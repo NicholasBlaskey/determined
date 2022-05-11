@@ -1,3 +1,5 @@
+import os
+
 # The maximum number of slots we expect any agent to have. Since we offset some ports
 # by the min(device_id) belonging to the trial, if we have two ports offset in this way,
 # we separate them by the max(min(device_id)) to avoid collisions. The two rendezvous ports
@@ -24,16 +26,39 @@ DEFAULT_EXP_CFG = {
     "optimizations": DEFAULT_OPTIMIZATIONS,
 }
 
+# Allow users to override the ports using the environment variables, in case
+# there are other processes running on the compute node which are already using
+# our default port. Users will likely set these in their "startup-hook.sh".
+# Below is an example how to set these in the experiment's YAML file for testing.
+#
+# environment:
+#   environment_variables:
+#      - DTRAIN_SSH_PORT=13000
+#      - HOROVOD_GLOO_RENDEZVOUS_PORT=13010
+#      - INTER_TRAIN_PROCESS_COMM_PORT_1=13020
+DTRAIN_SSH_PORT_ENV_VAR = "DTRAIN_SSH_PORT"
+HOROVOD_GLOO_RENDEZVOUS_PORT_ENV_VAR = "HOROVOD_GLOO_RENDEZVOUS_PORT"
+INTER_TRAIN_PROCESS_COMM_PORT_1_ENV_VAR = "INTER_TRAIN_PROCESS_COMM_PORT_1"
+
 # TODO (DET-1189): Use port registry to allocate ssh port.
 # SSH port used for agents during dtrain (currently used with horovod and deepspeed backend).
-DTRAIN_SSH_PORT = 12350
+# Note: Use of str() is to prevent lint complaint:
+#   error: Argument 1 to "int" has incompatible type "Optional[str]"
+DTRAIN_SSH_PORT = int(str(os.getenv(DTRAIN_SSH_PORT_ENV_VAR, "12350")))
 
 # GLOO port used by Horovod for the Gloo controller.
-HOROVOD_GLOO_RENDEZVOUS_PORT = 12355
+# Note: Use of str() is to prevent lint complaint:
+#   error: Argument 1 to "int" has incompatible type "Optional[str]"
+HOROVOD_GLOO_RENDEZVOUS_PORT = int(str(os.getenv(HOROVOD_GLOO_RENDEZVOUS_PORT_ENV_VAR, "12355")))
 
 # Port for communicating between training processes. Used for reducing
 # validation metrics.
-INTER_TRAIN_PROCESS_COMM_PORT_1 = 12360
+# Note: Use of str() is to prevent lint complaint:
+#   error: Argument 1 to "int" has incompatible type "Optional[str]"
+INTER_TRAIN_PROCESS_COMM_PORT_1 = int(
+    str(os.getenv(INTER_TRAIN_PROCESS_COMM_PORT_1_ENV_VAR, "12360"))
+)
+
 INTER_TRAIN_PROCESS_COMM_PORT_2 = INTER_TRAIN_PROCESS_COMM_PORT_1 + MAX_SLOTS_PER_AGENT
 
 # How many seconds horovod waits for startup to complete before failing.
