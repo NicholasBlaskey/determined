@@ -77,6 +77,30 @@ build-race: gen
 		-race \
 		./cmd/determined-master
 
+.PHONY: build-coverage
+build-coverage: export DET_SEGMENT_MASTER_KEY ?=
+build-coverage: export DET_SEGMENT_WEBUI_KEY ?=
+build-coverage: gen
+	go test \
+		./cmd/determined-master \
+		-ldflags "-X github.com/determined-ai/determined/master/version.Version=$(VERSION) \
+				  -X github.com/determined-ai/determined/master/internal/config.DefaultSegmentMasterKey=$(DET_SEGMENT_MASTER_KEY) \
+				  -X github.com/determined-ai/determined/master/internal/config.DefaultSegmentWebUIKey=$(DET_SEGMENT_WEBUI_KEY)" \
+		-coverpkg="./..." \
+		-run TestMainFunc \
+		-c -test.coverprofile=coverage.out -o ./cmd/determined-master/determined-master-cov \
+		-args -config-file
+
+.PHONY: run-coverage
+run-coverage: gen
+	cd ..; ./master/cmd/determined-master/determined-master-cov \
+	-test.coverprofile=./master/coverage.out \
+	--config-file=/tmp/devcluster/master.conf
+
+.PHONY: show-coverage
+show-coverage: gen
+	go tool cover -html=./coverage.out # -o cover.html
+
 .PHONY: check
 check: check-gen
 	go mod tidy
