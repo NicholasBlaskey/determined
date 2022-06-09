@@ -54,6 +54,8 @@ type EnvironmentConfigV0 struct {
 
 	RawAddCapabilities  []string `json:"add_capabilities"`
 	RawDropCapabilities []string `json:"drop_capabilities"`
+	RawShmSize          *string  `json:"shm_size"`
+	RawIPC              *string  `json:"ipc"`
 }
 
 //go:generate ../gen.sh
