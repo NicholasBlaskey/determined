@@ -334,41 +334,4 @@
     type: gcs
     bucket: determined-cp
     prefix: "this/is/a/prefix/.."
-
-- name: shm size valid 1.5 gb
-  complete_as:
-    - http://determined.ai/schemas/expconf/v0/environment.json
-  case:
-    image: test
-    shm_size: 1.5 gb
-
-- name: shm size valid 1 (omitting bytes)
-  complete_as:
-    - http://determined.ai/schemas/expconf/v0/environment.json
-  case:
-    image: test
-    shm_size: "1"
-
-- name: shm size valid 1219021b
-  complete_as:
-    - http://determined.ai/schemas/expconf/v0/environment.json
-  case:
-    image: test
-    shm_size: 1219021b
-
-- name: shm size invalid giga
-  sanity_errors:
-    http://determined.ai/schemas/expconf/v0/environment.json:
-      - "<config>.shm_size: must be a valid memory size"  
-  case:
-    image: test
-    shm_size: giga
-    
-- name: shm size invalid 1.gb
-  sanity_errors:
-    http://determined.ai/schemas/expconf/v0/environment.json:
-      - "<config>.shm_size: must be a valid memory size"  
-  case:
-    image: test
-    shm_size: 1.gb
     
