@@ -189,7 +189,7 @@ type ResourcesConfigV0 struct {
 	RawSlotsPerTrial  *int     `json:"slots_per_trial"`
 	RawWeight         *float64 `json:"weight"`
 	RawNativeParallel *bool    `json:"native_parallel,omitempty"`
-	RawShmSize        *int     `json:"shm_size"`
+	RawShmSize        *string  `json:"shm_size"`
 	RawAgentLabel     *string  `json:"agent_label"`
 	RawResourcePool   *string  `json:"resource_pool"`
 	RawPriority       *int     `json:"priority"`

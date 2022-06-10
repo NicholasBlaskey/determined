@@ -8,6 +8,7 @@ import (
 
 	docker "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/go-units"
 
 	"github.com/determined-ai/determined/master/pkg/archive"
 	"github.com/determined-ai/determined/master/pkg/cproto"
@@ -64,7 +65,7 @@ type TaskSpec struct {
 	// UseHostMode is whether host mode networking would be desirable for this task.
 	// This is used by Docker only.
 	UseHostMode bool
-	ShmSize     int64
+	ShmSize     string
 
 	// The parent task of an allocation.
 	TaskID string
@@ -164,8 +165,10 @@ func (t *TaskSpec) ToDockerSpec() cproto.Spec {
 		network = hostMode
 	}
 
-	shmSize := t.ShmSize
-	if shmSize == 0 {
+	// What if this is empty??? Do we get an error.
+	// Also could we ever take bad input here?
+	shmSize, err := units.RAMInBytes(t.ShmSize)
+	if err != nil {
 		shmSize = t.TaskContainerDefaults.ShmSizeBytes
 	}
 

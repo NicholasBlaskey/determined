@@ -57,11 +57,11 @@ func (r *ResourcesConfigV0) SetNativeParallel(val bool) {
 	r.RawNativeParallel = &val
 }
 
-func (r ResourcesConfigV0) ShmSize() *int {
+func (r ResourcesConfigV0) ShmSize() *string {
 	return r.RawShmSize
 }
 
-func (r *ResourcesConfigV0) SetShmSize(val *int) {
+func (r *ResourcesConfigV0) SetShmSize(val *string) {
 	r.RawShmSize = val
 }
 

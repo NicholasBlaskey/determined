@@ -23,6 +23,7 @@ import (
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/master/pkg/tasks"
 
+	"github.com/docker/go-units"
 	k8sV1 "k8s.io/api/core/v1"
 	schedulingV1 "k8s.io/api/scheduling/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -184,8 +185,10 @@ func (p *pod) configureVolumes(
 	volumeMounts = append(volumeMounts, hostVolumeMounts...)
 	volumes = append(volumes, hostVolumes...)
 
-	shmSize := p.taskSpec.ShmSize
-	if shmSize == 0 {
+	// What if this is empty??? Do we get an error.
+	// Also could we ever take bad input here?
+	shmSize, err := units.RAMInBytes(p.taskSpec.ShmSize)
+	if err != nil {
 		shmSize = p.taskSpec.TaskContainerDefaults.ShmSizeBytes
 	}
 	shmVolumeMount, shmVolume := configureShmVolume(shmSize)

@@ -67,7 +67,7 @@ type ResourcesConfig struct {
 	MaxSlots       *int    `json:"max_slots,omitempty"`
 	Weight         float64 `json:"weight"`
 	NativeParallel bool    `json:"native_parallel,omitempty"`
-	ShmSize        *int    `json:"shm_size,omitempty"`
+	ShmSize        string  `json:"shm_size"`
 	AgentLabel     string  `json:"agent_label"`
 	ResourcePool   string  `json:"resource_pool"`
 	Priority       *int    `json:"priority,omitempty"`

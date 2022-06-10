@@ -77,9 +77,7 @@ func (s GenericCommandSpec) ToTaskSpec(keys *ssh.PrivateAndPublicKeys) TaskSpec 
 
 	res.Mounts = ToDockerMounts(s.Config.BindMounts.ToExpconf(), res.WorkDir)
 
-	if shm := s.Config.Resources.ShmSize; shm != nil {
-		res.ShmSize = int64(*shm)
-	}
+	res.ShmSize = s.Config.Resources.ShmSize
 
 	res.TaskType = s.TaskType
 	return res
