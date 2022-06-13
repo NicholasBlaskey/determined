@@ -25,6 +25,14 @@ func (d DevicesConfig) ToExpconf() expconf.DevicesConfig {
 }
 
 // ToExpconf translates old model objects into an expconf object.
+func (d *StorageSize) ToExpconf() *int {
+	if d == nil {
+		return nil
+	}
+	return ptrs.Ptr(int(d.Bytes))
+}
+
+// ToExpconf translates old model objects into an expconf object.
 func (r ResourcesConfig) ToExpconf() expconf.ResourcesConfig {
 	return schemas.WithDefaults(expconf.ResourcesConfig{
 		RawSlots:          ptrs.Ptr(r.Slots),
@@ -32,7 +40,7 @@ func (r ResourcesConfig) ToExpconf() expconf.ResourcesConfig {
 		RawSlotsPerTrial:  ptrs.Ptr(1),
 		RawWeight:         ptrs.Ptr(r.Weight),
 		RawNativeParallel: ptrs.Ptr(r.NativeParallel),
-		RawShmSize:        ptrs.Ptr(r.ShmSize),
+		RawShmSize:        r.ShmSize.ToExpconf(),
 		RawAgentLabel:     ptrs.Ptr(r.AgentLabel),
 		RawResourcePool:   ptrs.Ptr(r.ResourcePool),
 		RawPriority:       r.Priority,

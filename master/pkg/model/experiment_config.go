@@ -2,7 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	//"fmt"
 	"path/filepath"
+	"strconv"
 
 	"github.com/pkg/errors"
 
@@ -66,15 +68,41 @@ func (d *DeviceConfig) UnmarshalJSON(data []byte) error {
 type ResourcesConfig struct {
 	Slots int `json:"slots"`
 
-	MaxSlots       *int    `json:"max_slots,omitempty"`
-	Weight         float64 `json:"weight"`
-	NativeParallel bool    `json:"native_parallel,omitempty"`
-	ShmSize        string  `json:"shm_size"`
-	AgentLabel     string  `json:"agent_label"`
-	ResourcePool   string  `json:"resource_pool"`
-	Priority       *int    `json:"priority,omitempty"`
+	MaxSlots       *int         `json:"max_slots,omitempty"`
+	Weight         float64      `json:"weight"`
+	NativeParallel bool         `json:"native_parallel,omitempty"`
+	ShmSize        *StorageSize `json:"shm_size,omitempty"`
+	AgentLabel     string       `json:"agent_label"`
+	ResourcePool   string       `json:"resource_pool"`
+	Priority       *int         `json:"priority,omitempty"`
 
 	Devices DevicesConfig `json:"devices"`
+}
+
+// StorageSize is TODO.
+type StorageSize struct {
+	Bytes   int64
+	Inputed string
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (d *StorageSize) UnmarshalJSON(data []byte) error {
+	// Passed in an int (for backwards compatibility)?
+	err := json.Unmarshal(data, &d.Bytes)
+	if err == nil {
+		d.Inputed = strconv.FormatInt(d.Bytes, 64)
+		return nil
+	}
+
+	// Passed in string?
+	if _, ok := err.(*json.UnsupportedValueError); !ok {
+		return err
+	}
+	if err := json.Unmarshal(data, &d.Inputed); err != nil {
+		return err
+	}
+	d.Bytes, err = units.RAMInBytes(d.Inputed)
+	return errors.Wrap(err, "shm_size not a valid size")
 }
 
 // ParseJustResources is a helper function for breaking the circular dependency where we need the
@@ -120,12 +148,6 @@ func (r ResourcesConfig) Validate() []error {
 		check.GreaterThanOrEqualTo(r.Slots, 0, "slots must be >= 0"),
 		check.GreaterThan(r.Weight, float64(0), "weight must be > 0"),
 	}
-	if r.ShmSize != "" {
-		if _, err := units.RAMInBytes(r.ShmSize); err != nil {
-			errs = append(errs, errors.Wrap(err, "failed to parse shm_size"))
-		}
-	}
-
 	errs = append(errs, ValidatePrioritySetting(r.Priority)...)
 	return errs
 }

@@ -121,7 +121,7 @@ func (s TrialSpec) ToTaskSpec(keys *ssh.PrivateAndPublicKeys) TaskSpec {
 	}
 
 	if shm := s.ExperimentConfig.Resources().ShmSize(); shm != nil {
-		res.ShmSize = *shm
+		res.ShmSize = int64(*shm)
 	}
 
 	mounts := ToDockerMounts(s.ExperimentConfig.BindMounts(), res.WorkDir)
