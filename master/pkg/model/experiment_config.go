@@ -6,6 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/docker/go-units"
+
 	"github.com/ghodss/yaml"
 
 	"github.com/determined-ai/determined/master/pkg/check"
@@ -117,8 +119,13 @@ func (r ResourcesConfig) Validate() []error {
 	errs := []error{
 		check.GreaterThanOrEqualTo(r.Slots, 0, "slots must be >= 0"),
 		check.GreaterThan(r.Weight, float64(0), "weight must be > 0"),
-		check.GreaterThanOrEqualTo(r.ShmSize, 0, "shm_size must be >= 0"),
 	}
+	if r.ShmSize != "" {
+		if _, err := units.RAMInBytes(r.ShmSize); err != nil {
+			errs = append(errs, errors.Wrap(err, "failed to parse shm_size"))
+		}
+	}
+
 	errs = append(errs, ValidatePrioritySetting(r.Priority)...)
 	return errs
 }
