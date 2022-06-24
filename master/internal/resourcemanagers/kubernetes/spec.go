@@ -105,6 +105,8 @@ func (p *pod) configureEnvVars(
 	return envVars, nil
 }
 
+// actually adds the pod specs???
+// What is this archive tho???
 func (p *pod) configureConfigMapSpec(
 	runArchives []cproto.RunArchive, fluentFiles map[string][]byte,
 ) (*k8sV1.ConfigMap, error) {

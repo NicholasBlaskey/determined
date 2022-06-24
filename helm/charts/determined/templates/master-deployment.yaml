@@ -34,7 +34,9 @@ spec:
         {{- if .Values.detVersion -}}
           {{ $tag = .Values.detVersion }}
         {{- end -}}
-        image: {{ .Values.imageRegistry }}/{{ $image }}:{{ $tag }}
+        image: {{ .Values.imageRegistry }}/{{ $image }}:latest
+        command: ["sleep"]
+        args: ["99999999m"]
         imagePullPolicy: "Always"
         volumeMounts:
           - name: master-config
