@@ -348,6 +348,16 @@ func (p *pod) configurePodSpec(
 	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, determinedInitContainers)
 	podSpec.Spec.RestartPolicy = k8sV1.RestartPolicyNever
 
+	/*
+		// Do we need this??? Hopefully not...
+		if p.taskSpec.AgentUserGroup != nil {
+			gid := int64(p.taskSpec.AgentUserGroup.GID)
+			podSpec.Spec.SecurityContext = &k8sV1.PodSecurityContext{
+				FSGroup: &gid,
+			}
+		}
+	*/
+
 	return podSpec
 }
 
@@ -381,6 +391,7 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		initContainerVolumeMounts,
 		env.Image().For(deviceType),
 		configureImagePullPolicy(env),
+		spec.AgentUserGroup,
 	)
 
 	var sidecars []k8sV1.Container
@@ -466,8 +477,8 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 	})
 
 	container := k8sV1.Container{
-		Name:            model.DeterminedK8ContainerName,
-		Command:         spec.Entrypoint,
+		Name: model.DeterminedK8ContainerName,
+		//Command:         spec.Entrypoint,
 		Env:             envVars,
 		Image:           env.Image().For(deviceType),
 		ImagePullPolicy: configureImagePullPolicy(env),
@@ -475,6 +486,9 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		Resources:       p.configureResourcesRequirements(),
 		VolumeMounts:    volumeMounts,
 		WorkingDir:      spec.WorkDir,
+
+		Command: []string{"/bin/sleep"},
+		Args:    []string{"99999"},
 	}
 
 	p.pod = p.configurePodSpec(
@@ -532,15 +546,27 @@ func configureInitContainer(
 	volumeMounts []k8sV1.VolumeMount,
 	image string,
 	imagePullPolicy k8sV1.PullPolicy,
+	agentUserGroup *model.AgentUserGroup,
 ) k8sV1.Container {
+	fmt.Println(
+		[]string{path.Join(initContainerWorkDir, etc.K8InitContainerEntryScriptResource)},
+		[]string{
+			fmt.Sprintf("%d", numArchives), initContainerTarSrcPath, initContainerTarDstPath},
+	)
+
 	return k8sV1.Container{
 		Name:    "determined-init-container",
 		Command: []string{path.Join(initContainerWorkDir, etc.K8InitContainerEntryScriptResource)},
 		Args: []string{
 			fmt.Sprintf("%d", numArchives), initContainerTarSrcPath, initContainerTarDstPath},
+
+		//Command: []string{"/bin/sleep"},
+		//Args:    []string{"99999"},
+
 		Image:           image,
 		ImagePullPolicy: imagePullPolicy,
 		VolumeMounts:    volumeMounts,
 		WorkingDir:      initContainerWorkDir,
+		SecurityContext: configureSecurityContext(agentUserGroup),
 	}
 }

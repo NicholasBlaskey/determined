@@ -13,6 +13,11 @@ do
     SRC=$2/$IDX.tar.gz
     DST=$3/$IDX
     mkdir $DST
-    # TODO(Brad): init container runs as root to use --same-owner, could be a problem.
-    tar --same-owner -xvf $SRC -C $DST
+
+    if [ $(id -u) == "0" ]
+    then
+        tar --same-owner -xvf $SRC -C $DST
+    else
+        tar -xvf $SRC -C $DST
+    fi
 done
