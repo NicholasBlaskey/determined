@@ -144,11 +144,13 @@ func configureAdditionalFilesVolumes(
 
 	for idx, runArchive := range runArchives {
 		for _, item := range runArchive.Archive {
-			mainContainerVolumeMounts = append(mainContainerVolumeMounts, k8sV1.VolumeMount{
-				Name:      additionalFilesVolumeName,
-				MountPath: path.Join(runArchive.Path, item.Path),
-				SubPath:   path.Join(fmt.Sprintf("%d", idx), item.Path),
-			})
+			if item.UserID != 0 { // TODO
+				mainContainerVolumeMounts = append(mainContainerVolumeMounts, k8sV1.VolumeMount{
+					Name:      additionalFilesVolumeName,
+					MountPath: path.Join(runArchive.Path, item.Path),
+					SubPath:   path.Join(fmt.Sprintf("%d", idx), item.Path),
+				})
+			}
 		}
 	}
 

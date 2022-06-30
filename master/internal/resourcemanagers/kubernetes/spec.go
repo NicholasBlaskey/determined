@@ -40,6 +40,8 @@ const (
 	rootUserName = "root"
 )
 
+var singleton bool
+
 func (p *pod) configureResourcesRequirements() k8sV1.ResourceRequirements {
 	switch p.slotType {
 	case device.CPU:
@@ -109,15 +111,89 @@ func (p *pod) configureEnvVars(
 // What is this archive tho???
 func (p *pod) configureConfigMapSpec(
 	runArchives []cproto.RunArchive, fluentFiles map[string][]byte,
-) (*k8sV1.ConfigMap, error) {
+) (*k8sV1.ConfigMap, []k8sV1.Volume, []k8sV1.VolumeMount, error) {
+	var volumes []k8sV1.Volume
+	var volumeMounts []k8sV1.VolumeMount
+
 	configMapData := make(map[string][]byte)
 	// Add additional files as tar.gz archive.
 	for idx, runArchive := range runArchives {
-		zippedArchive, err := archive.ToTarGz(runArchive.Archive)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to zip archive")
+		var c archive.Archive
+		for j, i := range runArchive.Archive {
+			fmt.Println(i.UserID, i.Path)
+			if i.UserID == 0 {
+				fmt.Println("ROOT")
+				endl := strings.Split(i.Path, "/")
+				name := endl[len(endl)-1] // fmt.Sprintf("%d-%d", idx, j)
+				configMapData[name] = i.Content
+				workDir := strings.Join(endl[:len(endl)-1], "/")
+
+				if workDir == "/run/determined/etc" {
+					continue
+				}
+
+				// TODO
+				volumeName := fmt.Sprintf("%d-%d", idx, j)
+				var entryPointVolumeMode int32 = 0777 //0700 TODO this is bad.
+				volumes = append(volumes, k8sV1.Volume{
+					Name: volumeName,
+					VolumeSource: k8sV1.VolumeSource{
+						ConfigMap: &k8sV1.ConfigMapVolumeSource{
+							LocalObjectReference: k8sV1.LocalObjectReference{
+								Name: p.configMapName,
+							},
+							Items: []k8sV1.KeyToPath{{
+								Key:  name,
+								Path: name,
+							}},
+							DefaultMode: &entryPointVolumeMode,
+						},
+					},
+				})
+
+				volumeMounts = append(volumeMounts, k8sV1.VolumeMount{
+					Name:      volumeName,
+					MountPath: workDir,
+					ReadOnly:  true,
+				})
+			} else {
+				c = append(c, i)
+			}
+
+			/*
+				copy := i
+				fmt.Println(copy.Path)
+
+				if i.Path == "/run/determined/etc/passwd" ||
+					i.Path == "/run/determined/etc/group" ||
+					//i.Path == "/run/determined/etc/shadow" ||
+					//i.Path == "/etc/ssh/ssh_config" {
+					false {
+					fmt.Println("Pre non rooting", i.Path)
+					copy.UserID = 1038
+					copy.GroupID = 1039
+					fmt.Println("NON ROOTING", i.Path)
+				}
+			*/
+			/*
+				if i.Path != "/run/determined/etc/shadow" ||
+					i.Path != "/etc/ssh/ssh_config" ||
+					false {
+
+					copy.UserID = 1038
+					copy.GroupID = 1039
+				}
+			*/
+
 		}
-		configMapData[fmt.Sprintf("%d.tar.gz", idx)] = zippedArchive
+
+		if len(c) > 0 {
+			zippedArchive, err := archive.ToTarGz(c)
+			if err != nil {
+				return nil, nil, nil, errors.Wrap(err, "failed to zip archive")
+			}
+			configMapData[fmt.Sprintf("%d.tar.gz", idx)] = zippedArchive
+		}
 	}
 
 	for fn, content := range fluentFiles {
@@ -137,7 +213,7 @@ func (p *pod) configureConfigMapSpec(
 			Labels:    map[string]string{determinedLabel: p.taskSpec.AllocationID},
 		},
 		BinaryData: configMapData,
-	}, nil
+	}, volumes, volumeMounts, nil
 }
 
 func (p *pod) configureLoggingVolumes(
@@ -319,7 +395,11 @@ func (p *pod) configurePodSpec(
 		}
 
 		determinedContainer.Env = append(determinedContainer.Env, container.Env...)
+		//determinedContainer.Env = append(determinedContainer.Env,
+		//	k8sV1.EnvVar{Name: "LIBNSS_DETERMINED_DEBUG", Value: "1"})
 		determinedContainer.EnvFrom = append(determinedContainer.EnvFrom, container.EnvFrom...)
+		fmt.Println("ENV!", determinedContainer.Env)
+		panic("!!!")
 
 		for k, v := range podSpec.Spec.Containers[idx].Resources.Limits {
 			if _, present := determinedContainer.Resources.Limits[k]; !present {
@@ -476,9 +556,11 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		WorkingDir:      fluentBaseDir,
 	})
 
+	envVars = append(envVars, k8sV1.EnvVar{Name: "LIBNSS_DETERMINED_DEBUG", Value: "1"})
+	fmt.Println(spec.Entrypoint)
 	container := k8sV1.Container{
-		Name: model.DeterminedK8ContainerName,
-		//Command:         spec.Entrypoint,
+		Name:            model.DeterminedK8ContainerName,
+		Command:         spec.Entrypoint,
 		Env:             envVars,
 		Image:           env.Image().For(deviceType),
 		ImagePullPolicy: configureImagePullPolicy(env),
@@ -487,17 +569,39 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		VolumeMounts:    volumeMounts,
 		WorkingDir:      spec.WorkDir,
 
-		Command: []string{"/bin/sleep"},
-		Args:    []string{"99999"},
+		/*
+			Command: []string{"/bin/bash", "-c"},
+			Args:    []string{"chown root:root /etc/ssh/ssh_config && chown root:root /run/determined/etc/passwd && chown root:root /run/determined/etc/shadow && chown root:root /run/determined/etc/group && sudo service sshd restart && /run/determined/train/entrypoint.sh"},
+		*/
+
+		//Command: append([]string{"chown", "root:root", spec.Entrypoint[len(spec.Entrypoint)-1], "&&"},
+		//	spec.Entrypoint...),
+		//SecurityContext: configureSecurityContext(&model.AgentUserGroup{ID: 0, GID: 0}),
+		//Command: []string{"/bin/sleep"},
+		//Args:    []string{"99999"},
+	}
+	fmt.Println("ENTRYPOINT", container.Command, container.Args)
+
+	var vs []k8sV1.Volume
+	var vms []k8sV1.VolumeMount
+	p.configMap, vs, vms, err = p.configureConfigMapSpec(runArchives, fluentFiles)
+	if err != nil {
+		return err
+	}
+
+	//fmt.Println(len(vs), len(vms))
+	//fmt.Println(vs, vms)
+	container.VolumeMounts = append(container.VolumeMounts, vms...)
+
+	for _, v := range container.VolumeMounts {
+		fmt.Println(v)
 	}
 
 	p.pod = p.configurePodSpec(
 		ctx, volumes, initContainer, container, sidecars, (*k8sV1.Pod)(env.PodSpec()), scheduler)
+	p.pod.Spec.Volumes = append(p.pod.Spec.Volumes, vs...)
+	//for _, p := range p.pod.Spec.
 
-	p.configMap, err = p.configureConfigMapSpec(runArchives, fluentFiles)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -553,6 +657,11 @@ func configureInitContainer(
 		[]string{
 			fmt.Sprintf("%d", numArchives), initContainerTarSrcPath, initContainerTarDstPath},
 	)
+
+	if !singleton && false {
+		//singleton = true
+		agentUserGroup = &model.AgentUserGroup{GID: 0, UID: 0}
+	}
 
 	return k8sV1.Container{
 		Name:    "determined-init-container",
