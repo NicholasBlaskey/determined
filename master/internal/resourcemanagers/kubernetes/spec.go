@@ -119,72 +119,16 @@ func (p *pod) configureConfigMapSpec(
 	// Add additional files as tar.gz archive.
 	for idx, runArchive := range runArchives {
 		var c archive.Archive
-		for j, i := range runArchive.Archive {
-			fmt.Println(i.UserID, i.Path)
+		for _, i := range runArchive.Archive {
 			if i.UserID == 0 {
-				fmt.Println("ROOT")
-				endl := strings.Split(i.Path, "/")
-				name := endl[len(endl)-1] // fmt.Sprintf("%d-%d", idx, j)
-				configMapData[name] = i.Content
-				workDir := strings.Join(endl[:len(endl)-1], "/")
-
-				if workDir == "/run/determined/etc" {
-					continue
+				// TODO issue here with potentially two paths going to same place...
+				if _, ok := configMapData[path.Base(i.Path)]; ok {
+					panic("REPEAT" + i.Path)
 				}
-
-				// TODO
-				volumeName := fmt.Sprintf("%d-%d", idx, j)
-				var entryPointVolumeMode int32 = 0777 //0700 TODO this is bad.
-				volumes = append(volumes, k8sV1.Volume{
-					Name: volumeName,
-					VolumeSource: k8sV1.VolumeSource{
-						ConfigMap: &k8sV1.ConfigMapVolumeSource{
-							LocalObjectReference: k8sV1.LocalObjectReference{
-								Name: p.configMapName,
-							},
-							Items: []k8sV1.KeyToPath{{
-								Key:  name,
-								Path: name,
-							}},
-							DefaultMode: &entryPointVolumeMode,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, k8sV1.VolumeMount{
-					Name:      volumeName,
-					MountPath: workDir,
-					ReadOnly:  true,
-				})
+				configMapData[path.Base(i.Path)] = i.Content
 			} else {
 				c = append(c, i)
 			}
-
-			/*
-				copy := i
-				fmt.Println(copy.Path)
-
-				if i.Path == "/run/determined/etc/passwd" ||
-					i.Path == "/run/determined/etc/group" ||
-					//i.Path == "/run/determined/etc/shadow" ||
-					//i.Path == "/etc/ssh/ssh_config" {
-					false {
-					fmt.Println("Pre non rooting", i.Path)
-					copy.UserID = 1038
-					copy.GroupID = 1039
-					fmt.Println("NON ROOTING", i.Path)
-				}
-			*/
-			/*
-				if i.Path != "/run/determined/etc/shadow" ||
-					i.Path != "/etc/ssh/ssh_config" ||
-					false {
-
-					copy.UserID = 1038
-					copy.GroupID = 1039
-				}
-			*/
-
 		}
 
 		if len(c) > 0 {
