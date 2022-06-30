@@ -106,15 +106,16 @@ func (p *pod) configureEnvVars(
 }
 
 func (p *pod) configureConfigMapSpec(
-	runArchives []cproto.RunArchive, fluentFiles map[string][]byte,
+	runArchives []cproto.RunArchive,
+	fluentFiles map[string][]byte,
+	agentUserGroup *model.AgentUserGroup,
 ) (*k8sV1.ConfigMap, error) {
 	configMapData := make(map[string][]byte)
 	// Add additional files as tar.gz archive.
 	for idx, runArchive := range runArchives {
 		var c archive.Archive
 		for _, i := range runArchive.Archive {
-			if i.UserID == 0 {
-				// TODO issue here with potentially two paths going to same place...
+			if i.NeedsRoot {
 				if _, ok := configMapData[path.Base(i.Path)]; ok {
 					return nil, fmt.Errorf("multiple rooted files have same file name %s", i.Path)
 				}
@@ -494,7 +495,7 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 	p.pod = p.configurePodSpec(
 		ctx, volumes, initContainer, container, sidecars, (*k8sV1.Pod)(env.PodSpec()), scheduler)
 
-	p.configMap, err = p.configureConfigMapSpec(runArchives, fluentFiles)
+	p.configMap, err = p.configureConfigMapSpec(runArchives, fluentFiles, spec.AgentUserGroup)
 	if err != nil {
 		return err
 	}

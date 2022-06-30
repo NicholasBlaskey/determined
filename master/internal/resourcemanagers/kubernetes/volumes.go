@@ -108,7 +108,7 @@ func configureAdditionalFilesVolumes(
 	initContainerVolumeMounts = append(initContainerVolumeMounts, archiveVolumeMount)
 
 	entryPointVolumeName := "entrypoint-volume"
-	var entryPointVolumeMode int32 = 0777 //0700 TODO this is bad.
+	var entryPointVolumeMode int32 = 0555
 	entryPointVolume := k8sV1.Volume{
 		Name: entryPointVolumeName,
 		VolumeSource: k8sV1.VolumeSource{
@@ -147,7 +147,7 @@ func configureAdditionalFilesVolumes(
 	for idx, runArchive := range runArchives {
 		for _, item := range runArchive.Archive {
 			// Files that aren't owned by root can get extracted.
-			if item.UserID != 0 {
+			if !item.NeedsRoot {
 				mainContainerVolumeMounts = append(mainContainerVolumeMounts, k8sV1.VolumeMount{
 					Name:      additionalFilesVolumeName,
 					MountPath: path.Join(runArchive.Path, item.Path),
@@ -176,8 +176,6 @@ func configureAdditionalFilesVolumes(
 				Mode: &mode,
 			})
 		}
-
-		var entryPointVolumeMode int32 = 0555
 		volumes = append(volumes, k8sV1.Volume{
 			Name: volumeName,
 			VolumeSource: k8sV1.VolumeSource{
@@ -185,8 +183,7 @@ func configureAdditionalFilesVolumes(
 					LocalObjectReference: k8sV1.LocalObjectReference{
 						Name: configMapName,
 					},
-					Items:       keyToPaths,
-					DefaultMode: &entryPointVolumeMode,
+					Items: keyToPaths,
 				},
 			},
 		})
