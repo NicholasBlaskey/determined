@@ -14,16 +14,8 @@ do
     DST=$3/$IDX
     mkdir $DST
 
-    if [ ! -f $SRC ]; then
-        echo "Not found $SRC"
-        continue
-    fi
-    
-    if [ $(id -u) == "0" ]
+    if [ -f $SRC ]
     then
-        tar --same-owner -xvf $SRC -C $DST
-    else
         tar -xvf $SRC -C $DST
     fi
 done
-echo "Done"

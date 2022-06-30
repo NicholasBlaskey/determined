@@ -40,8 +40,6 @@ const (
 	rootUserName = "root"
 )
 
-var singleton bool
-
 func (p *pod) configureResourcesRequirements() k8sV1.ResourceRequirements {
 	switch p.slotType {
 	case device.CPU:
@@ -107,14 +105,9 @@ func (p *pod) configureEnvVars(
 	return envVars, nil
 }
 
-// actually adds the pod specs???
-// What is this archive tho???
 func (p *pod) configureConfigMapSpec(
 	runArchives []cproto.RunArchive, fluentFiles map[string][]byte,
-) (*k8sV1.ConfigMap, []k8sV1.Volume, []k8sV1.VolumeMount, error) {
-	var volumes []k8sV1.Volume
-	var volumeMounts []k8sV1.VolumeMount
-
+) (*k8sV1.ConfigMap, error) {
 	configMapData := make(map[string][]byte)
 	// Add additional files as tar.gz archive.
 	for idx, runArchive := range runArchives {
@@ -123,7 +116,7 @@ func (p *pod) configureConfigMapSpec(
 			if i.UserID == 0 {
 				// TODO issue here with potentially two paths going to same place...
 				if _, ok := configMapData[path.Base(i.Path)]; ok {
-					panic("REPEAT" + i.Path)
+					return nil, fmt.Errorf("multiple rooted files have same file name %s", i.Path)
 				}
 				configMapData[path.Base(i.Path)] = i.Content
 			} else {
@@ -134,7 +127,7 @@ func (p *pod) configureConfigMapSpec(
 		if len(c) > 0 {
 			zippedArchive, err := archive.ToTarGz(c)
 			if err != nil {
-				return nil, nil, nil, errors.Wrap(err, "failed to zip archive")
+				return nil, errors.Wrap(err, "failed to zip archive")
 			}
 			configMapData[fmt.Sprintf("%d.tar.gz", idx)] = zippedArchive
 		}
@@ -157,7 +150,7 @@ func (p *pod) configureConfigMapSpec(
 			Labels:    map[string]string{determinedLabel: p.taskSpec.AllocationID},
 		},
 		BinaryData: configMapData,
-	}, volumes, volumeMounts, nil
+	}, nil
 }
 
 func (p *pod) configureLoggingVolumes(
@@ -339,11 +332,7 @@ func (p *pod) configurePodSpec(
 		}
 
 		determinedContainer.Env = append(determinedContainer.Env, container.Env...)
-		//determinedContainer.Env = append(determinedContainer.Env,
-		//	k8sV1.EnvVar{Name: "LIBNSS_DETERMINED_DEBUG", Value: "1"})
 		determinedContainer.EnvFrom = append(determinedContainer.EnvFrom, container.EnvFrom...)
-		fmt.Println("ENV!", determinedContainer.Env)
-		panic("!!!")
 
 		for k, v := range podSpec.Spec.Containers[idx].Resources.Limits {
 			if _, present := determinedContainer.Resources.Limits[k]; !present {
@@ -371,16 +360,6 @@ func (p *pod) configurePodSpec(
 	podSpec.Spec.HostNetwork = p.taskSpec.TaskContainerDefaults.NetworkMode.IsHost()
 	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, determinedInitContainers)
 	podSpec.Spec.RestartPolicy = k8sV1.RestartPolicyNever
-
-	/*
-		// Do we need this??? Hopefully not...
-		if p.taskSpec.AgentUserGroup != nil {
-			gid := int64(p.taskSpec.AgentUserGroup.GID)
-			podSpec.Spec.SecurityContext = &k8sV1.PodSecurityContext{
-				FSGroup: &gid,
-			}
-		}
-	*/
 
 	return podSpec
 }
@@ -422,7 +401,6 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 	var fluentFiles map[string][]byte
 
 	p.containerNames[model.DeterminedK8FluentContainerName] = true
-	envVars = append(envVars, k8sV1.EnvVar{Name: "DET_K8S_LOG_TO_FILE", Value: "true"})
 	asNonRoot := p.taskSpec.AgentUserGroup != nil &&
 		p.taskSpec.AgentUserGroup.User != rootUserName
 
@@ -500,8 +478,6 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		WorkingDir:      fluentBaseDir,
 	})
 
-	envVars = append(envVars, k8sV1.EnvVar{Name: "LIBNSS_DETERMINED_DEBUG", Value: "1"})
-	fmt.Println(spec.Entrypoint)
 	container := k8sV1.Container{
 		Name:            model.DeterminedK8ContainerName,
 		Command:         spec.Entrypoint,
@@ -512,40 +488,15 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		Resources:       p.configureResourcesRequirements(),
 		VolumeMounts:    volumeMounts,
 		WorkingDir:      spec.WorkDir,
-
-		/*
-			Command: []string{"/bin/bash", "-c"},
-			Args:    []string{"chown root:root /etc/ssh/ssh_config && chown root:root /run/determined/etc/passwd && chown root:root /run/determined/etc/shadow && chown root:root /run/determined/etc/group && sudo service sshd restart && /run/determined/train/entrypoint.sh"},
-		*/
-
-		//Command: append([]string{"chown", "root:root", spec.Entrypoint[len(spec.Entrypoint)-1], "&&"},
-		//	spec.Entrypoint...),
-		//SecurityContext: configureSecurityContext(&model.AgentUserGroup{ID: 0, GID: 0}),
-		//Command: []string{"/bin/sleep"},
-		//Args:    []string{"99999"},
-	}
-	fmt.Println("ENTRYPOINT", container.Command, container.Args)
-
-	var vs []k8sV1.Volume
-	var vms []k8sV1.VolumeMount
-	p.configMap, vs, vms, err = p.configureConfigMapSpec(runArchives, fluentFiles)
-	if err != nil {
-		return err
-	}
-
-	//fmt.Println(len(vs), len(vms))
-	//fmt.Println(vs, vms)
-	container.VolumeMounts = append(container.VolumeMounts, vms...)
-
-	for _, v := range container.VolumeMounts {
-		fmt.Println(v)
 	}
 
 	p.pod = p.configurePodSpec(
 		ctx, volumes, initContainer, container, sidecars, (*k8sV1.Pod)(env.PodSpec()), scheduler)
-	p.pod.Spec.Volumes = append(p.pod.Spec.Volumes, vs...)
-	//for _, p := range p.pod.Spec.
 
+	p.configMap, err = p.configureConfigMapSpec(runArchives, fluentFiles)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -596,26 +547,11 @@ func configureInitContainer(
 	imagePullPolicy k8sV1.PullPolicy,
 	agentUserGroup *model.AgentUserGroup,
 ) k8sV1.Container {
-	fmt.Println(
-		[]string{path.Join(initContainerWorkDir, etc.K8InitContainerEntryScriptResource)},
-		[]string{
-			fmt.Sprintf("%d", numArchives), initContainerTarSrcPath, initContainerTarDstPath},
-	)
-
-	if !singleton && false {
-		//singleton = true
-		agentUserGroup = &model.AgentUserGroup{GID: 0, UID: 0}
-	}
-
 	return k8sV1.Container{
 		Name:    "determined-init-container",
 		Command: []string{path.Join(initContainerWorkDir, etc.K8InitContainerEntryScriptResource)},
 		Args: []string{
 			fmt.Sprintf("%d", numArchives), initContainerTarSrcPath, initContainerTarDstPath},
-
-		//Command: []string{"/bin/sleep"},
-		//Args:    []string{"99999"},
-
 		Image:           image,
 		ImagePullPolicy: imagePullPolicy,
 		VolumeMounts:    volumeMounts,
