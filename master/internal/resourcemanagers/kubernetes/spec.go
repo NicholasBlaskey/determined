@@ -401,6 +401,7 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 	var fluentFiles map[string][]byte
 
 	p.containerNames[model.DeterminedK8FluentContainerName] = true
+	envVars = append(envVars, k8sV1.EnvVar{Name: "DET_K8S_LOG_TO_FILE", Value: "true"})
 	asNonRoot := p.taskSpec.AgentUserGroup != nil &&
 		p.taskSpec.AgentUserGroup.User != rootUserName
 

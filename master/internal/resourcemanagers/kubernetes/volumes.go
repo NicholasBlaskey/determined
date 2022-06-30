@@ -161,10 +161,10 @@ func configureAdditionalFilesVolumes(
 	}
 
 	// Files owned by root will be added as a config map unextracted.
-	i := 0 // TODO
+	i := 0
 	for dir, items := range rootPathsToItem {
-		i++ // TODO
-		volumeName := fmt.Sprintf("root-file-%d", i)
+		volumeName := fmt.Sprintf("root-volume-%d", i)
+		i++
 
 		var keyToPaths []k8sV1.KeyToPath
 		for _, item := range items {
@@ -177,7 +177,7 @@ func configureAdditionalFilesVolumes(
 			})
 		}
 
-		var entryPointVolumeMode int32 = 0777 //0700 TODO this is bad.
+		var entryPointVolumeMode int32 = 0555
 		volumes = append(volumes, k8sV1.Volume{
 			Name: volumeName,
 			VolumeSource: k8sV1.VolumeSource{
@@ -194,7 +194,7 @@ func configureAdditionalFilesVolumes(
 		mainContainerVolumeMounts = append(mainContainerVolumeMounts, k8sV1.VolumeMount{
 			Name:      volumeName,
 			MountPath: dir,
-			ReadOnly:  false, // TODO Assume root files are read only?
+			ReadOnly:  true, // Assume root files will be read only.
 		})
 	}
 

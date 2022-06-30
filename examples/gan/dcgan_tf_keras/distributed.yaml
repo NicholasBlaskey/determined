@@ -13,4 +13,4 @@ searcher:
     epochs: 50
 entrypoint: model_def:DCGanTrial
 resources:
-  slots_per_trial: 2
+  slots_per_trial: 4
