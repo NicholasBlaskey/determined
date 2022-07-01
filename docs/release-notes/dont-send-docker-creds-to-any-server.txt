@@ -1,0 +1,6 @@
+:orphan:
+
+**Improvements**
+
+-  Security: Setting ``registry_auth.serveraddress`` will now only send credentials to the server
+   configured. Not setting ``registry_auth`` is now deprecated and will be required soon.

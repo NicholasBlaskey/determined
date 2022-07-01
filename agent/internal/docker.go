@@ -179,9 +179,16 @@ func (d *dockerActor) pullImage(ctx *actor.Context, msg pullImage) {
 		}
 	}
 
-	opts := types.ImagePullOptions{
-		All:          false,
-		RegistryAuth: reg,
+	opts := types.ImagePullOptions{All: false}
+	if msg.Registry != nil && msg.Registry.ServerAddress == "" {
+		d.sendAuxLog(ctx, "warning setting registry_auth without registry_auth.serveraddress is "+
+			"deprecated and will soon be required")
+		opts.RegistryAuth = reg
+	}
+	// Only send auth if the server matches the domain of the image we are pulling.
+	// TODO URL normalize the serveraddress.
+	if msg.Registry != nil && msg.Registry.ServerAddress == reference.Domain(ref) {
+		opts.RegistryAuth = reg
 	}
 
 	logs, err := d.ImagePull(context.Background(), ref.String(), opts)
