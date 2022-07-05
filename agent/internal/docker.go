@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	//"net"
 	"syscall"
 	"time"
 
@@ -160,6 +161,25 @@ func (d *dockerActor) pullImage(ctx *actor.Context, msg pullImage) {
 			sendErr(ctx, errors.Wrap(err, "error encoding registry credentials"))
 			return
 		}
+
+		if msg.Registry.ServerAddress == "" {
+			d.sendAuxLog(ctx, "warning setting registry_auth without registry_auth.serveraddress "+
+				"is deprecated and will soon be required")
+		} else {
+			match, err := dockerDomainsMatch(msg.Registry.ServerAddress, reference.Domain(ref))
+			if err != nil {
+				sendErr(ctx, errors.Wrap(err, "error determining if domains match to "+
+					"send docker registry authentication"))
+				return
+			}
+			if !match {
+				d.sendAuxLog(ctx, fmt.Sprintf("not sending docker registry credentials "+
+					"since registry_auth.serveraddress %s is not equal to domain of docker image %s",
+					msg.Registry.ServerAddress, reference.Domain(ref),
+				))
+				reg = ""
+			}
+		}
 	} else {
 		domain := reference.Domain(ref)
 		if store, ok := d.credentialStores[domain]; ok {
@@ -179,16 +199,9 @@ func (d *dockerActor) pullImage(ctx *actor.Context, msg pullImage) {
 		}
 	}
 
-	opts := types.ImagePullOptions{All: false}
-	if msg.Registry != nil && msg.Registry.ServerAddress == "" {
-		d.sendAuxLog(ctx, "warning setting registry_auth without registry_auth.serveraddress is "+
-			"deprecated and will soon be required")
-		opts.RegistryAuth = reg
-	}
-	// Only send auth if the server matches the domain of the image we are pulling.
-	// TODO URL normalize the serveraddress.
-	if msg.Registry != nil && msg.Registry.ServerAddress == reference.Domain(ref) {
-		opts.RegistryAuth = reg
+	opts := types.ImagePullOptions{
+		All:          false,
+		RegistryAuth: reg,
 	}
 
 	logs, err := d.ImagePull(context.Background(), ref.String(), opts)
@@ -572,4 +585,29 @@ func trackLogs(
 		return errors.Wrap(lErr, "error closing log stream")
 	}
 	return nil
+}
+
+func dockerDomainsMatch(d0, d1 string) (bool, error) {
+	/*
+		addrs, err := net.LookupIP(d0)
+		if err != nil {
+			return false, err
+		}
+		addrMap := make(map[string]bool)
+		for _, addr := range addrs {
+			addrMap[addr.String()] = true
+		}
+
+		addrs1, err := net.LookupIP(d1)
+		if err != nil {
+			return false, err
+		}
+		for _, addr := range addrs1 {
+			if addrMap[addr.String()] {
+				return true, nil
+			}
+		}
+		return false, nil
+	*/
+	return d0 == d1, nil
 }
