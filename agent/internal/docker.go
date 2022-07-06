@@ -18,6 +18,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -154,54 +155,14 @@ func (d *dockerActor) pullImage(ctx *actor.Context, msg pullImage) {
 			}})
 	}()
 
-	// TODO: replace with command.EncodeAuthToBase64
-	reg := ""
-	if msg.Registry != nil {
-		if reg, err = registryToString(*msg.Registry); err != nil {
-			sendErr(ctx, errors.Wrap(err, "error encoding registry credentials"))
-			return
-		}
-
-		if msg.Registry.ServerAddress == "" {
-			d.sendAuxLog(ctx, "warning setting registry_auth without registry_auth.serveraddress "+
-				"is deprecated and will soon be required")
-		} else {
-			match, err := dockerDomainsMatch(msg.Registry.ServerAddress, reference.Domain(ref))
-			if err != nil {
-				sendErr(ctx, errors.Wrap(err, "error determining if domains match to "+
-					"send docker registry authentication"))
-				return
-			}
-			if !match {
-				d.sendAuxLog(ctx, fmt.Sprintf("not sending docker registry credentials "+
-					"since registry_auth.serveraddress %s is not equal to domain of docker image %s",
-					msg.Registry.ServerAddress, reference.Domain(ref),
-				))
-				reg = ""
-			}
-		}
-	} else {
-		domain := reference.Domain(ref)
-		if store, ok := d.credentialStores[domain]; ok {
-			var creds types.AuthConfig
-			creds, err = store.get()
-			if err != nil {
-				sendErr(ctx, errors.Wrap(err, "unable to get credentials from helper"))
-				return
-			}
-			reg, err = registryToString(creds)
-			if err != nil {
-				sendErr(ctx, errors.Wrap(err, "error encoding registry credentials from helper"))
-				return
-			}
-			d.sendAuxLog(ctx, fmt.Sprintf(
-				"domain '%s' found in 'credHelpers' config. Using credentials helper.", domain))
-		}
+	auths, err := d.getDockerAuths(ctx, msg.Registry, reference.Domain(ref))
+	if err != nil {
+		sendErr(ctx, errors.Wrap(err, "could not get docker authentication"))
+		return
 	}
-
 	opts := types.ImagePullOptions{
 		All:          false,
-		RegistryAuth: reg,
+		RegistryAuth: auths,
 	}
 
 	logs, err := d.ImagePull(context.Background(), ref.String(), opts)
@@ -220,6 +181,45 @@ func (d *dockerActor) pullImage(ctx *actor.Context, msg pullImage) {
 	}
 
 	ctx.Tell(ctx.Sender(), imagePulled{})
+}
+
+func (d *dockerActor) getDockerAuths(
+	ctx *actor.Context,
+	expconfReg *types.AuthConfig,
+	imageDomain string,
+) (string, error) {
+	// Try expconf registery auth config.
+	if expconfReg != nil {
+		didNotPassServerAddress := expconfReg.ServerAddress == ""
+		if didNotPassServerAddress {
+			d.sendAuxLog(ctx, "warning setting registry_auth without registry_auth.serveraddress "+
+				"is deprecated and will soon be required")
+		}
+		if registry.ConvertToHostname(expconfReg.ServerAddress) == imageDomain ||
+			didNotPassServerAddress { // TODO remove didNotPassServerAddress when it becomes required.
+			reg, err := registryToString(*expconfReg)
+			return reg, errors.Wrap(err, "error encoding registry credentials")
+		}
+	}
+
+	// Try using credential stores.
+	if store, ok := d.credentialStores[imageDomain]; ok {
+		creds, err := store.get()
+		if err != nil {
+			return "", errors.Wrap(err, "unable to get credentials from helper")
+		}
+
+		reg, err := registryToString(creds)
+		if err == nil {
+			d.sendAuxLog(ctx, fmt.Sprintf(
+				"domain '%s' found in 'credHelpers' config. Using credentials helper.", imageDomain))
+		}
+		return reg, errors.Wrap(err, "error encoding registry credentials from helper")
+	}
+
+	// TODO try using the auths section of a users ~/.docker/config.json file.
+
+	return "", nil
 }
 
 func (d *dockerActor) runContainer(ctx *actor.Context, msg cproto.RunSpec) {
@@ -585,29 +585,4 @@ func trackLogs(
 		return errors.Wrap(lErr, "error closing log stream")
 	}
 	return nil
-}
-
-func dockerDomainsMatch(d0, d1 string) (bool, error) {
-	/*
-		addrs, err := net.LookupIP(d0)
-		if err != nil {
-			return false, err
-		}
-		addrMap := make(map[string]bool)
-		for _, addr := range addrs {
-			addrMap[addr.String()] = true
-		}
-
-		addrs1, err := net.LookupIP(d1)
-		if err != nil {
-			return false, err
-		}
-		for _, addr := range addrs1 {
-			if addrMap[addr.String()] {
-				return true, nil
-			}
-		}
-		return false, nil
-	*/
-	return d0 == d1, nil
 }
