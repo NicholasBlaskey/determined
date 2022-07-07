@@ -30,6 +30,32 @@ func getDockerConfigPath() (string, error) {
 	return path.Join(homeDir, ".docker", "config.json"), nil
 }
 
+func processDockerConfig() (map[string]*credentialStore, map[string]types.AuthConfig, error) {
+	credStores := make(map[string]*credentialStore)
+	authConfig := make(map[string]types.AuthConfig)
+
+	configFile, err := os.Open(dockerConfigFile) // #nosec: G304
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "can't open docker config")
+	}
+
+	b, err := ioutil.ReadAll(configFile)
+	if err != nil {
+		return credentialsStores, errors.Wrap(err, "can't read docker config")
+	}
+
+	config := struct {
+		CredentialHelpers map[string]string           `json:"credHelpers,omitempty"`
+		Auths             map[string]types.AuthConfig `json:"auths,omitempty"`
+	}{}
+	err = json.Unmarshal(b, &config)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse docker config")
+	}
+
+}
+
+/*
 // getAllCredentialStores returns the credential helpers configured in the default docker
 // config or an error.
 func getAllCredentialStores() (map[string]*credentialStore, error) {
@@ -43,21 +69,6 @@ func getAllCredentialStores() (map[string]*credentialStore, error) {
 		return credentialsStores, err
 	}
 
-	configFile, err := os.Open(dockerConfigFile) // #nosec: G304
-	if err != nil {
-		return credentialsStores, errors.Wrap(err, "can't open docker config")
-	}
-
-	b, err := ioutil.ReadAll(configFile)
-	if err != nil {
-		return credentialsStores, errors.Wrap(err, "can't read docker config")
-	}
-
-	var config ConfigFile
-	err = json.Unmarshal(b, &config)
-	if err != nil {
-		return credentialsStores, errors.Wrap(err, "can't parse docker config")
-	}
 
 	if config.CredentialHelpers == nil {
 		return credentialsStores, nil
@@ -72,6 +83,7 @@ func getAllCredentialStores() (map[string]*credentialStore, error) {
 
 	return credentialsStores, nil
 }
+*/
 
 // get executes the command to get the credentials from the native store.
 func (s *credentialStore) get() (types.AuthConfig, error) {
