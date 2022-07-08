@@ -82,14 +82,6 @@ func registryToString(reg types.AuthConfig) (string, error) {
 func (d *dockerActor) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
-		/*
-			stores, err := getAllCredentialStores()
-			if err != nil {
-				ctx.Log().Infof(
-					"can't find any docker credential stores, continuing without them %v", err)
-			}
-			d.credentialStores = stores
-		*/
 		stores, auths, err := processDockerConfig()
 		if err != nil {
 			ctx.Log().Infof("couldn't process ~/.docker/config.json %v", err)
@@ -98,9 +90,9 @@ func (d *dockerActor) Receive(ctx *actor.Context) error {
 			ctx.Log().Info("can't find any docker credential stores, continuing without them")
 		}
 		if len(auths) == 0 {
-			ctx.Log().Info("can't find any auth in ~/.docker/config.json")
+			ctx.Log().Info("can't find any auths in ~/.docker/config.json, continuing without them")
 		}
-		d.stores, d.authConfigs = stores, auths
+		d.credentialStores, d.authConfigs = stores, auths
 	case pullImage:
 		go d.pullImage(ctx, msg)
 
@@ -168,15 +160,14 @@ func (d *dockerActor) pullImage(ctx *actor.Context, msg pullImage) {
 			}})
 	}()
 
-	fmt.Println("REFFF!", ref, reference.Domain(ref))
-	auth, err := d.getDockerAuths(ctx, msg.Registry, ref) //reference.Domain(ref))
+	auth, err := d.getDockerAuths(ctx, msg.Registry, ref)
 	if err != nil {
 		sendErr(ctx, errors.Wrap(err, "could not get docker authentication"))
 		return
 	}
 	authString, err := registryToString(auth)
 	if err != nil {
-		sendErr(ctx, errors.Wrap(err, "could not convert docker auth to string"))
+		sendErr(ctx, errors.Wrap(err, "error encoding docker credentials"))
 		return
 	}
 	opts := types.ImagePullOptions{
@@ -217,12 +208,7 @@ func (d *dockerActor) getDockerAuths(
 		}
 		if registry.ConvertToHostname(expconfReg.ServerAddress) == imageDomain ||
 			didNotPassServerAddress { // TODO remove didNotPassServerAddress when it becomes required.
-			return *expconfReg, nil // TODO copy to types.AuthConfig
-			//return ""
-			/*
-				reg, err := registryToString(*expconfReg)
-				return reg, errors.Wrap(err, "error encoding registry credentials")
-			*/
+			return *expconfReg, nil
 		}
 	}
 
@@ -233,19 +219,7 @@ func (d *dockerActor) getDockerAuths(
 			d.sendAuxLog(ctx, fmt.Sprintf(
 				"domain '%s' found in 'credHelpers' config. Using credentials helper.", imageDomain))
 		}
-		return creds, err
-
-		/*
-			if err != nil {
-				return "", errors.Wrap(err, "unable to get credentials from helper")
-			}
-			reg, err := registryToString(creds)
-			if err == nil {
-				d.sendAuxLog(ctx, fmt.Sprintf(
-					"domain '%s' found in 'credHelpers' config. Using credentials helper.", imageDomain))
-			}
-			return reg, errors.Wrap(err, "error encoding registry credentials from helper")
-		*/
+		return creds, errors.Wrap(err, "unable to get credentials from helper")
 	}
 
 	// Finally try using auths section of users ~/.docker/config.json.
@@ -256,7 +230,7 @@ func (d *dockerActor) getDockerAuths(
 	reg := registry.ResolveAuthConfig(d.authConfigs, index)
 	if reg != (types.AuthConfig{}) {
 		d.sendAuxLog(ctx, fmt.Sprintf(
-			"domain '%s' found in 'auths' config.json", imageDomain))
+			"domain '%s' found in 'auths' ~/.docker/config.json", imageDomain))
 	}
 	return reg, nil
 }
