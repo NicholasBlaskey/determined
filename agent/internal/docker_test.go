@@ -31,11 +31,11 @@ func TestGetDockerAuths(t *testing.T) {
 	}
 
 	dockerAuthSection := map[string]types.AuthConfig{
-		"https://index.docker.io/v1/": types.AuthConfig{
+		"https://index.docker.io/v1/": {
 			Auth:          "dockerhubtoken",
 			ServerAddress: "docker.io",
 		},
-		"example.com": types.AuthConfig{
+		"example.com": {
 			Auth:          "exampletoken",
 			ServerAddress: "example.com",
 		},
@@ -55,7 +55,7 @@ func TestGetDockerAuths(t *testing.T) {
 		{"example.com/detai", &exampleDockerConfig, nil, exampleDockerConfig},
 		// Different server passed than specified auth.
 		{"example.com/detai", &dockerhubAuthConfig, nil, types.AuthConfig{}},
-		// No server (behaviour is deprecated).
+		// No server (behavior is deprecated).
 		{"detai", &noServerAuthConfig, nil, noServerAuthConfig},
 		{"example.com/detai", &noServerAuthConfig, nil, noServerAuthConfig},
 

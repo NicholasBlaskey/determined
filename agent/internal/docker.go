@@ -73,7 +73,7 @@ type (
 func registryToString(reg types.AuthConfig) (string, error) {
 	// Docker stores the username and password in an auth section types.AuthConfig
 	// formatted as user:pass then base64ed. This is not documented clearly.
-	// https://cs.github.com/docker/cli/blob/8dd94d382409b7384d210a2ed84b52f0d4a12995/cli/config/configfile/file.go#L216
+	// https://github.com/docker/cli/blob/master/cli/config/configfile/file.go#L76
 	if reg.Auth != "" {
 		bytes, err := base64.StdEncoding.DecodeString(reg.Auth)
 		if err != nil {
@@ -214,7 +214,7 @@ func (d *dockerActor) getDockerAuths(
 	image reference.Named,
 ) (types.AuthConfig, error) {
 	imageDomain := reference.Domain(image)
-	// Try expconf registery auth config.
+	// Try expconf registry auth config.
 	if expconfReg != nil {
 		didNotPassServerAddress := expconfReg.ServerAddress == ""
 		if didNotPassServerAddress {
