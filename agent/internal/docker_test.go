@@ -1,7 +1,7 @@
 package internal
 
 import (
-	//"fmt"
+	"fmt"
 	"testing"
 
 	"github.com/determined-ai/determined/master/pkg/actor"
@@ -28,6 +28,17 @@ func TestGetDockerAuths(t *testing.T) {
 		Password: "password",
 	}
 
+	dockerAuthSection := map[string]types.AuthConfig{
+		"https://index.docker.io/v1/": types.AuthConfig{
+			Auth:          "dockerhubtoken",
+			ServerAddress: "docker.io",
+		},
+		"example.com": types.AuthConfig{
+			Auth:          "exampletoken",
+			ServerAddress: "example.com",
+		},
+	}
+
 	cases := []struct {
 		image            string
 		expconfReg       *types.AuthConfig
@@ -44,18 +55,31 @@ func TestGetDockerAuths(t *testing.T) {
 		// Different server passed than specified auth.
 		{"example.com/detai", &dockerhubAuthConfig, nil, nil, types.AuthConfig{}},
 		// No server (behaviour is deprecated)
-		{"example.com/detai", &noServerAuthConfig, nil, nil, types.AuthConfig{}},
-		{"example.com/detai", &noServerAuthConfig, nil, nil, types.AuthConfig{Username: "FALSE"}},
+		{"detai", &noServerAuthConfig, nil, nil, noServerAuthConfig},
+		{"example.com/detai", &noServerAuthConfig, nil, nil, noServerAuthConfig},
 
-		//
+		// Credential stores.
+		// TODO
+
+		// Docker auth config gets used.
+		{"detai", nil, nil, dockerAuthSection, dockerAuthSection["https://index.docker.io/v1/"]},
+		// Expconf takes precedence over docker config.
+		{"detai", &dockerhubAuthConfig, nil, dockerAuthSection, dockerhubAuthConfig},
+		// We fallback to auths if docker hub has wrong server.
+		{"example.com/detai", &dockerhubAuthConfig, nil, dockerAuthSection,
+			dockerAuthSection["example.com"]},
+		// We don't return a result if we don't have that serveraddress.
+		{"determined.ai/detai", nil, nil, dockerAuthSection, types.AuthConfig{}},
 	}
 
+	ctx := getMockDockerActorCtx()
 	for _, testCase := range cases {
 		d := dockerActor{
 			credentialStores: testCase.credentialStores,
 			authConfigs:      testCase.authConfigs,
 		}
-		ctx := &actor.Context{}
+		d.credentialStores = testCase.credentialStores
+		d.authConfigs = testCase.authConfigs
 
 		// Parse image to correct format.
 		ref, err := reference.ParseNormalizedNamed(testCase.image)
@@ -65,21 +89,22 @@ func TestGetDockerAuths(t *testing.T) {
 		actual, err := d.getDockerAuths(ctx, testCase.expconfReg, ref)
 		require.NoError(t, err)
 		require.Equal(t, testCase.expected, actual)
-
-		/*
-			// Mock an actor to just get an actor.Context with a nonnil sender.
-			system := actor.NewSystem(fmt.Sprintf("%d", i))
-			system.ActorOf(actor.Addr("test"), actor.ActorFunc(func(ctx *actor.Context) error {
-				fmt.Println("CONTEXT", ctx.Message())
-
-				actual, err := d.getDockerAuths(ctx, testCase.expconfReg, ref)
-				require.NoError(t, err)
-				require.Equal(t, testCase.expected, actual)
-
-				panic("HERE")
-				return nil
-			}))
-			//system.Ask(r, "").Get()
-		*/
 	}
+}
+
+func getMockDockerActorCtx() *actor.Context {
+	var ctx *actor.Context
+	sys := actor.NewSystem("")
+	child, _ := sys.ActorOf(actor.Addr("child"), actor.ActorFunc(func(context *actor.Context) error {
+		ctx = context
+		return nil
+	}))
+	parent, _ := sys.ActorOf(actor.Addr("parent"), actor.ActorFunc(func(context *actor.Context) error {
+		context.Ask(child, "").Get()
+		return nil
+	}))
+	sys.Ask(parent, "").Get()
+
+	fmt.Printf("context? %+v", ctx)
+	return ctx
 }

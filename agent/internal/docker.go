@@ -227,6 +227,8 @@ func (d *dockerActor) getDockerAuths(
 	if err != nil {
 		return types.AuthConfig{}, errors.Wrap(err, "error invalid docker repo name")
 	}
+	//fmt.Printf("hmmm index \n%+v\n", index)
+	//panic(index)
 	reg := registry.ResolveAuthConfig(d.authConfigs, index)
 	if reg != (types.AuthConfig{}) {
 		d.sendAuxLog(ctx, fmt.Sprintf(
