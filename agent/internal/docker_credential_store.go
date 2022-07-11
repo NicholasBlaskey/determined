@@ -32,7 +32,6 @@ func getDockerConfigPath() (string, error) {
 
 // processDockerConfig reads a users ~/.docker/config.json and returns
 // credential helpers configured and the "auths" section of the config.
-// TODO pass in a file for testing purpsoses.
 func processDockerConfig() (map[string]*credentialStore, map[string]types.AuthConfig, error) {
 	credStores := make(map[string]*credentialStore) // Always return non nil maps.
 	authConfig := make(map[string]types.AuthConfig)
@@ -51,8 +50,8 @@ func processDockerConfig() (map[string]*credentialStore, map[string]types.AuthCo
 	}
 
 	var config struct {
-		CredentialHelpers map[string]string           `json:"credHelpers,omitempty"`
-		Auths             map[string]types.AuthConfig `json:"auths,omitempty"`
+		CredentialHelpers map[string]string           `json:"credHelpers"`
+		Auths             map[string]types.AuthConfig `json:"auths"`
 	}
 	if err := json.Unmarshal(b, &config); err != nil {
 		return credStores, authConfig, errors.Wrap(err, "can't parse docker config")

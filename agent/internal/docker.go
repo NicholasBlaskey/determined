@@ -81,7 +81,7 @@ func registryToString(reg types.AuthConfig) (string, error) {
 		}
 		userAndPass := strings.SplitN(string(bytes), ":", 2)
 		if len(userAndPass) != 2 {
-			return "", errors.Errorf("auth field of docker authConfig must be in format user:pass")
+			return "", errors.Errorf("auth field of docker authConfig must be base64ed user:pass")
 		}
 		reg.Username, reg.Password = userAndPass[0], userAndPass[1]
 		reg.Auth = ""
