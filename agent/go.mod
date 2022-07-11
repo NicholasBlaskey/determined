@@ -26,6 +26,7 @@ require (
 
 require (
 	github.com/determined-ai/determined/proto v0.0.0-00010101000000-000000000000
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/exp v0.0.0-20220328175248-053ad81199eb
 )
 
@@ -112,7 +113,6 @@ require (
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
-	github.com/stretchr/testify v1.7.1 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
 	github.com/uber/jaeger-client-go v2.25.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.0+incompatible // indirect

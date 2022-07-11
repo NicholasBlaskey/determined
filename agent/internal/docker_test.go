@@ -55,7 +55,7 @@ func TestGetDockerAuths(t *testing.T) {
 		{"example.com/detai", &exampleDockerConfig, nil, exampleDockerConfig},
 		// Different server passed than specified auth.
 		{"example.com/detai", &dockerhubAuthConfig, nil, types.AuthConfig{}},
-		// No server (behaviour is deprecated)
+		// No server (behaviour is deprecated).
 		{"detai", &noServerAuthConfig, nil, noServerAuthConfig},
 		{"example.com/detai", &noServerAuthConfig, nil, noServerAuthConfig},
 
