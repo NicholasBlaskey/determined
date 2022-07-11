@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	//"net"
+	"strings"
 	"syscall"
 	"time"
 
@@ -71,6 +71,21 @@ type (
 
 // registryToString converts the Registry struct to a base64 encoding for json strings.
 func registryToString(reg types.AuthConfig) (string, error) {
+	// Docker stores the username and password in an auth section types.AuthConfig
+	// formatted as user:pass then base64ed. This is not documented clearly.
+	// https://cs.github.com/docker/cli/blob/8dd94d382409b7384d210a2ed84b52f0d4a12995/cli/config/configfile/file.go#L216
+	if reg.Auth != "" {
+		bytes, err := base64.StdEncoding.DecodeString(reg.Auth)
+		if err != nil {
+			return "", err
+		}
+		userAndPass := strings.SplitN(string(bytes), ":", 2)
+		if len(userAndPass) != 2 {
+			return "", errors.Errorf("auth field of docker authConfig must be in format user:pass")
+		}
+		reg.Username, reg.Password = userAndPass[0], userAndPass[1]
+		reg.Auth = ""
+	}
 	bs, err := json.Marshal(reg)
 	if err != nil {
 		return "", err
@@ -227,8 +242,6 @@ func (d *dockerActor) getDockerAuths(
 	if err != nil {
 		return types.AuthConfig{}, errors.Wrap(err, "error invalid docker repo name")
 	}
-	//fmt.Printf("hmmm index \n%+v\n", index)
-	//panic(index)
 	reg := registry.ResolveAuthConfig(d.authConfigs, index)
 	if reg != (types.AuthConfig{}) {
 		d.sendAuxLog(ctx, fmt.Sprintf(

@@ -1,10 +1,12 @@
 package internal
 
 import (
+	"encoding/base64"
 	"fmt"
 	"testing"
 
 	"github.com/determined-ai/determined/master/pkg/actor"
+
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 
@@ -40,46 +42,39 @@ func TestGetDockerAuths(t *testing.T) {
 	}
 
 	cases := []struct {
-		image            string
-		expconfReg       *types.AuthConfig
-		credentialStores map[string]*credentialStore
-		authConfigs      map[string]types.AuthConfig
-		expected         types.AuthConfig
+		image       string
+		expconfReg  *types.AuthConfig
+		authConfigs map[string]types.AuthConfig
+		expected    types.AuthConfig
 	}{
 		// No authentication passed in.
-		{"detai", nil, nil, nil, types.AuthConfig{}},
+		{"detai", nil, nil, types.AuthConfig{}},
 		// Correct server passed in for dockerhub.
-		{"detai", &dockerhubAuthConfig, nil, nil, dockerhubAuthConfig},
+		{"detai", &dockerhubAuthConfig, nil, dockerhubAuthConfig},
 		// Correct server passed in for example.com.
-		{"example.com/detai", &exampleDockerConfig, nil, nil, exampleDockerConfig},
+		{"example.com/detai", &exampleDockerConfig, nil, exampleDockerConfig},
 		// Different server passed than specified auth.
-		{"example.com/detai", &dockerhubAuthConfig, nil, nil, types.AuthConfig{}},
+		{"example.com/detai", &dockerhubAuthConfig, nil, types.AuthConfig{}},
 		// No server (behaviour is deprecated)
-		{"detai", &noServerAuthConfig, nil, nil, noServerAuthConfig},
-		{"example.com/detai", &noServerAuthConfig, nil, nil, noServerAuthConfig},
-
-		// Credential stores.
-		// TODO
+		{"detai", &noServerAuthConfig, nil, noServerAuthConfig},
+		{"example.com/detai", &noServerAuthConfig, nil, noServerAuthConfig},
 
 		// Docker auth config gets used.
-		{"detai", nil, nil, dockerAuthSection, dockerAuthSection["https://index.docker.io/v1/"]},
+		{"detai", nil, dockerAuthSection, dockerAuthSection["https://index.docker.io/v1/"]},
 		// Expconf takes precedence over docker config.
-		{"detai", &dockerhubAuthConfig, nil, dockerAuthSection, dockerhubAuthConfig},
+		{"detai", &dockerhubAuthConfig, dockerAuthSection, dockerhubAuthConfig},
 		// We fallback to auths if docker hub has wrong server.
-		{"example.com/detai", &dockerhubAuthConfig, nil, dockerAuthSection,
+		{"example.com/detai", &dockerhubAuthConfig, dockerAuthSection,
 			dockerAuthSection["example.com"]},
 		// We don't return a result if we don't have that serveraddress.
-		{"determined.ai/detai", nil, nil, dockerAuthSection, types.AuthConfig{}},
+		{"determined.ai/detai", nil, dockerAuthSection, types.AuthConfig{}},
 	}
 
 	ctx := getMockDockerActorCtx()
 	for _, testCase := range cases {
 		d := dockerActor{
-			credentialStores: testCase.credentialStores,
-			authConfigs:      testCase.authConfigs,
+			authConfigs: testCase.authConfigs,
 		}
-		d.credentialStores = testCase.credentialStores
-		d.authConfigs = testCase.authConfigs
 
 		// Parse image to correct format.
 		ref, err := reference.ParseNormalizedNamed(testCase.image)
@@ -104,7 +99,30 @@ func getMockDockerActorCtx() *actor.Context {
 		return nil
 	}))
 	sys.Ask(parent, "").Get()
-
-	fmt.Printf("context? %+v", ctx)
 	return ctx
+}
+
+func TestRegistryToString(t *testing.T) {
+	// No auth just base64ed.
+	case1 := types.AuthConfig{
+		Email:    "det@example.com",
+		Password: "password",
+	}
+	expected := base64.URLEncoding.EncodeToString(
+		[]byte(`{"password":"password","email":"det@example.com"}`))
+	actual, err := registryToString(case1)
+	require.NoError(t, err, "could not to string auth config")
+	require.Equal(t, expected, actual)
+
+	// Auth gets split.
+	user, pass := "user", "pass"
+	auth := fmt.Sprintf("%s:%s", user, pass)
+	case2 := types.AuthConfig{
+		Auth: base64.StdEncoding.EncodeToString([]byte(auth)),
+	}
+	expected = base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(
+		`{"username":"%s","password":"%s"}`, user, pass)))
+	actual, err = registryToString(case2)
+	require.NoError(t, err, "could not to string auth config")
+	require.Equal(t, expected, actual)
 }
