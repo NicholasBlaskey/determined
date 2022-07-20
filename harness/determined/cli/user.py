@@ -1,6 +1,7 @@
 import getpass
 from argparse import Namespace
 from collections import namedtuple
+import sys
 from typing import Any, Dict, List, Optional
 
 from requests import Response
@@ -64,18 +65,23 @@ def deactivate_user(parsed_args: Namespace) -> None:
 
 
 def log_in_user(parsed_args: Namespace) -> None:
-    if parsed_args.username is None:
-        username = input("Username: ")
-    else:
-        username = parsed_args.username
+    username = parsed_args.username
+    if parsed_args.password_from_stdin:
+        if username is None:
+            raise api.errors.BadRequestException(
+                "username is required when --password-from-stdin is passed")
+        password = sys.stdin.read().strip()
+    else:        
+        if parsed_args.username is None:
+            username = input("Username: ")
+        message = "Password for user '{}': ".format(username)
+        password = getpass.getpass(message)
 
-    message = "Password for user '{}': ".format(username)
-
+        
     # In order to not send clear-text passwords, we hash the password.
-    password = api.salt_and_hash(getpass.getpass(message))
+    password = api.salt_and_hash(password)
 
     token_store = authentication.TokenStore(parsed_args.master)
-
     token = authentication.do_login(parsed_args.master, username, password)
     token_store.set_token(username, token)
     token_store.set_active(username)
@@ -186,7 +192,8 @@ args_description = [
     Cmd("u|ser", None, "manage users", [
         Cmd("list", list_users, "list users", [], is_default=True),
         Cmd("login", log_in_user, "log in user", [
-            Arg("username", nargs="?", default=None, help="name of user to log in as")
+            Arg("username", nargs="?", default=None, help="name of user to log in as"),
+            Arg("--password-from-stdin", action="store_true", help="read password from stdin")
         ]),
         Cmd("rename", rename, "change username for user", [
             Arg("target_user", default=None, help="name of user whose username should be changed"),

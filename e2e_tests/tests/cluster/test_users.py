@@ -348,6 +348,35 @@ def test_login_wrong_password(clean_auth: None) -> None:
 
 
 @pytest.mark.e2e_cpu
+def test_login_password_from_stdin(clean_auth: None) -> None:
+    creds = create_test_user(ADMIN_CREDENTIALS, True)
+    username, password = creds
+
+    cmd = ["echo", password, "|", "det", "-m", conf.make_master_url(), "user", "login"]
+    
+    # No username throws error.    
+    '''
+    no_username_cmd = cmd + ["--password-from-stdin"]
+    try:
+        res = subprocess.run(" ".join(no_username_cmd), shell=True, check=True, stdout=subprocess.PIPE)
+    except subprocess.CalledProcessError:
+        pass
+    assert res.returncode != 0
+    '''
+    
+    # Can sucessfully login.
+    login_cmd = cmd + [username, "--password-from-stdin"]
+    subprocess.run(" ".join(login_cmd), shell=True)
+    child = det_spawn(["user", "whoami"])
+    child.expect(username)
+    child.read()
+    child.wait()
+    assert child.exitstatus == 0
+    
+    
+    
+
+@pytest.mark.e2e_cpu
 def test_login_as_non_existent_user(clean_auth: None) -> None:
     username = "doesNotExist"
 
