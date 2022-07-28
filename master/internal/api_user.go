@@ -56,25 +56,6 @@ func getUser(d *db.PgDB, userID model.UserID) (*userv1.User, error) {
 		return nil, err
 	}
 	return toProtoUserFromFullUser(*user), nil
-	/*
-		var protoAug *userv1.AgentUserGroup
-		agentUserGroup, err := d.AgentUserGroup(user.ID)
-		if agentUserGroup != nil {
-			protoAug = &userv1.AgentUserGroup{
-				AgentUid: int32(agentUserGroup.UID),
-				AgentGid: int32(agentUserGroup.GID),
-			}
-		}
-		displayNameString := user.DisplayName.ValueOrZero()
-		return &userv1.User{
-			Id:             int32(user.ID),
-			Username:       user.Username,
-			Admin:          user.Admin,
-			Active:         user.Active,
-			AgentUserGroup: protoAug,
-			DisplayName:    displayNameString,
-		}, err
-	*/
 }
 
 func userShouldBeAdmin(ctx context.Context, a *apiServer) error {
@@ -155,12 +136,9 @@ func (a *apiServer) GetUser(
 		return nil, err
 	}
 	if err := user.AuthZProvider.Get().CanGetUser(*curUser, targetFullUser.ToUser()); err != nil {
-		return nil, err
+		return nil, err // TODO wrap forbidden error
 	}
 
-	// TODO is this correct?... think so
-	// fullUserProto, err := getUser(a.m.db, model.UserID(req.UserId))
-	// return &apiv1.GetUserResponse{User: fullUserProto}, err
 	return &apiv1.GetUserResponse{User: toProtoUserFromFullUser(*targetFullUser)}, err
 }
 
@@ -189,7 +167,7 @@ func (a *apiServer) PostUser(
 	}
 	if err := user.AuthZProvider.Get().
 		CanCreateUser(*curUser, *userToAdd, agentUserGroup); err != nil {
-		return nil, err
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	if err := grpcutil.ValidateRequest(
@@ -302,7 +280,7 @@ func (a *apiServer) GetUserSetting(
 		return nil, err
 	}
 	if err := user.AuthZProvider.Get().CanGetUsersOwnSettings(*curUser); err != nil {
-		return nil, err
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	settings, err := db.GetUserSetting(curUser.ID)
@@ -327,7 +305,7 @@ func (a *apiServer) PostUserSetting(
 		StoragePath: req.StoragePath,
 	}
 	if err := user.AuthZProvider.Get().CanCreateUsersOwnSetting(*curUser, settingModel); err != nil {
-		return nil, err
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	err = db.UpdateUserSetting(&settingModel)
@@ -342,7 +320,7 @@ func (a *apiServer) ResetUserSetting(
 		return nil, err
 	}
 	if err := user.AuthZProvider.Get().CanResetUsersOwnSettings(*curUser); err != nil {
-		return nil, err
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	err = db.ResetUserSetting(curUser.ID)
