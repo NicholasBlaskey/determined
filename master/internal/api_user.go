@@ -42,7 +42,7 @@ func toProtoUserFromFullUser(user model.FullUser) *userv1.User {
 	}
 }
 
-func getFullModelUser(d *db.PgDB, userID model.UserID) (*model.FullUser, error) {
+func getFullModelUser(d db.DB, userID model.UserID) (*model.FullUser, error) {
 	user, err := d.UserByID(userID)
 	if err == db.ErrNotFound {
 		return nil, errUserNotFound
@@ -50,7 +50,7 @@ func getFullModelUser(d *db.PgDB, userID model.UserID) (*model.FullUser, error) 
 	return user, err
 }
 
-func getUser(d *db.PgDB, userID model.UserID) (*userv1.User, error) {
+func getUser(d db.DB, userID model.UserID) (*userv1.User, error) {
 	user, err := getFullModelUser(d, userID)
 	if err != nil {
 		return nil, err
