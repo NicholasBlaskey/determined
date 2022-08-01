@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -14,8 +15,8 @@ import (
 )
 
 const (
-	minTickIntervalMins = 10
-	maxTickIntervalMins = 60
+	minTickIntervalMins = 1
+	maxTickIntervalMins = 2
 )
 
 type telemetryTick struct{}
@@ -33,6 +34,7 @@ func New(
 	clusterID string,
 	segmentKey string,
 ) (*TelemetryActor, error) {
+	fmt.Println("NEW ACTOR")
 	client, err := analytics.NewWithConfig(
 		segmentKey,
 		analytics.Config{Logger: debugLogger{}},
@@ -66,10 +68,12 @@ func (s *TelemetryActor) Receive(ctx *actor.Context) error {
 		}
 
 	case telemetryTick:
+		fmt.Println("TICKET")
 		// Tick in a random interval.
 		//nolint:gosec // Weak RNG is fine here.
 		randNum := rand.Intn(maxTickIntervalMins-minTickIntervalMins) + minTickIntervalMins
-		actors.NotifyAfter(ctx, time.Duration(randNum)*time.Minute, telemetryTick{})
+		_ = randNum
+		actors.NotifyAfter(ctx, time.Duration(15)*time.Second, telemetryTick{})
 
 		ReportMasterTick(ctx.Self().System(), s.db)
 

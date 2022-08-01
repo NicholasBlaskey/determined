@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -20,6 +21,7 @@ import (
 
 // ReportMasterTick reports the master snapshot on a periodic tick.
 func ReportMasterTick(system *actor.System, db db.DB) {
+	fmt.Println("REPORTING TICKET")
 	resourceManagerType := ""
 	req := &apiv1.GetResourcePoolsRequest{}
 	var resp *apiv1.GetResourcePoolsResponse

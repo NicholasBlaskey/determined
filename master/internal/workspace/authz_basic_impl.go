@@ -33,24 +33,28 @@ func (a *WorkspaceAuthZBasic) CanCreateWorkspace(curUser model.User) error {
 func (a *WorkspaceAuthZBasic) CanSetWorkspacesName(
 	curUser model.User, workspace *workspacev1.Workspace,
 ) error {
+	// TODO ADD LOGIC
 	return nil
 }
 
 func (a *WorkspaceAuthZBasic) CanDeleteWorkspace(
 	curUser model.User, workspace *workspacev1.Workspace,
 ) error {
+	// TODO ADD LOGIC
 	return nil
 }
 
 func (a *WorkspaceAuthZBasic) CanArchiveWorkspace(
 	curUser model.User, workspace *workspacev1.Workspace,
 ) error {
+	// TODO ADD LOGIC
 	return nil
 }
 
 func (a *WorkspaceAuthZBasic) CanUnarchiveWorkspace(
 	curUser model.User, workspace *workspacev1.Workspace,
 ) error {
+	// TODO ADD LOGIC
 	return nil
 }
 
