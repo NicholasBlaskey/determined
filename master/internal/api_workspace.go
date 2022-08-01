@@ -6,36 +6,64 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/guregu/null.v3"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
+	"github.com/determined-ai/determined/master/pkg/model"
+	//"github.com/determined-ai/determined/master/internal/grpcutil"
+	"github.com/determined-ai/determined/master/internal/workspace"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
+	"github.com/determined-ai/determined/proto/pkg/userv1"
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
-func (a *apiServer) GetWorkspaceByID(id int32, userID int32,
-	rejectImmutable bool,
-) (*workspacev1.Workspace, error) {
-	w := &workspacev1.Workspace{}
-	switch err := a.m.db.QueryProto("get_workspace", w, id, userID); err {
-	case db.ErrNotFound:
-		return nil, status.Errorf(
-			codes.NotFound, "workspace (%d) not found", id)
-	default:
-		if rejectImmutable && w.Immutable {
-			return nil, errors.Errorf("workspace (%v) is immutable and cannot add new projects.", w.Id)
-		}
-		if rejectImmutable && w.Archived {
-			return nil, errors.Errorf("workspace (%v) is archived and cannot add new projects.", w.Id)
-		}
-		return w, errors.Wrapf(err,
-			"error fetching workspace (%d) from database", id)
+// TODO move this
+func toModelUser(u userv1.User) model.User {
+	return model.User{
+		ID:       model.UserID(u.Id),
+		Username: u.Username,
+		// PasswordHash: u,
+		DisplayName: null.StringFrom(u.DisplayName),
+		Admin:       u.Admin,
+		Active:      u.Active,
+		ModifiedAt:  u.ModifiedAt.AsTime(),
 	}
 }
 
+// Should this have permissions encoded???
+func (a *apiServer) GetWorkspaceByID(
+	id int32, curUser model.User, rejectImmutable bool,
+) (*workspacev1.Workspace, error) {
+	notFoundErr := status.Errorf(codes.NotFound, "workspace (%d) not found", id)
+	w := &workspacev1.Workspace{}
+
+	// TODO we should be able to see all workspaces yeah? Like we are filtering twice here.
+	// It might be fine to just refactor the condition out to the authzBasic tbh.
+	if err := a.m.db.QueryProto("get_workspace", w, id, curUser.ID); err == db.ErrNotFound {
+		return nil, notFoundErr
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "error fetching workspace (%d) from database", id)
+	}
+
+	if !workspace.AuthZProvider.Get().CanGetWorkspace(curUser, w) {
+		return nil, notFoundErr
+	}
+
+	if rejectImmutable && w.Immutable {
+		return nil, errors.Errorf("workspace (%v) is immutable and cannot add new projects.", w.Id)
+	}
+	if rejectImmutable && w.Archived {
+		return nil, errors.Errorf("workspace (%v) is archived and cannot add new projects.", w.Id)
+	}
+	return w, nil
+}
+
+// TODO test
 func (a *apiServer) GetWorkspace(
 	ctx context.Context, req *apiv1.GetWorkspaceRequest,
 ) (*apiv1.GetWorkspaceResponse, error) {
@@ -44,14 +72,16 @@ func (a *apiServer) GetWorkspace(
 		return nil, err
 	}
 
-	w, err := a.GetWorkspaceByID(req.Id, user.User.Id, false)
+	w, err := a.GetWorkspaceByID(req.Id, toModelUser(*user.User), false)
 	return &apiv1.GetWorkspaceResponse{Workspace: w}, err
 }
 
+// TODO test
 func (a *apiServer) GetWorkspaceProjects(ctx context.Context,
 	req *apiv1.GetWorkspaceProjectsRequest) (*apiv1.GetWorkspaceProjectsResponse,
 	error,
 ) {
+	// TODO user filter???? Think its fine the way it is.
 	nameFilter := req.Name
 	archFilterExpr := ""
 	if req.Archived != nil {
@@ -100,9 +130,20 @@ func (a *apiServer) GetWorkspaceProjects(ctx context.Context,
 		return nil, err
 	}
 
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, err
+	}
+	resp.Projects, err = workspace.AuthZProvider.Get().
+		FilterWorkspaceProjects(toModelUser(*user.User), resp.Projects)
+	if err != nil {
+		return nil, err
+	}
+
 	return resp, a.paginate(&resp.Pagination, &resp.Projects, req.Offset, req.Limit)
 }
 
+// TODO test
 func (a *apiServer) GetWorkspaces(
 	ctx context.Context, req *apiv1.GetWorkspacesRequest,
 ) (*apiv1.GetWorkspacesResponse, error) {
@@ -159,9 +200,17 @@ func (a *apiServer) GetWorkspaces(
 	if err != nil {
 		return nil, err
 	}
+
+	resp.Workspaces, err = workspace.AuthZProvider.Get().
+		FilterWorkspaces(toModelUser(*user.User), resp.Workspaces)
+	if err != nil {
+		return nil, err
+	}
+
 	return resp, a.paginate(&resp.Pagination, &resp.Workspaces, req.Offset, req.Limit)
 }
 
+// TODO test
 func (a *apiServer) PostWorkspace(
 	ctx context.Context, req *apiv1.PostWorkspaceRequest,
 ) (*apiv1.PostWorkspaceResponse, error) {
@@ -169,10 +218,13 @@ func (a *apiServer) PostWorkspace(
 	if err != nil {
 		return nil, err
 	}
+	if err := workspace.AuthZProvider.Get().CanCreateWorkspace(toModelUser(*user.User)); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN THIS)
+	}
 
 	w := &workspacev1.Workspace{}
 	err = a.m.db.QueryProto("insert_workspace", w, req.Name, user.User.Id)
-
+	// TODO do we bother permitting pins??? I don't think we do??? Maybe we do
 	if err == nil && w.Id > 0 {
 		holder := &workspacev1.Workspace{}
 		err = a.m.db.QueryProto("pin_workspace", holder, w.Id, user.User.Id)
@@ -182,6 +234,7 @@ func (a *apiServer) PostWorkspace(
 		errors.Wrapf(err, "error creating workspace %s in database", req.Name)
 }
 
+// TODO test + queryproto
 func (a *apiServer) PatchWorkspace(
 	ctx context.Context, req *apiv1.PatchWorkspaceRequest,
 ) (*apiv1.PatchWorkspaceResponse, error) {
@@ -191,9 +244,14 @@ func (a *apiServer) PatchWorkspace(
 	}
 
 	// Verify current workspace exists and can be edited.
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, user.User.Id, true)
+	modelUser := toModelUser(*user.User)
+	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
 	if err != nil {
 		return nil, err
+	}
+	if err := workspace.AuthZProvider.Get().
+		CanSetWorkspacesName(modelUser, currWorkspace); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN)
 	}
 
 	madeChanges := false
@@ -216,6 +274,7 @@ func (a *apiServer) PatchWorkspace(
 		errors.Wrapf(err, "error updating workspace (%d) in database", currWorkspace.Id)
 }
 
+// TODO test + queryproto
 func (a *apiServer) DeleteWorkspace(
 	ctx context.Context, req *apiv1.DeleteWorkspaceRequest) (*apiv1.DeleteWorkspaceResponse,
 	error,
@@ -224,7 +283,16 @@ func (a *apiServer) DeleteWorkspace(
 	if err != nil {
 		return nil, err
 	}
+	modelUser := toModelUser(*user.User)
+	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.AuthZProvider.Get().CanDeleteWorkspace(modelUser, currWorkspace); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN)
+	}
 
+	// TODO this queryproto is kinda problematic
 	holder := &workspacev1.Workspace{}
 	err = a.m.db.QueryProto("delete_workspace", holder, req.Id, user.User.Id,
 		user.User.Admin)
@@ -238,6 +306,7 @@ func (a *apiServer) DeleteWorkspace(
 		errors.Wrapf(err, "error deleting workspace (%d)", req.Id)
 }
 
+// TODO test +
 func (a *apiServer) ArchiveWorkspace(
 	ctx context.Context, req *apiv1.ArchiveWorkspaceRequest) (*apiv1.ArchiveWorkspaceResponse,
 	error,
@@ -246,7 +315,17 @@ func (a *apiServer) ArchiveWorkspace(
 	if err != nil {
 		return nil, err
 	}
+	modelUser := toModelUser(*user.User)
+	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.AuthZProvider.Get().
+		CanArchiveWorkspace(modelUser, currWorkspace); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN)
+	}
 
+	// TODO convert to bun! ! ! !?
 	holder := &workspacev1.Workspace{}
 	err = a.m.db.QueryProto("archive_workspace", holder, req.Id, true,
 		user.User.Id, user.User.Admin)
@@ -260,6 +339,7 @@ func (a *apiServer) ArchiveWorkspace(
 		errors.Wrapf(err, "error archiving workspace (%d)", req.Id)
 }
 
+// TODO test +
 func (a *apiServer) UnarchiveWorkspace(
 	ctx context.Context, req *apiv1.UnarchiveWorkspaceRequest) (*apiv1.UnarchiveWorkspaceResponse,
 	error,
@@ -267,6 +347,15 @@ func (a *apiServer) UnarchiveWorkspace(
 	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
 	if err != nil {
 		return nil, err
+	}
+	modelUser := toModelUser(*user.User)
+	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.AuthZProvider.Get().
+		CanUnarchiveWorkspace(modelUser, currWorkspace); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN)
 	}
 
 	holder := &workspacev1.Workspace{}
@@ -282,12 +371,22 @@ func (a *apiServer) UnarchiveWorkspace(
 		errors.Wrapf(err, "error unarchiving workspace (%d)", req.Id)
 }
 
+//
 func (a *apiServer) PinWorkspace(
 	ctx context.Context, req *apiv1.PinWorkspaceRequest,
 ) (*apiv1.PinWorkspaceResponse, error) {
 	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
 	if err != nil {
 		return nil, err
+	}
+	modelUser := toModelUser(*user.User)
+	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.AuthZProvider.Get().
+		CanPinWorkspace(modelUser, currWorkspace); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN)
 	}
 
 	holder := &workspacev1.Workspace{}
@@ -297,12 +396,22 @@ func (a *apiServer) PinWorkspace(
 		errors.Wrapf(err, "error pinning workspace (%d)", req.Id)
 }
 
+//
 func (a *apiServer) UnpinWorkspace(
 	ctx context.Context, req *apiv1.UnpinWorkspaceRequest,
 ) (*apiv1.UnpinWorkspaceResponse, error) {
 	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
 	if err != nil {
 		return nil, err
+	}
+	modelUser := toModelUser(*user.User)
+	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
+	if err != nil {
+		return nil, err
+	}
+	if err := workspace.AuthZProvider.Get().
+		CanUnpinWorkspace(modelUser, currWorkspace); err != nil {
+		return nil, err // TODO forbidden? (YES FORBIDDEN)
 	}
 
 	holder := &workspacev1.Workspace{}

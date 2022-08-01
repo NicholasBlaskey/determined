@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
+	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/projectv1"
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
@@ -56,7 +57,8 @@ func (a *apiServer) PostProject(
 		return nil, err
 	}
 
-	_, err = a.GetWorkspaceByID(req.WorkspaceId, 0, true)
+	// TODO WEIRD
+	_, err = a.GetWorkspaceByID(req.WorkspaceId, model.User{}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +170,7 @@ func (a *apiServer) MoveProject(
 	ctx context.Context, req *apiv1.MoveProjectRequest) (*apiv1.MoveProjectResponse,
 	error,
 ) {
-	_, err := a.GetWorkspaceByID(req.DestinationWorkspaceId, 0, true)
+	_, err := a.GetWorkspaceByID(req.DestinationWorkspaceId, model.User{}, true)
 	if err != nil {
 		return nil, err
 	}
