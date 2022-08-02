@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
+	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/project"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
@@ -48,7 +49,6 @@ func (a *apiServer) CheckParentWorkspaceUnarchived(pid int32) error {
 	return nil
 }
 
-// TODO test
 func (a *apiServer) GetProject(
 	ctx context.Context, req *apiv1.GetProjectRequest,
 ) (*apiv1.GetProjectResponse, error) {
@@ -62,6 +62,8 @@ func (a *apiServer) GetProject(
 }
 
 // TODO test
+// workspace
+// cancreateproject
 func (a *apiServer) PostProject(
 	ctx context.Context, req *apiv1.PostProjectRequest,
 ) (*apiv1.PostProjectResponse, error) {
@@ -87,7 +89,7 @@ func (a *apiServer) PostProject(
 		errors.Wrapf(err, "error creating project %s in database", req.Name)
 }
 
-// TODO test +
+// TODO db check
 func (a *apiServer) AddProjectNote(
 	ctx context.Context, req *apiv1.AddProjectNoteRequest,
 ) (*apiv1.AddProjectNoteResponse, error) {
@@ -101,7 +103,7 @@ func (a *apiServer) AddProjectNote(
 		return nil, getProjectErr
 	}
 	if err = project.AuthZProvider.Get().CanSetProjectNotes(curUser, p); err != nil {
-		return nil, err // TODO 400 this !!!
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	notes := p.Notes
@@ -116,7 +118,7 @@ func (a *apiServer) AddProjectNote(
 		errors.Wrapf(err, "error adding project note")
 }
 
-// TODO test
+// TODO db check
 func (a *apiServer) PutProjectNotes(
 	ctx context.Context, req *apiv1.PutProjectNotesRequest,
 ) (*apiv1.PutProjectNotesResponse, error) {
@@ -130,7 +132,7 @@ func (a *apiServer) PutProjectNotes(
 		return nil, getProjectErr
 	}
 	if err = project.AuthZProvider.Get().CanSetProjectNotes(curUser, p); err != nil {
-		return nil, err // TODO 400 this !!!
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	newp := &projectv1.Project{}
@@ -139,7 +141,7 @@ func (a *apiServer) PutProjectNotes(
 		errors.Wrapf(err, "error putting project notes")
 }
 
-// TODO test
+// TODO db check
 func (a *apiServer) PatchProject(
 	ctx context.Context, req *apiv1.PatchProjectRequest,
 ) (*apiv1.PatchProjectResponse, error) {
@@ -164,7 +166,7 @@ func (a *apiServer) PatchProject(
 	madeChanges := false
 	if req.Project.Name != nil && req.Project.Name.Value != currProject.Name {
 		if err = project.AuthZProvider.Get().CanSetProjectName(currUser, currProject); err != nil {
-			return nil, err // TODO 400 this
+			return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 		}
 
 		log.Infof("project (%d) name changing from \"%s\" to \"%s\"",
@@ -176,7 +178,7 @@ func (a *apiServer) PatchProject(
 	if req.Project.Description != nil && req.Project.Description.Value != currProject.Description {
 		if err = project.AuthZProvider.Get().
 			CanSetProjectDescription(currUser, currProject); err != nil {
-			return nil, err // TODO 400 this
+			return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 		}
 
 		log.Infof("project (%d) description changing from \"%s\" to \"%s\"",
@@ -197,7 +199,7 @@ func (a *apiServer) PatchProject(
 		errors.Wrapf(err, "error updating project (%d) in database", currProject.Id)
 }
 
-// TODO test
+// TODO db
 func (a *apiServer) DeleteProject(
 	ctx context.Context, req *apiv1.DeleteProjectRequest) (*apiv1.DeleteProjectResponse,
 	error,
@@ -212,7 +214,7 @@ func (a *apiServer) DeleteProject(
 		return nil, getProjectErr
 	}
 	if err = project.AuthZProvider.Get().CanDeleteProject(curUser, p); err != nil {
-		return nil, err // TODO 400
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	// TODO remove user.User.Admin!!!
@@ -229,7 +231,9 @@ func (a *apiServer) DeleteProject(
 		errors.Wrapf(err, "error deleting project (%d)", req.Id)
 }
 
-//
+// TODO test
+// workspacebyid
+// TODODODODODODO (skip this is a weird one)
 func (a *apiServer) MoveProject(
 	ctx context.Context, req *apiv1.MoveProjectRequest) (*apiv1.MoveProjectResponse,
 	error,
@@ -257,7 +261,7 @@ func (a *apiServer) MoveProject(
 		errors.Wrapf(err, "error moving project (%d)", req.ProjectId)
 }
 
-// TODO test?
+// TODO db
 func (a *apiServer) ArchiveProject(
 	ctx context.Context, req *apiv1.ArchiveProjectRequest) (*apiv1.ArchiveProjectResponse,
 	error,
@@ -272,7 +276,7 @@ func (a *apiServer) ArchiveProject(
 		return nil, getProjectErr
 	}
 	if err = project.AuthZProvider.Get().CanArchiveProject(curUser, p); err != nil {
-		return nil, err // TODO 400
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 	w, err := a.GetWorkspaceByID(req.Id, curUser, false)
 	if w.Archived {
@@ -294,7 +298,7 @@ func (a *apiServer) ArchiveProject(
 		errors.Wrapf(err, "error archiving project (%d)", req.Id)
 }
 
-// TODO test ?!
+// TODO db
 func (a *apiServer) UnarchiveProject(
 	ctx context.Context, req *apiv1.UnarchiveProjectRequest) (*apiv1.UnarchiveProjectResponse,
 	error,
@@ -309,7 +313,7 @@ func (a *apiServer) UnarchiveProject(
 		return nil, getProjectErr
 	}
 	if err = project.AuthZProvider.Get().CanUnarchiveProject(curUser, p); err != nil {
-		return nil, err // TODO 400
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 	w, err := a.GetWorkspaceByID(req.Id, curUser, false)
 	if w.Archived {

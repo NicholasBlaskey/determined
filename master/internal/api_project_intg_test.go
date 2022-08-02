@@ -5,36 +5,34 @@ package internal
 
 import (
 	"context"
-	//"fmt"
+	"fmt"
 	"testing"
 
-	// "google.golang.org/grpc/codes"
-	// "google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	// "github.com/google/uuid"
-	// "github.com/pkg/errors"
-	// "github.com/stretchr/testify/mock"
-	// "github.com/stretchr/testify/require"
-	// "google.golang.org/protobuf/types/known/wrapperspb"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	// "github.com/determined-ai/determined/master/internal/grpcutil"
+	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/mocks"
 	"github.com/determined-ai/determined/master/internal/project"
 	// "github.com/determined-ai/determined/master/internal/workspace"
 	"github.com/determined-ai/determined/master/pkg/model"
-	// "github.com/determined-ai/determined/proto/pkg/apiv1"
-	// "github.com/determined-ai/determined/proto/pkg/projectv1"
+	"github.com/determined-ai/determined/proto/pkg/apiv1"
+	"github.com/determined-ai/determined/proto/pkg/projectv1"
 	// "github.com/determined-ai/determined/proto/pkg/workspacev1"
 	//"github.com/determined-ai/determined/proto/pkg/userv1"
 )
 
 var projectAuthZ *mocks.ProjectAuthZ
 
-/*
-func workspaceNotFoundErr(id int) error {
-	return status.Errorf(codes.NotFound, fmt.Sprintf("workspace (%d) not found", id))
+func projectNotFoundErr(id int) error {
+	return status.Errorf(codes.NotFound, fmt.Sprintf("project (%d) not found", id))
 }
-*/
 
 func SetupProjectAuthZTest(
 	t *testing.T,
@@ -48,26 +46,116 @@ func SetupProjectAuthZTest(
 	return api, projectAuthZ, workspaceAuthZ, curUser, ctx
 }
 
-func TestAuthzGetProject(t *testing.T) {
+func TestAuthZGetProject(t *testing.T) {
+	api, projectAuthZ, _, _, ctx := SetupProjectAuthZTest(t)
+
+	// Deny returns same as 404,
+	_, err := api.GetProject(ctx, &apiv1.GetProjectRequest{Id: -9999})
+	require.Equal(t, projectNotFoundErr(-9999).Error(), err.Error())
+
+	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(false, nil).Once()
+	_, err = api.GetProject(ctx, &apiv1.GetProjectRequest{Id: 1})
+	require.Equal(t, projectNotFoundErr(1).Error(), err.Error())
+
+	// An error returned by CanGetProject is returned unmodified.
+	expectedErr := fmt.Errorf("canGetProjectErr")
+	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(false, expectedErr).Once()
+	_, err = api.GetProject(ctx, &apiv1.GetProjectRequest{Id: 1})
+	require.Equal(t, expectedErr.Error(), err.Error())
+}
+
+func TestAuthZRoutesGetProjectThenAction(t *testing.T) {
 	api, projectAuthZ, workspaceAuthZ, _, ctx := SetupProjectAuthZTest(t)
 
-	// Deny returns same as 494,
-	//_, err := api.GetProject
+	cases := []struct {
+		DenyFuncName string
+		IDToReqCall  func(id int) error
+	}{
+		{"CanSetProjectNotes", func(id int) error {
+			_, err := api.AddProjectNote(ctx, &apiv1.AddProjectNoteRequest{
+				Note:      &projectv1.Note{Name: "x", Contents: "y"},
+				ProjectId: int32(id),
+			})
+			return err
+		}},
+		{"CanSetProjectNotes", func(id int) error {
+			_, err := api.PutProjectNotes(ctx, &apiv1.PutProjectNotesRequest{
+				Notes:     []*projectv1.Note{{Name: "x", Contents: "y"}},
+				ProjectId: int32(id),
+			})
+			return err
+		}},
+		{"CanSetProjectName", func(id int) error {
+			_, err := api.PatchProject(ctx, &apiv1.PatchProjectRequest{
+				Project: &projectv1.PatchProject{Name: wrapperspb.String("newman")},
+				Id:      int32(id),
+			})
+			return err
+		}},
+		{"CanSetProjectDescription", func(id int) error {
+			_, err := api.PatchProject(ctx, &apiv1.PatchProjectRequest{
+				Project: &projectv1.PatchProject{Description: wrapperspb.String("newman")},
+				Id:      int32(id),
+			})
+			return err
+		}},
+		{"CanDeleteProject", func(id int) error {
+			_, err := api.DeleteProject(ctx, &apiv1.DeleteProjectRequest{
+				Id: int32(id),
+			})
+			return err
+		}},
+		{"CanArchiveProject", func(id int) error {
+			_, err := api.ArchiveProject(ctx, &apiv1.ArchiveProjectRequest{
+				Id: int32(id),
+			})
+			return err
+		}},
+		{"CanUnarchiveProject", func(id int) error {
+			_, err := api.UnarchiveProject(ctx, &apiv1.UnarchiveProjectRequest{
+				Id: int32(id),
+			})
+			return err
+		}},
+	}
 
-	/*
-		// Deny returns same as 404.
-		_, err := api.GetWorkspace(ctx, &apiv1.GetWorkspaceRequest{Id: -9999})
-		require.Equal(t, workspaceNotFoundErr(-9999).Error(), err.Error())
+	for _, curCase := range cases {
+		// Create a project and workspace.
+		workspaceAuthZ.On("CanCreateWorkspace", mock.Anything, mock.Anything).Return(nil).Once()
+		wresp, werr := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
+		require.NoError(t, werr)
 
-		workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(false, nil).Once()
-		_, err = api.GetWorkspace(ctx, &apiv1.GetWorkspaceRequest{Id: 1})
-		require.Equal(t, workspaceNotFoundErr(1).Error(), err.Error())
+		workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
+		projectAuthZ.On("CanCreateProject", mock.Anything, mock.Anything).Return(nil).Once()
+		resp, err := api.PostProject(ctx, &apiv1.PostProjectRequest{
+			Name: uuid.New().String(), WorkspaceId: wresp.Workspace.Id,
+		})
+		require.NoError(t, err)
+		projectID := int(resp.Project.Id)
 
-		// A error returned by CanGetWorkspace is returned unmodified.
-		expectedErr := fmt.Errorf("canGetWorkspaceError")
-		workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).
+		// Project not found.
+		err = curCase.IDToReqCall(-9999)
+		require.Equal(t, projectNotFoundErr(-9999).Error(), err.Error())
+
+		// Project can't be viewed.
+		projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(false, nil).Once()
+		err = curCase.IDToReqCall(projectID)
+		require.Equal(t, projectNotFoundErr(projectID).Error(), err.Error())
+
+		// Error checking if project errors during view check.
+		expectedErr := fmt.Errorf("canGetProjectError")
+		projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).
 			Return(false, expectedErr).Once()
-		_, err = api.GetWorkspace(ctx, &apiv1.GetWorkspaceRequest{Id: 1})
+		err = curCase.IDToReqCall(projectID)
 		require.Equal(t, expectedErr, err)
-	*/
+
+		// Can view but can't perform action.
+		expectedErr = errors.Wrap(grpcutil.ErrPermissionDenied, curCase.DenyFuncName+"Deny")
+		projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).
+			Return(true, nil).Once()
+		projectAuthZ.On(curCase.DenyFuncName, mock.Anything, mock.Anything).
+			Return(fmt.Errorf(curCase.DenyFuncName + "Deny"))
+		err = curCase.IDToReqCall(projectID)
+		require.Equal(t, expectedErr.Error(), err.Error())
+	}
 }
