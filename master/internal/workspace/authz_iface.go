@@ -9,7 +9,9 @@ import (
 
 type WorkspaceAuthZ interface {
 	// GET /api/v1/workspaces/:workspace_id
-	CanGetWorkspace(curUser model.User, workspace *workspacev1.Workspace) bool
+	CanGetWorkspace(
+		curUser model.User, workspace *workspacev1.Workspace,
+	) (canGetWorkspace bool, serverError error)
 
 	// GET /api/v1/workspaces/:workspace_id/projects
 	FilterWorkspaceProjects(

@@ -47,7 +47,9 @@ func (a *apiServer) GetWorkspaceByID(
 		return nil, errors.Wrapf(err, "error fetching workspace (%d) from database", id)
 	}
 
-	if !workspace.AuthZProvider.Get().CanGetWorkspace(curUser, w) {
+	if ok, err := workspace.AuthZProvider.Get().CanGetWorkspace(curUser, w); err != nil {
+		return nil, err
+	} else if !ok {
 		return nil, notFoundErr
 	}
 
@@ -72,7 +74,6 @@ func (a *apiServer) GetWorkspace(
 	return &apiv1.GetWorkspaceResponse{Workspace: w}, err
 }
 
-// TODO test
 func (a *apiServer) GetWorkspaceProjects(
 	ctx context.Context, req *apiv1.GetWorkspaceProjectsRequest,
 ) (*apiv1.GetWorkspaceProjectsResponse, error) {
@@ -358,7 +359,6 @@ func (a *apiServer) UnarchiveWorkspace(
 		errors.Wrapf(err, "error unarchiving workspace (%d)", req.Id)
 }
 
-//
 func (a *apiServer) PinWorkspace(
 	ctx context.Context, req *apiv1.PinWorkspaceRequest,
 ) (*apiv1.PinWorkspaceResponse, error) {
@@ -383,7 +383,6 @@ func (a *apiServer) PinWorkspace(
 		errors.Wrapf(err, "error pinning workspace (%d)", req.Id)
 }
 
-//
 func (a *apiServer) UnpinWorkspace(
 	ctx context.Context, req *apiv1.UnpinWorkspaceRequest,
 ) (*apiv1.UnpinWorkspaceResponse, error) {

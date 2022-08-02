@@ -59,7 +59,7 @@ func (_m *WorkspaceAuthZ) CanDeleteWorkspace(curUser model.User, _a1 *workspacev
 }
 
 // CanGetWorkspace provides a mock function with given fields: curUser, _a1
-func (_m *WorkspaceAuthZ) CanGetWorkspace(curUser model.User, _a1 *workspacev1.Workspace) bool {
+func (_m *WorkspaceAuthZ) CanGetWorkspace(curUser model.User, _a1 *workspacev1.Workspace) (bool, error) {
 	ret := _m.Called(curUser, _a1)
 
 	var r0 bool
@@ -69,7 +69,14 @@ func (_m *WorkspaceAuthZ) CanGetWorkspace(curUser model.User, _a1 *workspacev1.W
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(model.User, *workspacev1.Workspace) error); ok {
+		r1 = rf(curUser, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CanPinWorkspace provides a mock function with given fields: curUser, _a1
