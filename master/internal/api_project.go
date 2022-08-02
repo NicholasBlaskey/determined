@@ -9,22 +9,28 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
+	"github.com/determined-ai/determined/master/internal/project"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/projectv1"
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
-func (a *apiServer) GetProjectByID(id int32) (*projectv1.Project, error) {
+func (a *apiServer) GetProjectByID(id int32, curUser model.User) (*projectv1.Project, error) {
+	notFoundErr := status.Errorf(codes.NotFound, "project (%d) not found", id)
 	p := &projectv1.Project{}
-	switch err := a.m.db.QueryProto("get_project", p, id); err {
-	case db.ErrNotFound:
-		return nil, status.Errorf(
-			codes.NotFound, "project (%d) not found", id)
-	default:
-		return p, errors.Wrapf(err,
-			"error fetching project (%d) from database", id)
+	if err := a.m.db.QueryProto("get_project", p, id); errors.Is(err, db.ErrNotFound) {
+		return nil, notFoundErr
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "error fetching project (%d) from database", id)
 	}
+
+	if ok, err := project.AuthZProvider.Get().CanGetProject(curUser, p); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, notFoundErr
+	}
+	return p, nil
 }
 
 func (a *apiServer) CheckParentWorkspaceUnarchived(pid int32) error {
@@ -42,13 +48,20 @@ func (a *apiServer) CheckParentWorkspaceUnarchived(pid int32) error {
 	return nil
 }
 
+// TODO test
 func (a *apiServer) GetProject(
-	_ context.Context, req *apiv1.GetProjectRequest,
+	ctx context.Context, req *apiv1.GetProjectRequest,
 ) (*apiv1.GetProjectResponse, error) {
-	p, err := a.GetProjectByID(req.Id)
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := a.GetProjectByID(req.Id, toModelUser(*user.User))
 	return &apiv1.GetProjectResponse{Project: p}, err
 }
 
+// TODO test
 func (a *apiServer) PostProject(
 	ctx context.Context, req *apiv1.PostProjectRequest,
 ) (*apiv1.PostProjectResponse, error) {
@@ -57,10 +70,13 @@ func (a *apiServer) PostProject(
 		return nil, err
 	}
 
-	// TODO WEIRD
-	_, err = a.GetWorkspaceByID(req.WorkspaceId, model.User{}, true)
+	curUser := toModelUser(*user.User)
+	w, err := a.GetWorkspaceByID(req.WorkspaceId, curUser, true)
 	if err != nil {
 		return nil, err
+	}
+	if err = project.AuthZProvider.Get().CanCreateProject(curUser, w); err != nil {
+		return nil, err // TODO 400 this !!!
 	}
 
 	p := &projectv1.Project{}
@@ -71,12 +87,21 @@ func (a *apiServer) PostProject(
 		errors.Wrapf(err, "error creating project %s in database", req.Name)
 }
 
+// TODO test +
 func (a *apiServer) AddProjectNote(
-	_ context.Context, req *apiv1.AddProjectNoteRequest,
+	ctx context.Context, req *apiv1.AddProjectNoteRequest,
 ) (*apiv1.AddProjectNoteResponse, error) {
-	p, err := a.GetProjectByID(req.ProjectId)
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
 	if err != nil {
 		return nil, err
+	}
+	curUser := toModelUser(*user.User)
+	p, getProjectErr := a.GetProjectByID(req.ProjectId, curUser)
+	if getProjectErr != nil {
+		return nil, getProjectErr
+	}
+	if err = project.AuthZProvider.Get().CanSetProjectNotes(curUser, p); err != nil {
+		return nil, err // TODO 400 this !!!
 	}
 
 	notes := p.Notes
@@ -91,20 +116,39 @@ func (a *apiServer) AddProjectNote(
 		errors.Wrapf(err, "error adding project note")
 }
 
+// TODO test
 func (a *apiServer) PutProjectNotes(
-	_ context.Context, req *apiv1.PutProjectNotesRequest,
+	ctx context.Context, req *apiv1.PutProjectNotesRequest,
 ) (*apiv1.PutProjectNotesResponse, error) {
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, err
+	}
+	curUser := toModelUser(*user.User)
+	p, getProjectErr := a.GetProjectByID(req.ProjectId, curUser)
+	if getProjectErr != nil {
+		return nil, getProjectErr
+	}
+	if err = project.AuthZProvider.Get().CanSetProjectNotes(curUser, p); err != nil {
+		return nil, err // TODO 400 this !!!
+	}
+
 	newp := &projectv1.Project{}
-	err := a.m.db.QueryProto("insert_project_note", newp, req.ProjectId, req.Notes)
+	err = a.m.db.QueryProto("insert_project_note", newp, req.ProjectId, req.Notes)
 	return &apiv1.PutProjectNotesResponse{Notes: newp.Notes},
 		errors.Wrapf(err, "error putting project notes")
 }
 
+// TODO test
 func (a *apiServer) PatchProject(
-	_ context.Context, req *apiv1.PatchProjectRequest,
+	ctx context.Context, req *apiv1.PatchProjectRequest,
 ) (*apiv1.PatchProjectResponse, error) {
-	// Verify current project exists and can be edited.
-	currProject, err := a.GetProjectByID(req.Id)
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, err
+	}
+	currUser := toModelUser(*user.User)
+	currProject, err := a.GetProjectByID(req.Id, currUser)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +163,10 @@ func (a *apiServer) PatchProject(
 
 	madeChanges := false
 	if req.Project.Name != nil && req.Project.Name.Value != currProject.Name {
+		if err = project.AuthZProvider.Get().CanSetProjectName(currUser, currProject); err != nil {
+			return nil, err // TODO 400 this
+		}
+
 		log.Infof("project (%d) name changing from \"%s\" to \"%s\"",
 			currProject.Id, currProject.Name, req.Project.Name.Value)
 		madeChanges = true
@@ -126,6 +174,11 @@ func (a *apiServer) PatchProject(
 	}
 
 	if req.Project.Description != nil && req.Project.Description.Value != currProject.Description {
+		if err = project.AuthZProvider.Get().
+			CanSetProjectDescription(currUser, currProject); err != nil {
+			return nil, err // TODO 400 this
+		}
+
 		log.Infof("project (%d) description changing from \"%s\" to \"%s\"",
 			currProject.Id, currProject.Description, req.Project.Description.Value)
 		madeChanges = true
@@ -144,6 +197,7 @@ func (a *apiServer) PatchProject(
 		errors.Wrapf(err, "error updating project (%d) in database", currProject.Id)
 }
 
+// TODO test
 func (a *apiServer) DeleteProject(
 	ctx context.Context, req *apiv1.DeleteProjectRequest) (*apiv1.DeleteProjectResponse,
 	error,
@@ -152,7 +206,16 @@ func (a *apiServer) DeleteProject(
 	if err != nil {
 		return nil, err
 	}
+	curUser := toModelUser(*user.User)
+	p, getProjectErr := a.GetProjectByID(req.Id, curUser)
+	if getProjectErr != nil {
+		return nil, getProjectErr
+	}
+	if err = project.AuthZProvider.Get().CanDeleteProject(curUser, p); err != nil {
+		return nil, err // TODO 400
+	}
 
+	// TODO remove user.User.Admin!!!
 	holder := &projectv1.Project{}
 	err = a.m.db.QueryProto("delete_project", holder, req.Id, user.User.Id,
 		user.User.Admin)
@@ -166,6 +229,7 @@ func (a *apiServer) DeleteProject(
 		errors.Wrapf(err, "error deleting project (%d)", req.Id)
 }
 
+//
 func (a *apiServer) MoveProject(
 	ctx context.Context, req *apiv1.MoveProjectRequest) (*apiv1.MoveProjectResponse,
 	error,
@@ -193,6 +257,7 @@ func (a *apiServer) MoveProject(
 		errors.Wrapf(err, "error moving project (%d)", req.ProjectId)
 }
 
+// TODO test?
 func (a *apiServer) ArchiveProject(
 	ctx context.Context, req *apiv1.ArchiveProjectRequest) (*apiv1.ArchiveProjectResponse,
 	error,
@@ -201,12 +266,21 @@ func (a *apiServer) ArchiveProject(
 	if err != nil {
 		return nil, err
 	}
-
-	err = a.CheckParentWorkspaceUnarchived(req.Id)
-	if err != nil {
-		return nil, err
+	curUser := toModelUser(*user.User)
+	p, getProjectErr := a.GetProjectByID(req.Id, curUser)
+	if getProjectErr != nil {
+		return nil, getProjectErr
+	}
+	if err = project.AuthZProvider.Get().CanArchiveProject(curUser, p); err != nil {
+		return nil, err // TODO 400
+	}
+	w, err := a.GetWorkspaceByID(req.Id, curUser, false)
+	if w.Archived {
+		return nil, errors.Errorf("This project belongs to an archived workspace. " +
+			"To make changes, first unarchive the workspace.")
 	}
 
+	// Remove user.ADMIN
 	holder := &projectv1.Project{}
 	err = a.m.db.QueryProto("archive_project", holder, req.Id, true,
 		user.User.Id, user.User.Admin)
@@ -220,6 +294,7 @@ func (a *apiServer) ArchiveProject(
 		errors.Wrapf(err, "error archiving project (%d)", req.Id)
 }
 
+// TODO test ?!
 func (a *apiServer) UnarchiveProject(
 	ctx context.Context, req *apiv1.UnarchiveProjectRequest) (*apiv1.UnarchiveProjectResponse,
 	error,
@@ -228,12 +303,21 @@ func (a *apiServer) UnarchiveProject(
 	if err != nil {
 		return nil, err
 	}
-
-	err = a.CheckParentWorkspaceUnarchived(req.Id)
-	if err != nil {
-		return nil, err
+	curUser := toModelUser(*user.User)
+	p, getProjectErr := a.GetProjectByID(req.Id, curUser)
+	if getProjectErr != nil {
+		return nil, getProjectErr
+	}
+	if err = project.AuthZProvider.Get().CanUnarchiveProject(curUser, p); err != nil {
+		return nil, err // TODO 400
+	}
+	w, err := a.GetWorkspaceByID(req.Id, curUser, false)
+	if w.Archived {
+		return nil, errors.Errorf("This project belongs to an archived workspace. " +
+			"To make changes, first unarchive the workspace.")
 	}
 
+	// REMOVE user.admin
 	holder := &projectv1.Project{}
 	err = a.m.db.QueryProto("archive_project", holder, req.Id, false,
 		user.User.Id, user.User.Admin)
