@@ -1,4 +1,4 @@
-proj AS (
+WITH proj AS (
   SELECT id FROM projects
   WHERE id = $1
   AND NOT immutable
