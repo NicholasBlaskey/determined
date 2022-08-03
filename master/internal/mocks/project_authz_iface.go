@@ -80,13 +80,13 @@ func (_m *ProjectAuthZ) CanGetProject(curUser model.User, _a1 *projectv1.Project
 	return r0, r1
 }
 
-// CanMoveProject provides a mock function with given fields: curUser, fromWorkspace, toWorkspace
-func (_m *ProjectAuthZ) CanMoveProject(curUser model.User, fromWorkspace *workspacev1.Workspace, toWorkspace *workspacev1.Workspace) error {
-	ret := _m.Called(curUser, fromWorkspace, toWorkspace)
+// CanMoveProject provides a mock function with given fields: curUser, _a1, from, to
+func (_m *ProjectAuthZ) CanMoveProject(curUser model.User, _a1 *projectv1.Project, from *workspacev1.Workspace, to *workspacev1.Workspace) error {
+	ret := _m.Called(curUser, _a1, from, to)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.User, *workspacev1.Workspace, *workspacev1.Workspace) error); ok {
-		r0 = rf(curUser, fromWorkspace, toWorkspace)
+	if rf, ok := ret.Get(0).(func(model.User, *projectv1.Project, *workspacev1.Workspace, *workspacev1.Workspace) error); ok {
+		r0 = rf(curUser, _a1, from, to)
 	} else {
 		r0 = ret.Error(0)
 	}

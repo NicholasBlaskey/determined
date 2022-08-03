@@ -61,9 +61,7 @@ func (a *apiServer) GetProject(
 	return &apiv1.GetProjectResponse{Project: p}, err
 }
 
-// TODO test
-// workspace
-// cancreateproject
+// TODO db check
 func (a *apiServer) PostProject(
 	ctx context.Context, req *apiv1.PostProjectRequest,
 ) (*apiv1.PostProjectResponse, error) {
@@ -78,7 +76,7 @@ func (a *apiServer) PostProject(
 		return nil, err
 	}
 	if err = project.AuthZProvider.Get().CanCreateProject(curUser, w); err != nil {
-		return nil, err // TODO 400 this !!!
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	p := &projectv1.Project{}
@@ -231,21 +229,35 @@ func (a *apiServer) DeleteProject(
 		errors.Wrapf(err, "error deleting project (%d)", req.Id)
 }
 
-// TODO test
-// workspacebyid
-// TODODODODODODO (skip this is a weird one)
+// TODO db
 func (a *apiServer) MoveProject(
 	ctx context.Context, req *apiv1.MoveProjectRequest) (*apiv1.MoveProjectResponse,
 	error,
 ) {
-	_, err := a.GetWorkspaceByID(req.DestinationWorkspaceId, model.User{}, true)
-	if err != nil {
-		return nil, err
-	}
-
 	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
 	if err != nil {
 		return nil, err
+	}
+	curUser := toModelUser(*user.User)
+	p, err := a.GetProjectByID(req.ProjectId, curUser)
+	if err != nil { // Can view project?
+
+		return nil, err
+	}
+	// Allow projects to be moved from immutable workspaces but not to immutable workspaces.
+	from, err := a.GetWorkspaceByID(p.WorkspaceId, curUser, false)
+	if err != nil { // Can view from workspace?
+		return nil, err
+	}
+	to, err := a.GetWorkspaceByID(req.DestinationWorkspaceId, curUser, true)
+	if err != nil { // Can view to workspace?
+
+		return nil, err
+	}
+
+	// Can move project?
+	if err = project.AuthZProvider.Get().CanMoveProject(curUser, p, from, to); err != nil {
+		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	holder := &projectv1.Project{}

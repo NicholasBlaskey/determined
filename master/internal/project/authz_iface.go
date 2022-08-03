@@ -28,7 +28,9 @@ type ProjectAuthZ interface {
 	CanDeleteProject(curUser model.User, targetProject *projectv1.Project) error
 
 	//
-	CanMoveProject(curUser model.User, fromWorkspace, toWorkspace *workspacev1.Workspace) error
+	CanMoveProject(
+		curUser model.User, project *projectv1.Project, from, to *workspacev1.Workspace,
+	) error
 
 	//
 	CanArchiveProject(curUSer model.User, project *projectv1.Project) error

@@ -46,6 +46,50 @@ func SetupProjectAuthZTest(
 	return api, projectAuthZ, workspaceAuthZ, curUser, ctx
 }
 
+func TestAuthZCanCreateProject(t *testing.T) {
+	api, projectAuthZ, workspaceAuthZ, _, ctx := SetupProjectAuthZTest(t)
+
+	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything, mock.Anything).Return(nil).Once()
+	resp, err := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
+	require.NoError(t, err)
+	workspaceID := int(resp.Workspace.Id)
+
+	// Workspace deny returns same as 404.
+	_, err = api.PostProject(ctx, &apiv1.PostProjectRequest{
+		Name:        uuid.New().String(),
+		WorkspaceId: -9999,
+	})
+	require.Equal(t, workspaceNotFoundErr(-9999).Error(), err.Error())
+
+	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(false, nil).Once()
+	_, err = api.PostProject(ctx, &apiv1.PostProjectRequest{
+		Name:        uuid.New().String(),
+		WorkspaceId: int32(workspaceID),
+	})
+	require.Equal(t, workspaceNotFoundErr(workspaceID).Error(), err.Error())
+
+	// Workspace error returns error unmodified.
+	expectedErr := fmt.Errorf("canGetWorkspaceErr")
+	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).
+		Return(false, expectedErr).Once()
+	_, err = api.PostProject(ctx, &apiv1.PostProjectRequest{
+		Name:        uuid.New().String(),
+		WorkspaceId: int32(workspaceID),
+	})
+	require.Equal(t, expectedErr.Error(), err.Error())
+
+	// Can view workspace but can't deny returns error wrapped in forbidden.
+	expectedErr = errors.Wrap(grpcutil.ErrPermissionDenied, "canGetWorkspaceDeny")
+	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
+	projectAuthZ.On("CanCreateProject", mock.Anything, mock.Anything).
+		Return(fmt.Errorf("canGetWorkspaceDeny")).Once()
+	_, err = api.PostProject(ctx, &apiv1.PostProjectRequest{
+		Name:        uuid.New().String(),
+		WorkspaceId: int32(workspaceID),
+	})
+	require.Equal(t, expectedErr.Error(), err.Error())
+}
+
 func TestAuthZGetProject(t *testing.T) {
 	api, projectAuthZ, _, _, ctx := SetupProjectAuthZTest(t)
 
@@ -61,6 +105,50 @@ func TestAuthZGetProject(t *testing.T) {
 	expectedErr := fmt.Errorf("canGetProjectErr")
 	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(false, expectedErr).Once()
 	_, err = api.GetProject(ctx, &apiv1.GetProjectRequest{Id: 1})
+	require.Equal(t, expectedErr.Error(), err.Error())
+}
+
+func TestAuthZCanMoveProject(t *testing.T) {
+	// Setup.
+	api, projectAuthZ, workspaceAuthZ, _, ctx := SetupProjectAuthZTest(t)
+
+	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything, mock.Anything).Return(nil).Once()
+	fromResp, err := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
+	require.NoError(t, err)
+
+	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything, mock.Anything).Return(nil).Once()
+	toResp, err := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
+	require.NoError(t, err)
+	workspaceID := toResp.Workspace.Id
+
+	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
+	projectAuthZ.On("CanCreateProject", mock.Anything, mock.Anything).Return(nil).Once()
+	resp, err := api.PostProject(ctx, &apiv1.PostProjectRequest{
+		Name: uuid.New().String(), WorkspaceId: fromResp.Workspace.Id,
+	})
+	require.NoError(t, err)
+	projectID := resp.Project.Id
+
+	req := &apiv1.MoveProjectRequest{ProjectId: projectID, DestinationWorkspaceId: workspaceID}
+
+	// Can't view project.
+	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(false, nil).Once()
+	_, err = api.MoveProject(ctx, req)
+	require.Equal(t, projectNotFoundErr(int(projectID)).Error(), err.Error())
+
+	// Can't view from workspace.
+	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(true, nil).Once()
+	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(false, nil).Once()
+	_, err = api.MoveProject(ctx, req)
+	require.Equal(t, workspaceNotFoundErr(int(fromResp.Workspace.Id)).Error(), err.Error())
+
+	// Can't move project.
+	expectedErr := errors.Wrap(grpcutil.ErrPermissionDenied, "canMoveProjectDeny")
+	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(true, nil).Once()
+	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Twice()
+	projectAuthZ.On("CanMoveProject", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("canMoveProjectDeny")).Once()
+	_, err = api.MoveProject(ctx, req)
 	require.Equal(t, expectedErr.Error(), err.Error())
 }
 

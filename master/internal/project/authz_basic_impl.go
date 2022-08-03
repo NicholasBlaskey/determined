@@ -44,7 +44,7 @@ func (a *ProjectAuthZBasic) CanDeleteProject(
 }
 
 func (a *ProjectAuthZBasic) CanMoveProject(
-	curUser model.User, fromWorkspace, toWorkspace *workspacev1.Workspace,
+	curUser model.User, project *projectv1.Project, from, to *workspacev1.Workspace,
 ) error {
 	return nil
 }
