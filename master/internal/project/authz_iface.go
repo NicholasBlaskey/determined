@@ -9,33 +9,33 @@ import (
 
 type ProjectAuthZ interface {
 	// GET /api/v1/projects/:project_id
-	CanGetProject(
-		curUser model.User, project *projectv1.Project,
-	) (canGetProject bool, serverError error)
+	CanGetProject(curUser model.User, project *projectv1.Project) (
+		canGetProject bool, serverError error,
+	)
 
 	// POST /api/v1/workspaces/:workspace_id/projects
 	CanCreateProject(curUser model.User, targetWorkspace *workspacev1.Workspace) error
 
-	// HMMM do we need put????
-	// BOTH
+	// POST /api/v1/projects/:project_id/notes
+	// PUT /api/v1/projects/:project_id/notes
 	CanSetProjectNotes(curUser model.User, project *projectv1.Project) error
 
-	//
+	// PATCH /api/v1/projects/:project_id
 	CanSetProjectName(curUser model.User, project *projectv1.Project) error
 	CanSetProjectDescription(curUser model.User, project *projectv1.Project) error
 
-	//
+	// DELETE /api/v1/projects/:project_id
 	CanDeleteProject(curUser model.User, targetProject *projectv1.Project) error
 
-	//
+	// POST /api/v1/projects/:project_id/move
 	CanMoveProject(
 		curUser model.User, project *projectv1.Project, from, to *workspacev1.Workspace,
 	) error
 
-	//
-	CanArchiveProject(curUSer model.User, project *projectv1.Project) error
-	//
-	CanUnarchiveProject(curUSer model.User, project *projectv1.Project) error
+	// POST /api/v1/projects/:project_id/archive
+	CanArchiveProject(curUser model.User, project *projectv1.Project) error
+	// POST /api/v1/projects/:project_id/unarchive
+	CanUnarchiveProject(curUser model.User, project *projectv1.Project) error
 }
 
 var AuthZProvider authz.AuthZProviderType[ProjectAuthZ]

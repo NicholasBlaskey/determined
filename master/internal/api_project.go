@@ -34,12 +34,12 @@ func (a *apiServer) GetProjectByID(id int32, curUser model.User) (*projectv1.Pro
 	return p, nil
 }
 
-func (a *apiServer) CheckParentWorkspaceUnarchived(pid int32) error {
+func (a *apiServer) CheckParentWorkspaceUnarchived(project *projectv1.Project) error {
 	w := &workspacev1.Workspace{}
-	err := a.m.db.QueryProto("get_workspace_from_project", w, pid)
+	err := a.m.db.QueryProto("get_workspace_from_project", w, project.Id)
 	if err != nil {
 		return errors.Wrapf(err,
-			"error fetching project (%v)'s workspace from database", pid)
+			"error fetching project (%v)'s workspace from database", project.Id)
 	}
 
 	if w.Archived {
@@ -61,7 +61,6 @@ func (a *apiServer) GetProject(
 	return &apiv1.GetProjectResponse{Project: p}, err
 }
 
-// TODO db check
 func (a *apiServer) PostProject(
 	ctx context.Context, req *apiv1.PostProjectRequest,
 ) (*apiv1.PostProjectResponse, error) {
@@ -87,21 +86,34 @@ func (a *apiServer) PostProject(
 		errors.Wrapf(err, "error creating project %s in database", req.Name)
 }
 
-// TODO db check
+func (a *apiServer) getProjectAndCheckCanDoActions(
+	ctx context.Context, projectID int32, canDoActions ...func(model.User, *projectv1.Project) error,
+) (*projectv1.Project, model.User, error) {
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, model.User{}, err
+	}
+	curUser := toModelUser(*user.User)
+	p, err := a.GetProjectByID(projectID, curUser)
+	if err != nil {
+		return nil, model.User{}, err
+	}
+
+	for _, canDoAction := range canDoActions {
+		if err = canDoAction(curUser, p); err != nil {
+			return nil, model.User{}, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+		}
+	}
+	return p, model.User{}, nil
+}
+
 func (a *apiServer) AddProjectNote(
 	ctx context.Context, req *apiv1.AddProjectNoteRequest,
 ) (*apiv1.AddProjectNoteResponse, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	p, _, err := a.getProjectAndCheckCanDoActions(ctx, req.ProjectId,
+		project.AuthZProvider.Get().CanSetProjectNotes)
 	if err != nil {
 		return nil, err
-	}
-	curUser := toModelUser(*user.User)
-	p, getProjectErr := a.GetProjectByID(req.ProjectId, curUser)
-	if getProjectErr != nil {
-		return nil, getProjectErr
-	}
-	if err = project.AuthZProvider.Get().CanSetProjectNotes(curUser, p); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	notes := p.Notes
@@ -116,21 +128,13 @@ func (a *apiServer) AddProjectNote(
 		errors.Wrapf(err, "error adding project note")
 }
 
-// TODO db check
 func (a *apiServer) PutProjectNotes(
 	ctx context.Context, req *apiv1.PutProjectNotesRequest,
 ) (*apiv1.PutProjectNotesResponse, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	_, _, err := a.getProjectAndCheckCanDoActions(ctx, req.ProjectId,
+		project.AuthZProvider.Get().CanSetProjectNotes)
 	if err != nil {
 		return nil, err
-	}
-	curUser := toModelUser(*user.User)
-	p, getProjectErr := a.GetProjectByID(req.ProjectId, curUser)
-	if getProjectErr != nil {
-		return nil, getProjectErr
-	}
-	if err = project.AuthZProvider.Get().CanSetProjectNotes(curUser, p); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	newp := &projectv1.Project{}
@@ -139,16 +143,10 @@ func (a *apiServer) PutProjectNotes(
 		errors.Wrapf(err, "error putting project notes")
 }
 
-// TODO db check
 func (a *apiServer) PatchProject(
 	ctx context.Context, req *apiv1.PatchProjectRequest,
 ) (*apiv1.PatchProjectResponse, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
-	if err != nil {
-		return nil, err
-	}
-	currUser := toModelUser(*user.User)
-	currProject, err := a.GetProjectByID(req.Id, currUser)
+	currProject, currUser, err := a.getProjectAndCheckCanDoActions(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -197,39 +195,28 @@ func (a *apiServer) PatchProject(
 		errors.Wrapf(err, "error updating project (%d) in database", currProject.Id)
 }
 
-// TODO db
 func (a *apiServer) DeleteProject(
 	ctx context.Context, req *apiv1.DeleteProjectRequest) (*apiv1.DeleteProjectResponse,
 	error,
 ) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	p, _, err := a.getProjectAndCheckCanDoActions(ctx, req.Id,
+		project.AuthZProvider.Get().CanDeleteProject)
 	if err != nil {
 		return nil, err
 	}
-	curUser := toModelUser(*user.User)
-	p, getProjectErr := a.GetProjectByID(req.Id, curUser)
-	if getProjectErr != nil {
-		return nil, getProjectErr
-	}
-	if err = project.AuthZProvider.Get().CanDeleteProject(curUser, p); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+	if p.Immutable {
+		return nil, errors.Errorf("project (%d) is immutable so can't be deleted", req.Id)
 	}
 
-	// TODO remove user.User.Admin!!!
 	holder := &projectv1.Project{}
-	err = a.m.db.QueryProto("delete_project", holder, req.Id, user.User.Id,
-		user.User.Admin)
-
-	if holder.Id == 0 {
-		return nil, errors.Wrapf(err, "project (%d) does not exist or not deletable by this user",
-			req.Id)
+	err = a.m.db.QueryProto("delete_project", holder, req.Id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error deleting project (%d)", req.Id)
 	}
-
-	return &apiv1.DeleteProjectResponse{},
-		errors.Wrapf(err, "error deleting project (%d)", req.Id)
+	return &apiv1.DeleteProjectResponse{}, nil
 }
 
-// TODO db
+// TODO come back to this
 func (a *apiServer) MoveProject(
 	ctx context.Context, req *apiv1.MoveProjectRequest) (*apiv1.MoveProjectResponse,
 	error,
@@ -241,7 +228,6 @@ func (a *apiServer) MoveProject(
 	curUser := toModelUser(*user.User)
 	p, err := a.GetProjectByID(req.ProjectId, curUser)
 	if err != nil { // Can view project?
-
 		return nil, err
 	}
 	// Allow projects to be moved from immutable workspaces but not to immutable workspaces.
@@ -254,95 +240,65 @@ func (a *apiServer) MoveProject(
 
 		return nil, err
 	}
-
 	// Can move project?
 	if err = project.AuthZProvider.Get().CanMoveProject(curUser, p, from, to); err != nil {
 		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	holder := &projectv1.Project{}
-	err = a.m.db.QueryProto("move_project", holder, req.ProjectId,
-		req.DestinationWorkspaceId, user.User.Id, user.User.Admin)
-
+	err = a.m.db.QueryProto("move_project", holder, req.ProjectId, req.DestinationWorkspaceId)
+	if err != nil {
+		errors.Wrapf(err, "error moving project (%d)", req.ProjectId)
+	}
 	if holder.Id == 0 {
 		return nil, errors.Wrapf(err, "project (%d) does not exist or not moveable by this user",
 			req.ProjectId)
 	}
 
-	return &apiv1.MoveProjectResponse{},
-		errors.Wrapf(err, "error moving project (%d)", req.ProjectId)
+	return &apiv1.MoveProjectResponse{}, nil
 }
 
-// TODO db
 func (a *apiServer) ArchiveProject(
 	ctx context.Context, req *apiv1.ArchiveProjectRequest) (*apiv1.ArchiveProjectResponse,
 	error,
 ) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	p, _, err := a.getProjectAndCheckCanDoActions(ctx, req.Id,
+		project.AuthZProvider.Get().CanArchiveProject)
 	if err != nil {
 		return nil, err
 	}
-	curUser := toModelUser(*user.User)
-	p, getProjectErr := a.GetProjectByID(req.Id, curUser)
-	if getProjectErr != nil {
-		return nil, getProjectErr
+	if p.Immutable {
+		return nil, errors.Errorf("project (%d) is immutable so can't be archived", p.Id)
 	}
-	if err = project.AuthZProvider.Get().CanArchiveProject(curUser, p); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
-	}
-	w, err := a.GetWorkspaceByID(req.Id, curUser, false)
-	if w.Archived {
-		return nil, errors.Errorf("This project belongs to an archived workspace. " +
-			"To make changes, first unarchive the workspace.")
+	if err = a.CheckParentWorkspaceUnarchived(p); err != nil {
+		return nil, err
 	}
 
-	// Remove user.ADMIN
-	holder := &projectv1.Project{}
-	err = a.m.db.QueryProto("archive_project", holder, req.Id, true,
-		user.User.Id, user.User.Admin)
-
-	if holder.Id == 0 {
-		return nil, errors.Wrapf(err, "project (%d) is not archive-able by this user",
-			req.Id)
+	if err = a.m.db.QueryProto("archive_project", &projectv1.Project{}, req.Id, true); err != nil {
+		return nil, errors.Wrapf(err, "error archiving project (%d)", req.Id)
 	}
-
-	return &apiv1.ArchiveProjectResponse{},
-		errors.Wrapf(err, "error archiving project (%d)", req.Id)
+	return &apiv1.ArchiveProjectResponse{}, nil
 }
 
-// TODO db
 func (a *apiServer) UnarchiveProject(
 	ctx context.Context, req *apiv1.UnarchiveProjectRequest) (*apiv1.UnarchiveProjectResponse,
 	error,
 ) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	p, _, err := a.getProjectAndCheckCanDoActions(ctx, req.Id,
+		project.AuthZProvider.Get().CanUnarchiveProject)
 	if err != nil {
 		return nil, err
 	}
-	curUser := toModelUser(*user.User)
-	p, getProjectErr := a.GetProjectByID(req.Id, curUser)
-	if getProjectErr != nil {
-		return nil, getProjectErr
+	if p.Immutable {
+		return nil, errors.Errorf("project (%d) is immutable so can't be unarchived", p.Id)
 	}
-	if err = project.AuthZProvider.Get().CanUnarchiveProject(curUser, p); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
-	}
-	w, err := a.GetWorkspaceByID(req.Id, curUser, false)
-	if w.Archived {
-		return nil, errors.Errorf("This project belongs to an archived workspace. " +
-			"To make changes, first unarchive the workspace.")
+	if err = a.CheckParentWorkspaceUnarchived(p); err != nil {
+		return nil, err
 	}
 
-	// REMOVE user.admin
 	holder := &projectv1.Project{}
-	err = a.m.db.QueryProto("archive_project", holder, req.Id, false,
-		user.User.Id, user.User.Admin)
-
-	if holder.Id == 0 {
-		return nil, errors.Wrapf(err, "project (%d) is not unarchive-able by this user",
-			req.Id)
+	if err = a.m.db.QueryProto("archive_project", holder, req.Id, false); err != nil {
+		return nil, errors.Wrapf(err, "error unarchiving project (%d)", req.Id)
 	}
-
-	return &apiv1.UnarchiveProjectResponse{},
-		errors.Wrapf(err, "error unarchiving project (%d)", req.Id)
+	return &apiv1.UnarchiveProjectResponse{}, nil
 }
