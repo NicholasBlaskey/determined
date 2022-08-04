@@ -1582,7 +1582,7 @@ func (a *apiServer) MoveExperiment(
 	if err != nil {
 		return nil, err
 	}
-	p, err := a.GetProjectByID(req.DestinationProjectId, model.UserFromProto(*user.User))
+	p, err := a.GetProjectByID(req.DestinationProjectId, model.UserFromProto(user.User))
 	if err != nil {
 		return nil, err
 	}

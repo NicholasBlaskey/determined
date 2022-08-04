@@ -52,7 +52,7 @@ func (a *apiServer) getWorkspaceAndCheckCanDoActions(ctx context.Context, worksp
 	if err != nil {
 		return nil, model.User{}, err
 	}
-	curUser := model.UserFromProto(*user.User)
+	curUser := model.UserFromProto(user.User)
 	w, err := a.GetWorkspaceByID(workspaceID, curUser, rejectImmutable)
 	if err != nil {
 		return nil, model.User{}, err
@@ -74,7 +74,7 @@ func (a *apiServer) GetWorkspace(
 		return nil, err
 	}
 
-	w, err := a.GetWorkspaceByID(req.Id, model.UserFromProto(*user.User), false)
+	w, err := a.GetWorkspaceByID(req.Id, model.UserFromProto(user.User), false)
 	return &apiv1.GetWorkspaceResponse{Workspace: w}, err
 }
 
@@ -134,7 +134,7 @@ func (a *apiServer) GetWorkspaceProjects(
 		return nil, err
 	}
 	resp.Projects, err = workspace.AuthZProvider.Get().
-		FilterWorkspaceProjects(model.UserFromProto(*user.User), resp.Projects)
+		FilterWorkspaceProjects(model.UserFromProto(user.User), resp.Projects)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (a *apiServer) GetWorkspaces(
 	}
 
 	resp.Workspaces, err = workspace.AuthZProvider.Get().
-		FilterWorkspaces(model.UserFromProto(*user.User), resp.Workspaces)
+		FilterWorkspaces(model.UserFromProto(user.User), resp.Workspaces)
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +215,8 @@ func (a *apiServer) PostWorkspace(
 	if err != nil {
 		return nil, err
 	}
-	if err := workspace.AuthZProvider.Get().
-		CanCreateWorkspace(model.UserFromProto(*user.User)); err != nil {
+	if err = workspace.AuthZProvider.Get().
+		CanCreateWorkspace(model.UserFromProto(user.User)); err != nil {
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
@@ -291,7 +291,6 @@ func (a *apiServer) ArchiveWorkspace(
 	_, _, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, false,
 		workspace.AuthZProvider.Get().CanArchiveWorkspace)
 	if err != nil {
-		fmt.Println("RETURNING ERROR", err.Error())
 		return nil, err
 	}
 

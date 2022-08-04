@@ -7,6 +7,7 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
+// ProjectAuthZ is the interface for project authorization.
 type ProjectAuthZ interface {
 	// GET /api/v1/projects/:project_id
 	CanGetProject(curUser model.User, project *projectv1.Project) (
@@ -38,4 +39,5 @@ type ProjectAuthZ interface {
 	CanUnarchiveProject(curUser model.User, project *projectv1.Project) error
 }
 
+// AuthZProvider providers ProjectAuthZ implementations.
 var AuthZProvider authz.AuthZProviderType[ProjectAuthZ]

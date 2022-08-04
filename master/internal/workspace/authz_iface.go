@@ -7,6 +7,7 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
+// WorkspaceAuthZ is the interface for workspace authorization.
 type WorkspaceAuthZ interface {
 	// GET /api/v1/workspaces/:workspace_id
 	CanGetWorkspace(
@@ -43,4 +44,5 @@ type WorkspaceAuthZ interface {
 	CanUnpinWorkspace(curUser model.User, workspace *workspacev1.Workspace) error
 }
 
+// AuthZProvider providers WorkspaceAuthZ implementations.
 var AuthZProvider authz.AuthZProviderType[WorkspaceAuthZ]

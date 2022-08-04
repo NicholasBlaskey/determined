@@ -65,7 +65,7 @@ func (u FullUser) ToUser() User {
 }
 
 // UserFromProto converts a proto user to a model user.
-func UserFromProto(u userv1.User) User {
+func UserFromProto(u *userv1.User) User {
 	return User{
 		ID:       UserID(u.Id),
 		Username: u.Username,

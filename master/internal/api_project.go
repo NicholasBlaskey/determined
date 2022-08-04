@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +40,7 @@ func (a *apiServer) getProjectAndCheckCanDoActions(
 	if err != nil {
 		return nil, model.User{}, err
 	}
-	curUser := model.UserFromProto(*user.User)
+	curUser := model.UserFromProto(user.User)
 	p, err := a.GetProjectByID(projectID, curUser)
 	if err != nil {
 		return nil, model.User{}, err
@@ -78,7 +77,7 @@ func (a *apiServer) GetProject(
 		return nil, err
 	}
 
-	p, err := a.GetProjectByID(req.Id, model.UserFromProto(*user.User))
+	p, err := a.GetProjectByID(req.Id, model.UserFromProto(user.User))
 	return &apiv1.GetProjectResponse{Project: p}, err
 }
 
@@ -90,7 +89,7 @@ func (a *apiServer) PostProject(
 		return nil, err
 	}
 
-	curUser := model.UserFromProto(*user.User)
+	curUser := model.UserFromProto(user.User)
 	w, err := a.GetWorkspaceByID(req.WorkspaceId, curUser, true)
 	if err != nil {
 		return nil, err
@@ -148,11 +147,9 @@ func (a *apiServer) PatchProject(
 ) (*apiv1.PatchProjectResponse, error) {
 	currProject, currUser, err := a.getProjectAndCheckCanDoActions(ctx, req.Id)
 	if err != nil {
-		fmt.Println("RETURNING ERR", err)
 		return nil, err
 	}
 	if currProject.Archived {
-		fmt.Println("RETURNING ERR", err)
 		return nil, errors.Errorf("project (%d) is archived and cannot have attributes updated.",
 			currProject.Id)
 	}
@@ -164,7 +161,6 @@ func (a *apiServer) PatchProject(
 	madeChanges := false
 	if req.Project.Name != nil && req.Project.Name.Value != currProject.Name {
 		if err = project.AuthZProvider.Get().CanSetProjectName(currUser, currProject); err != nil {
-			fmt.Println("RETURNING ERR", err)
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 
@@ -177,7 +173,6 @@ func (a *apiServer) PatchProject(
 	if req.Project.Description != nil && req.Project.Description.Value != currProject.Description {
 		if err = project.AuthZProvider.Get().
 			CanSetProjectDescription(currUser, currProject); err != nil {
-			fmt.Println("RETURNING ERR", err)
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 
@@ -228,7 +223,7 @@ func (a *apiServer) MoveProject(
 	if err != nil {
 		return nil, err
 	}
-	curUser := model.UserFromProto(*user.User)
+	curUser := model.UserFromProto(user.User)
 	p, err := a.GetProjectByID(req.ProjectId, curUser)
 	if err != nil { // Can view project?
 		return nil, err
@@ -240,7 +235,6 @@ func (a *apiServer) MoveProject(
 	}
 	to, err := a.GetWorkspaceByID(req.DestinationWorkspaceId, curUser, true)
 	if err != nil { // Can view to workspace?
-
 		return nil, err
 	}
 	// Can move project?
@@ -251,7 +245,7 @@ func (a *apiServer) MoveProject(
 	holder := &projectv1.Project{}
 	err = a.m.db.QueryProto("move_project", holder, req.ProjectId, req.DestinationWorkspaceId)
 	if err != nil {
-		errors.Wrapf(err, "error moving project (%d)", req.ProjectId)
+		return nil, errors.Wrapf(err, "error moving project (%d)", req.ProjectId)
 	}
 	if holder.Id == 0 {
 		return nil, errors.Wrapf(err, "project (%d) does not exist or not moveable by this user",
