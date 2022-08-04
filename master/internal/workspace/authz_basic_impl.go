@@ -36,7 +36,6 @@ func (a *WorkspaceAuthZBasic) CanSetWorkspacesName(
 	curUser model.User, workspace *workspacev1.Workspace,
 ) error {
 	if !curUser.Admin && curUser.ID != model.UserID(workspace.UserId) {
-		// TODO this behaviour is changing from current. But this make senses.
 		return fmt.Errorf("only admins may set other user's workspaces names")
 	}
 	return nil

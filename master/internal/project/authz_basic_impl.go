@@ -57,21 +57,26 @@ func shouldBeAdminOrOwnWorkspaceOrProject(curUser model.User, project *projectv1
 	return nil
 }
 
-// CanSetProjectName returns an error if the user isn't the owner of the project or workspace.
+// CanSetProjectName returns an error if if a non admin isn't the owner of the project or workspace.
 func (a *ProjectAuthZBasic) CanSetProjectName(curUser model.User, project *projectv1.Project) error {
-	return fmt.Errorf("can't set project name: %w",
-		shouldBeAdminOrOwnWorkspaceOrProject(curUser, project))
+	if err := shouldBeAdminOrOwnWorkspaceOrProject(curUser, project); err != nil {
+		return fmt.Errorf("can't set project name: %w", err)
+	}
+	return nil
 }
 
-// CanSetProjectDescription returns an error if the user isn't the owner of the project or workspace.
+// CanSetProjectDescription returns an error if a non admin
+// isn't the owner of the project or workspace.
 func (a *ProjectAuthZBasic) CanSetProjectDescription(
 	curUser model.User, project *projectv1.Project,
 ) error {
-	return fmt.Errorf("can't set project name: %w",
-		shouldBeAdminOrOwnWorkspaceOrProject(curUser, project))
+	if err := shouldBeAdminOrOwnWorkspaceOrProject(curUser, project); err != nil {
+		return fmt.Errorf("can't set project name: %w", err)
+	}
+	return nil
 }
 
-// CanDeleteProject returns an error if the user isn't the owner of the project or workspace.
+// CanDeleteProject returns an error if if a non admin isn't the owner of the project or workspace.
 func (a *ProjectAuthZBasic) CanDeleteProject(curUser model.User, project *projectv1.Project) error {
 	if err := shouldBeAdminOrOwnWorkspaceOrProject(curUser, project); err != nil {
 		return fmt.Errorf("can't delete project: %w", err)
@@ -79,22 +84,33 @@ func (a *ProjectAuthZBasic) CanDeleteProject(curUser model.User, project *projec
 	return nil
 }
 
+// CanMoveProject returns an error if the user isn't a admin or owner of a project.
 func (a *ProjectAuthZBasic) CanMoveProject(
 	curUser model.User, project *projectv1.Project, from, to *workspacev1.Workspace,
 ) error {
+	fmt.Println("moving project", curUser.Admin, curUser.ID, project.UserId)
+	if !curUser.Admin && curUser.ID != model.UserID(project.UserId) {
+		return fmt.Errorf("non admin users can't move projects that someone else owns")
+	}
 	return nil
 }
 
+// CanArchiveProject returns an error if a non admin isn't the owner of the project or workspace.
 func (a *ProjectAuthZBasic) CanArchiveProject(curUser model.User, project *projectv1.Project) error {
-	return fmt.Errorf("can't archive project: %w",
-		shouldBeAdminOrOwnWorkspaceOrProject(curUser, project))
+	if err := shouldBeAdminOrOwnWorkspaceOrProject(curUser, project); err != nil {
+		return fmt.Errorf("can't archive project: %w", err)
+	}
+	return nil
 }
 
+// CanUnarchiveProject returns an error if the user isn't the owner of the project or workspace.
 func (a *ProjectAuthZBasic) CanUnarchiveProject(
 	curUser model.User, project *projectv1.Project,
 ) error {
-	return fmt.Errorf("can't unarchive project: %w",
-		shouldBeAdminOrOwnWorkspaceOrProject(curUser, project))
+	if err := shouldBeAdminOrOwnWorkspaceOrProject(curUser, project); err != nil {
+		return fmt.Errorf("can't unarchive project: %w", err)
+	}
+	return nil
 }
 
 func init() {

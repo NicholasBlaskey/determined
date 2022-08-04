@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -9,7 +10,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
-	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/project"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
@@ -32,6 +32,27 @@ func (a *apiServer) GetProjectByID(id int32, curUser model.User) (*projectv1.Pro
 		return nil, notFoundErr
 	}
 	return p, nil
+}
+
+func (a *apiServer) getProjectAndCheckCanDoActions(
+	ctx context.Context, projectID int32, canDoActions ...func(model.User, *projectv1.Project) error,
+) (*projectv1.Project, model.User, error) {
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, model.User{}, err
+	}
+	curUser := toModelUser(*user.User)
+	p, err := a.GetProjectByID(projectID, curUser)
+	if err != nil {
+		return nil, model.User{}, err
+	}
+
+	for _, canDoAction := range canDoActions {
+		if err = canDoAction(curUser, p); err != nil {
+			return nil, model.User{}, status.Error(codes.PermissionDenied, err.Error())
+		}
+	}
+	return p, curUser, nil
 }
 
 func (a *apiServer) CheckParentWorkspaceUnarchived(project *projectv1.Project) error {
@@ -75,7 +96,7 @@ func (a *apiServer) PostProject(
 		return nil, err
 	}
 	if err = project.AuthZProvider.Get().CanCreateProject(curUser, w); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
 	p := &projectv1.Project{}
@@ -84,27 +105,6 @@ func (a *apiServer) PostProject(
 
 	return &apiv1.PostProjectResponse{Project: p},
 		errors.Wrapf(err, "error creating project %s in database", req.Name)
-}
-
-func (a *apiServer) getProjectAndCheckCanDoActions(
-	ctx context.Context, projectID int32, canDoActions ...func(model.User, *projectv1.Project) error,
-) (*projectv1.Project, model.User, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
-	if err != nil {
-		return nil, model.User{}, err
-	}
-	curUser := toModelUser(*user.User)
-	p, err := a.GetProjectByID(projectID, curUser)
-	if err != nil {
-		return nil, model.User{}, err
-	}
-
-	for _, canDoAction := range canDoActions {
-		if err = canDoAction(curUser, p); err != nil {
-			return nil, model.User{}, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
-		}
-	}
-	return p, model.User{}, nil
 }
 
 func (a *apiServer) AddProjectNote(
@@ -148,9 +148,11 @@ func (a *apiServer) PatchProject(
 ) (*apiv1.PatchProjectResponse, error) {
 	currProject, currUser, err := a.getProjectAndCheckCanDoActions(ctx, req.Id)
 	if err != nil {
+		fmt.Println("RETURNING ERR", err)
 		return nil, err
 	}
 	if currProject.Archived {
+		fmt.Println("RETURNING ERR", err)
 		return nil, errors.Errorf("project (%d) is archived and cannot have attributes updated.",
 			currProject.Id)
 	}
@@ -162,7 +164,8 @@ func (a *apiServer) PatchProject(
 	madeChanges := false
 	if req.Project.Name != nil && req.Project.Name.Value != currProject.Name {
 		if err = project.AuthZProvider.Get().CanSetProjectName(currUser, currProject); err != nil {
-			return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+			fmt.Println("RETURNING ERR", err)
+			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 
 		log.Infof("project (%d) name changing from \"%s\" to \"%s\"",
@@ -174,7 +177,8 @@ func (a *apiServer) PatchProject(
 	if req.Project.Description != nil && req.Project.Description.Value != currProject.Description {
 		if err = project.AuthZProvider.Get().
 			CanSetProjectDescription(currUser, currProject); err != nil {
-			return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+			fmt.Println("RETURNING ERR", err)
+			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 
 		log.Infof("project (%d) description changing from \"%s\" to \"%s\"",
@@ -216,7 +220,6 @@ func (a *apiServer) DeleteProject(
 	return &apiv1.DeleteProjectResponse{}, nil
 }
 
-// TODO come back to this
 func (a *apiServer) MoveProject(
 	ctx context.Context, req *apiv1.MoveProjectRequest) (*apiv1.MoveProjectResponse,
 	error,
@@ -242,7 +245,7 @@ func (a *apiServer) MoveProject(
 	}
 	// Can move project?
 	if err = project.AuthZProvider.Get().CanMoveProject(curUser, p, from, to); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
 	holder := &projectv1.Project{}

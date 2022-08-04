@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
-	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/workspace"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
@@ -22,7 +21,7 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
-// TODO move this
+// TODO move this (TO USER???)
 func toModelUser(u userv1.User) model.User {
 	return model.User{
 		ID:       model.UserID(u.Id),
@@ -60,6 +59,27 @@ func (a *apiServer) GetWorkspaceByID(
 		return nil, errors.Errorf("workspace (%v) is archived and cannot add new projects.", w.Id)
 	}
 	return w, nil
+}
+
+func (a *apiServer) getWorkspaceAndCheckCanDoActions(ctx context.Context, workspaceID int32,
+	rejectImmutable bool, canDoActions ...func(model.User, *workspacev1.Workspace) error,
+) (*workspacev1.Workspace, model.User, error) {
+	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	if err != nil {
+		return nil, model.User{}, err
+	}
+	curUser := toModelUser(*user.User)
+	w, err := a.GetWorkspaceByID(workspaceID, curUser, rejectImmutable)
+	if err != nil {
+		return nil, model.User{}, err
+	}
+
+	for _, canDoAction := range canDoActions {
+		if err = canDoAction(curUser, w); err != nil {
+			return nil, model.User{}, status.Error(codes.PermissionDenied, err.Error())
+		}
+	}
+	return w, curUser, nil
 }
 
 func (a *apiServer) GetWorkspace(
@@ -212,12 +232,11 @@ func (a *apiServer) PostWorkspace(
 		return nil, err
 	}
 	if err := workspace.AuthZProvider.Get().CanCreateWorkspace(toModelUser(*user.User)); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
 	w := &workspacev1.Workspace{}
 	err = a.m.db.QueryProto("insert_workspace", w, req.Name, user.User.Id)
-	// TODO do we bother permitting pins??? I don't think we do???
 	if err == nil && w.Id > 0 {
 		holder := &workspacev1.Workspace{}
 		err = a.m.db.QueryProto("pin_workspace", holder, w.Id, user.User.Id)
@@ -233,18 +252,10 @@ func (a *apiServer) PostWorkspace(
 func (a *apiServer) PatchWorkspace(
 	ctx context.Context, req *apiv1.PatchWorkspaceRequest,
 ) (*apiv1.PatchWorkspaceResponse, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	currWorkspace, currUser, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, true,
+		workspace.AuthZProvider.Get().CanSetWorkspacesName)
 	if err != nil {
 		return nil, err
-	}
-	modelUser := toModelUser(*user.User)
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
-	if err != nil {
-		return nil, err
-	}
-	if err := workspace.AuthZProvider.Get().
-		CanSetWorkspacesName(modelUser, currWorkspace); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	madeChanges := false
@@ -261,7 +272,7 @@ func (a *apiServer) PatchWorkspace(
 
 	finalWorkspace := &workspacev1.Workspace{}
 	err = a.m.db.QueryProto("update_workspace",
-		finalWorkspace, currWorkspace.Id, currWorkspace.Name, user.User.Id)
+		finalWorkspace, currWorkspace.Id, currWorkspace.Name, currUser.ID)
 
 	return &apiv1.PatchWorkspaceResponse{Workspace: finalWorkspace},
 		errors.Wrapf(err, "error updating workspace (%d) in database", currWorkspace.Id)
@@ -271,113 +282,75 @@ func (a *apiServer) DeleteWorkspace(
 	ctx context.Context, req *apiv1.DeleteWorkspaceRequest) (*apiv1.DeleteWorkspaceResponse,
 	error,
 ) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	_, _, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, false,
+		workspace.AuthZProvider.Get().CanDeleteWorkspace)
 	if err != nil {
 		return nil, err
-	}
-	modelUser := toModelUser(*user.User)
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
-	if err != nil {
-		return nil, err
-	}
-	if err := workspace.AuthZProvider.Get().CanDeleteWorkspace(modelUser, currWorkspace); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	holder := &workspacev1.Workspace{}
-	err = a.m.db.QueryProto("delete_workspace", holder, req.Id, user.User.Id,
-		user.User.Admin)
-
+	if err = a.m.db.QueryProto("delete_workspace", holder, req.Id); err != nil {
+		return nil, errors.Wrapf(err, "error deleting workspace (%d)", req.Id)
+	}
 	if holder.Id == 0 {
 		return nil, errors.Wrapf(err, "workspace (%d) does not exist or not deletable by this user",
 			req.Id)
 	}
-
-	return &apiv1.DeleteWorkspaceResponse{},
-		errors.Wrapf(err, "error deleting workspace (%d)", req.Id)
+	return &apiv1.DeleteWorkspaceResponse{}, nil
 }
 
 func (a *apiServer) ArchiveWorkspace(
 	ctx context.Context, req *apiv1.ArchiveWorkspaceRequest) (*apiv1.ArchiveWorkspaceResponse,
 	error,
 ) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	_, _, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, false,
+		workspace.AuthZProvider.Get().CanArchiveWorkspace)
 	if err != nil {
 		return nil, err
-	}
-	modelUser := toModelUser(*user.User)
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
-	if err != nil {
-		return nil, err
-	}
-	if err := workspace.AuthZProvider.Get().
-		CanArchiveWorkspace(modelUser, currWorkspace); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	holder := &workspacev1.Workspace{}
-	err = a.m.db.QueryProto("archive_workspace", holder, req.Id, true,
-		user.User.Id, user.User.Admin)
-
+	if err = a.m.db.QueryProto("archive_workspace", holder, req.Id, true); err != nil {
+		return nil, errors.Wrapf(err, "error archiving workspace (%d)", req.Id)
+	}
 	if holder.Id == 0 {
 		return nil, errors.Wrapf(err, "workspace (%d) does not exist or not archive-able by this user",
 			req.Id)
 	}
-
-	return &apiv1.ArchiveWorkspaceResponse{},
-		errors.Wrapf(err, "error archiving workspace (%d)", req.Id)
+	return &apiv1.ArchiveWorkspaceResponse{}, nil
 }
 
 func (a *apiServer) UnarchiveWorkspace(
 	ctx context.Context, req *apiv1.UnarchiveWorkspaceRequest) (*apiv1.UnarchiveWorkspaceResponse,
 	error,
 ) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	_, _, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, false,
+		workspace.AuthZProvider.Get().CanUnarchiveWorkspace)
 	if err != nil {
 		return nil, err
-	}
-	modelUser := toModelUser(*user.User)
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
-	if err != nil {
-		return nil, err
-	}
-	if err := workspace.AuthZProvider.Get().
-		CanUnarchiveWorkspace(modelUser, currWorkspace); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
 	holder := &workspacev1.Workspace{}
-	err = a.m.db.QueryProto("archive_workspace", holder, req.Id, false,
-		user.User.Id, user.User.Admin)
-
-	if holder.Id == 0 {
-		return nil, errors.Wrapf(err, "workspace (%d) does not exist or not unarchive-able by this user",
-			req.Id)
+	if err = a.m.db.QueryProto("archive_workspace", holder, req.Id, false); err != nil {
+		return nil, errors.Wrapf(err, "error unarchiving workspace (%d)", req.Id)
 	}
-
-	return &apiv1.UnarchiveWorkspaceResponse{},
-		errors.Wrapf(err, "error unarchiving workspace (%d)", req.Id)
+	if holder.Id == 0 {
+		return nil, errors.Wrapf(err,
+			"workspace (%d) does not exist or not unarchive-able by this user", req.Id)
+	}
+	return &apiv1.UnarchiveWorkspaceResponse{}, nil
 }
 
 func (a *apiServer) PinWorkspace(
 	ctx context.Context, req *apiv1.PinWorkspaceRequest,
 ) (*apiv1.PinWorkspaceResponse, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	_, currUser, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, false,
+		workspace.AuthZProvider.Get().CanPinWorkspace)
 	if err != nil {
 		return nil, err
-	}
-	modelUser := toModelUser(*user.User)
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
-	if err != nil {
-		return nil, err
-	}
-	if err := workspace.AuthZProvider.Get().
-		CanPinWorkspace(modelUser, currWorkspace); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
-	holder := &workspacev1.Workspace{}
-	err = a.m.db.QueryProto("pin_workspace", holder, req.Id, user.User.Id)
+	err = a.m.db.QueryProto("pin_workspace", &workspacev1.Workspace{}, req.Id, currUser.ID)
 
 	return &apiv1.PinWorkspaceResponse{},
 		errors.Wrapf(err, "error pinning workspace (%d)", req.Id)
@@ -386,22 +359,13 @@ func (a *apiServer) PinWorkspace(
 func (a *apiServer) UnpinWorkspace(
 	ctx context.Context, req *apiv1.UnpinWorkspaceRequest,
 ) (*apiv1.UnpinWorkspaceResponse, error) {
-	user, err := a.CurrentUser(ctx, &apiv1.CurrentUserRequest{})
+	_, currUser, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, false,
+		workspace.AuthZProvider.Get().CanUnpinWorkspace)
 	if err != nil {
 		return nil, err
-	}
-	modelUser := toModelUser(*user.User)
-	currWorkspace, err := a.GetWorkspaceByID(req.Id, modelUser, true)
-	if err != nil {
-		return nil, err
-	}
-	if err := workspace.AuthZProvider.Get().
-		CanUnpinWorkspace(modelUser, currWorkspace); err != nil {
-		return nil, errors.Wrap(grpcutil.ErrPermissionDenied, err.Error())
 	}
 
-	holder := &workspacev1.Workspace{}
-	err = a.m.db.QueryProto("unpin_workspace", holder, req.Id, user.User.Id)
+	err = a.m.db.QueryProto("unpin_workspace", &workspacev1.Workspace{}, req.Id, currUser.ID)
 
 	return &apiv1.UnpinWorkspaceResponse{},
 		errors.Wrapf(err, "error un-pinning workspace (%d)", req.Id)

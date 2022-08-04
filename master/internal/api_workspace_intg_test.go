@@ -12,12 +12,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/mocks"
 	"github.com/determined-ai/determined/master/internal/workspace"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -105,7 +103,7 @@ func TestAuthzPostWorkspace(t *testing.T) {
 	api, workspaceAuthZ, _, ctx := SetupWorkspaceAuthZTest(t)
 
 	// Deny returns error wrapped in forbidden.
-	expectedErr := errors.Wrap(grpcutil.ErrPermissionDenied, "canCreateWorkspaceDeny")
+	expectedErr := status.Error(codes.PermissionDenied, "canCreateWorkspaceDeny")
 	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything).
 		Return(fmt.Errorf("canCreateWorkspaceDeny")).Once()
 	_, err := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
@@ -191,7 +189,7 @@ func TestAuthzWorkspaceGetThenActionRoutes(t *testing.T) {
 		require.Equal(t, cantGetWorkspaceErr, curCase.IDToReqCall(id))
 
 		// Deny with permission to view returns error wrapped in forbidden.
-		expectedErr := errors.Wrap(grpcutil.ErrPermissionDenied, curCase.DenyFuncName+"Deny")
+		expectedErr := status.Error(codes.PermissionDenied, curCase.DenyFuncName+"Deny")
 		workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
 		workspaceAuthZ.On(curCase.DenyFuncName, mock.Anything, mock.Anything).
 			Return(fmt.Errorf("%sDeny", curCase.DenyFuncName)).Once()

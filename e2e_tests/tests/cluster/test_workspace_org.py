@@ -13,7 +13,12 @@ def test_workspace_org() -> None:
     master_url = conf.make_master_url()
     authentication.cli_auth = authentication.Authentication(master_url, try_reauth=True)
     sess = session.Session(master_url, None, None, None)
+    #authentication.cli_auth = authentication.Authentication(master_url, "admin", "", try_reauth=True)
+    # TODO constants
+    admin_auth = authentication.Authentication(master_url, "admin", "", try_reauth=True)
+    admin_sess = session.Session(master_url, "admin", admin_auth, None)
 
+    
     test_experiments: List[bindings.v1Experiment] = []
     test_projects: List[bindings.v1Project] = []
     test_workspaces: List[bindings.v1Workspace] = []
@@ -66,14 +71,16 @@ def test_workspace_org() -> None:
         get_workspace_3 = bindings.get_GetWorkspace(sess, id=made_workspace.id).workspace
         assert not get_workspace_3.archived
 
+        # TODO this should be unchanged right?!!! We added some extra permissions here I think supposedly...
         # Refuse to patch, archive, unarchive, or delete the default workspace
         with pytest.raises(errors.APIException):
             bindings.patch_PatchWorkspace(sess, body=w_patch, id=default_workspace.id)
-        with pytest.raises(errors.APIException):
+        #with pytest.raises(errors.APIException):
+        with pytest.raises(errors.ForbiddenException):
             bindings.post_ArchiveWorkspace(sess, id=default_workspace.id)
-        with pytest.raises(errors.APIException):
+        with pytest.raises(errors.ForbiddenException):            
             bindings.post_UnarchiveWorkspace(sess, id=default_workspace.id)
-        with pytest.raises(errors.APIException):
+        with pytest.raises(errors.ForbiddenException):            
             bindings.delete_DeleteWorkspace(sess, id=default_workspace.id)
 
         # Sort test and default workspaces.

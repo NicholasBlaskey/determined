@@ -12,12 +12,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/mocks"
 	"github.com/determined-ai/determined/master/internal/project"
 	// "github.com/determined-ai/determined/master/internal/workspace"
@@ -79,7 +77,7 @@ func TestAuthZCanCreateProject(t *testing.T) {
 	require.Equal(t, expectedErr.Error(), err.Error())
 
 	// Can view workspace but can't deny returns error wrapped in forbidden.
-	expectedErr = errors.Wrap(grpcutil.ErrPermissionDenied, "canGetWorkspaceDeny")
+	expectedErr = status.Error(codes.PermissionDenied, "canGetWorkspaceDeny")
 	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
 	projectAuthZ.On("CanCreateProject", mock.Anything, mock.Anything).
 		Return(fmt.Errorf("canGetWorkspaceDeny")).Once()
@@ -143,7 +141,7 @@ func TestAuthZCanMoveProject(t *testing.T) {
 	require.Equal(t, workspaceNotFoundErr(int(fromResp.Workspace.Id)).Error(), err.Error())
 
 	// Can't move project.
-	expectedErr := errors.Wrap(grpcutil.ErrPermissionDenied, "canMoveProjectDeny")
+	expectedErr := status.Error(codes.PermissionDenied, "canMoveProjectDeny")
 	projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).Return(true, nil).Once()
 	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Twice()
 	projectAuthZ.On("CanMoveProject", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -238,7 +236,7 @@ func TestAuthZRoutesGetProjectThenAction(t *testing.T) {
 		require.Equal(t, expectedErr, err)
 
 		// Can view but can't perform action.
-		expectedErr = errors.Wrap(grpcutil.ErrPermissionDenied, curCase.DenyFuncName+"Deny")
+		expectedErr = status.Error(codes.PermissionDenied, curCase.DenyFuncName+"Deny")
 		projectAuthZ.On("CanGetProject", mock.Anything, mock.Anything).
 			Return(true, nil).Once()
 		projectAuthZ.On(curCase.DenyFuncName, mock.Anything, mock.Anything).
