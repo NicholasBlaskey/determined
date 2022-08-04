@@ -41,7 +41,7 @@ func (a *apiServer) getProjectAndCheckCanDoActions(
 	if err != nil {
 		return nil, model.User{}, err
 	}
-	curUser := toModelUser(*user.User)
+	curUser := model.UserFromProto(*user.User)
 	p, err := a.GetProjectByID(projectID, curUser)
 	if err != nil {
 		return nil, model.User{}, err
@@ -78,7 +78,7 @@ func (a *apiServer) GetProject(
 		return nil, err
 	}
 
-	p, err := a.GetProjectByID(req.Id, toModelUser(*user.User))
+	p, err := a.GetProjectByID(req.Id, model.UserFromProto(*user.User))
 	return &apiv1.GetProjectResponse{Project: p}, err
 }
 
@@ -90,7 +90,7 @@ func (a *apiServer) PostProject(
 		return nil, err
 	}
 
-	curUser := toModelUser(*user.User)
+	curUser := model.UserFromProto(*user.User)
 	w, err := a.GetWorkspaceByID(req.WorkspaceId, curUser, true)
 	if err != nil {
 		return nil, err
@@ -228,7 +228,7 @@ func (a *apiServer) MoveProject(
 	if err != nil {
 		return nil, err
 	}
-	curUser := toModelUser(*user.User)
+	curUser := model.UserFromProto(*user.User)
 	p, err := a.GetProjectByID(req.ProjectId, curUser)
 	if err != nil { // Can view project?
 		return nil, err
