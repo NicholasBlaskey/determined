@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/determined-ai/determined/master/internal/db"
+	expauth "github.com/determined-ai/determined/master/internal/experiment"
 	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/hpimportance"
 	"github.com/determined-ai/determined/master/internal/job"
@@ -46,6 +47,7 @@ import (
 
 var experimentsAddr = actor.Addr("experiments")
 
+// TODO?
 func (a *apiServer) checkExperimentExists(id int) error {
 	ok, err := a.m.db.CheckExperimentExists(id)
 	switch {
@@ -58,6 +60,7 @@ func (a *apiServer) checkExperimentExists(id int) error {
 	}
 }
 
+// TODO?
 func (a *apiServer) getExperiment(experimentID int) (*experimentv1.Experiment, error) {
 	exp := &experimentv1.Experiment{}
 	switch err := a.m.db.QueryProto("get_experiment", exp, experimentID); {
@@ -74,6 +77,7 @@ func (a *apiServer) getExperiment(experimentID int) (*experimentv1.Experiment, e
 	return exp, nil
 }
 
+// TODO?
 func (a *apiServer) GetExperiment(
 	_ context.Context, req *apiv1.GetExperimentRequest,
 ) (*apiv1.GetExperimentResponse, error) {
@@ -118,6 +122,8 @@ func (a *apiServer) GetExperiment(
 	return &resp, nil
 }
 
+// TODO info leakage...
+// TODO test
 func (a *apiServer) DeleteExperiment(
 	ctx context.Context, req *apiv1.DeleteExperimentRequest,
 ) (*apiv1.DeleteExperimentResponse, error) {
@@ -135,10 +141,8 @@ func (a *apiServer) DeleteExperiment(
 		return nil, errors.Wrap(err, "failed to retrieve experiment")
 	}
 
-	// AuthZ the request.
-	curUserIsOwner := e.OwnerID == nil || *e.OwnerID == curUser.ID
-	if !curUser.Admin && !curUserIsOwner {
-		return nil, grpcutil.ErrPermissionDenied
+	if err := expauth.AuthZProvider.Get().CanDeleteExperiment(*curUser, e); err != nil {
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
 	switch exists, eErr := a.m.db.ExperimentHasCheckpointsInRegistry(int(req.ExperimentId)); {
@@ -234,6 +238,7 @@ func (a *apiServer) deleteExperiment(exp *model.Experiment, user *model.User) er
 	return nil
 }
 
+// TODO proto (akw)
 func (a *apiServer) GetExperiments(
 	_ context.Context, req *apiv1.GetExperimentsRequest,
 ) (*apiv1.GetExperimentsResponse, error) {
@@ -307,6 +312,7 @@ func (a *apiServer) GetExperiments(
 	)
 }
 
+// TODO what is this???
 func (a *apiServer) GetExperimentLabels(_ context.Context,
 	req *apiv1.GetExperimentLabelsRequest,
 ) (*apiv1.GetExperimentLabelsResponse, error) {
@@ -334,6 +340,8 @@ func (a *apiServer) GetExperimentLabels(_ context.Context,
 	return resp, nil
 }
 
+// GetExperiment too
+// TODO filter experiments??? (yes)
 func (a *apiServer) GetExperimentValidationHistory(
 	_ context.Context, req *apiv1.GetExperimentValidationHistoryRequest,
 ) (*apiv1.GetExperimentValidationHistoryResponse, error) {
@@ -345,9 +353,11 @@ func (a *apiServer) GetExperimentValidationHistory(
 		return nil, errors.Wrapf(err,
 			"error fetching validation history for experiment from database: %d", req.ExperimentId)
 	}
+
 	return &resp, nil
 }
 
+// good? (or canPreviewHP search???)
 func (a *apiServer) PreviewHPSearch(
 	_ context.Context, req *apiv1.PreviewHPSearchRequest,
 ) (*apiv1.PreviewHPSearchResponse, error) {
@@ -432,6 +442,7 @@ func (a *apiServer) PreviewHPSearch(
 	return &apiv1.PreviewHPSearchResponse{Simulation: protoSim}, nil
 }
 
+// easy
 func (a *apiServer) ActivateExperiment(
 	ctx context.Context, req *apiv1.ActivateExperimentRequest,
 ) (resp *apiv1.ActivateExperimentResponse, err error) {
@@ -450,6 +461,7 @@ func (a *apiServer) ActivateExperiment(
 	}
 }
 
+// easy
 func (a *apiServer) PauseExperiment(
 	ctx context.Context, req *apiv1.PauseExperimentRequest,
 ) (resp *apiv1.PauseExperimentResponse, err error) {
@@ -468,6 +480,7 @@ func (a *apiServer) PauseExperiment(
 	}
 }
 
+// easy
 func (a *apiServer) CancelExperiment(
 	ctx context.Context, req *apiv1.CancelExperimentRequest,
 ) (resp *apiv1.CancelExperimentResponse, err error) {
@@ -483,6 +496,7 @@ func (a *apiServer) CancelExperiment(
 	return resp, err
 }
 
+// easy
 func (a *apiServer) KillExperiment(
 	ctx context.Context, req *apiv1.KillExperimentRequest,
 ) (
@@ -500,6 +514,7 @@ func (a *apiServer) KillExperiment(
 	return resp, err
 }
 
+// easy
 func (a *apiServer) ArchiveExperiment(
 	ctx context.Context, req *apiv1.ArchiveExperimentRequest,
 ) (*apiv1.ArchiveExperimentResponse, error) {
@@ -528,6 +543,7 @@ func (a *apiServer) ArchiveExperiment(
 	}
 }
 
+// easy
 func (a *apiServer) UnarchiveExperiment(
 	ctx context.Context, req *apiv1.UnarchiveExperimentRequest,
 ) (*apiv1.UnarchiveExperimentResponse, error) {
@@ -556,6 +572,7 @@ func (a *apiServer) UnarchiveExperiment(
 	}
 }
 
+// TODO toproto
 func (a *apiServer) PatchExperiment(
 	ctx context.Context, req *apiv1.PatchExperimentRequest,
 ) (*apiv1.PatchExperimentResponse, error) {
@@ -629,6 +646,7 @@ func (a *apiServer) PatchExperiment(
 	return &apiv1.PatchExperimentResponse{Experiment: &exp}, nil
 }
 
+// hmmm
 func (a *apiServer) GetExperimentCheckpoints(
 	ctx context.Context, req *apiv1.GetExperimentCheckpointsRequest,
 ) (*apiv1.GetExperimentCheckpointsResponse, error) {
