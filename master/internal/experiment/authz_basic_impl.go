@@ -44,6 +44,50 @@ func (a *ExperimentAuthZBasic) CanPreviewHPSearch(curUser model.User) error {
 	return nil
 }
 
+func (a *ExperimentAuthZBasic) CanActivateExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanPauseExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanCancelExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanKillExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanArchiveExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanUnarchiveExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsName(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsNotes(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsDescription(
+	curUser model.User, e *model.Experiment,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsLabels(
+	curUser model.User, e *model.Experiment,
+) error {
+	return nil
+}
+
 func init() {
 	AuthZProvider.Register("basic", &ExperimentAuthZBasic{})
 }
