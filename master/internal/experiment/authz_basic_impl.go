@@ -34,6 +34,16 @@ func (a *ExperimentAuthZBasic) FilterExperiments(
 	return experiments, nil
 }
 
+func (a *ExperimentAuthZBasic) CanGetExperimentValidationHistory(
+	curUser model.User, e *model.Experiment,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanPreviewHPSearch(curUser model.User) error {
+	return nil
+}
+
 func init() {
 	AuthZProvider.Register("basic", &ExperimentAuthZBasic{})
 }

@@ -88,6 +88,25 @@ func (a *apiServer) getExperiment(
 	return exp, nil
 }
 
+func (a *apiServer) getExperimentWithoutConfig(
+	curUser model.User, expID int,
+) (*model.Experiment, error) {
+	expNotFound := status.Errorf(codes.NotFound, "experiment not found: %d", expID)
+	e, err := a.m.db.ExperimentWithoutConfigByID(expID)
+	if err == db.ErrNotFound { // TODO validate this not being errors.Is
+		return nil, expNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	if ok, err := expauth.AuthZProvider.Get().CanGetExperiment(curUser, e); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, expNotFound
+	}
+	return e, nil
+}
+
 // TODO test
 func (a *apiServer) GetExperiment(
 	ctx context.Context, req *apiv1.GetExperimentRequest,
@@ -137,6 +156,7 @@ func (a *apiServer) GetExperiment(
 	return &resp, nil
 }
 
+// TODO refactor to get withut action
 // TODO test
 func (a *apiServer) DeleteExperiment(
 	ctx context.Context, req *apiv1.DeleteExperimentRequest,
@@ -146,6 +166,7 @@ func (a *apiServer) DeleteExperiment(
 		return nil, err
 	}
 
+	// TODO refactor thhis
 	// Avoid loading the experiment config for what may be a very old experiment.
 	e, err := a.m.db.ExperimentWithoutConfigByID(int(req.ExperimentId))
 	switch {
@@ -367,12 +388,19 @@ func (a *apiServer) GetExperiments(
 	return resp, nil
 }
 
-// TODO what is this???
+// TODO this is hard.
 func (a *apiServer) GetExperimentLabels(_ context.Context,
 	req *apiv1.GetExperimentLabelsRequest,
 ) (*apiv1.GetExperimentLabelsResponse, error) {
-	resp := &apiv1.GetExperimentLabelsResponse{}
+	/*
+		curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	// So we could get the list of experiments??? But that doesn't scale...
 
+	resp := &apiv1.GetExperimentLabelsResponse{}
 	var err error
 	labelUsage, err := a.m.db.ExperimentLabelUsage(req.ProjectId)
 	if err != nil {
@@ -395,11 +423,29 @@ func (a *apiServer) GetExperimentLabels(_ context.Context,
 	return resp, nil
 }
 
-// GetExperiment too
-// TODO filter experiments??? (yes)
+// TODO test
+// TODO refactor into check actions
 func (a *apiServer) GetExperimentValidationHistory(
-	_ context.Context, req *apiv1.GetExperimentValidationHistoryRequest,
+	ctx context.Context, req *apiv1.GetExperimentValidationHistoryRequest,
 ) (*apiv1.GetExperimentValidationHistoryResponse, error) {
+	// TODO
+	/*
+		if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, req.ExperimentId, auth); err != nil {
+			return nil, err
+		}
+	*/
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, err
+	}
+	e, err := a.getExperimentWithoutConfig(*curUser, int(req.ExperimentId))
+	if err != nil {
+		return nil, err
+	}
+	if err := expauth.AuthZProvider.Get().CanGetExperimentValidationHistory(*curUser, e); err != nil {
+		return nil, err
+	}
+
 	var resp apiv1.GetExperimentValidationHistoryResponse
 	switch err := a.m.db.QueryProto("proto_experiment_validation_history", &resp, req.ExperimentId); {
 	case err == db.ErrNotFound:
@@ -412,10 +458,18 @@ func (a *apiServer) GetExperimentValidationHistory(
 	return &resp, nil
 }
 
-// good? (or canPreviewHP search???)
+// TODO test
 func (a *apiServer) PreviewHPSearch(
-	_ context.Context, req *apiv1.PreviewHPSearchRequest,
+	ctx context.Context, req *apiv1.PreviewHPSearchRequest,
 ) (*apiv1.PreviewHPSearchResponse, error) {
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, err
+	}
+	if err := expauth.AuthZProvider.Get().CanPreviewHPSearch(*curUser); err != nil {
+		return nil, err // TODO
+	}
+
 	bytes, err := protojson.Marshal(req.Config)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "error parsing experiment config: %s", err)
