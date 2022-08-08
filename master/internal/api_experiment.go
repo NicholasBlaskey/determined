@@ -60,15 +60,26 @@ func (a *apiServer) checkExperimentExists(id int) error {
 	}
 }
 
-// TODO?
-func (a *apiServer) getExperiment(experimentID int) (*experimentv1.Experiment, error) {
+// TODO test... (also not copying config or a lot of fields right now)
+// THINK IT is relatively fine for now?
+func (a *apiServer) getExperiment(
+	curUser model.User, experimentID int,
+) (*experimentv1.Experiment, error) {
+	expNotFound := status.Errorf(codes.NotFound, "experiment not found: %d", experimentID)
 	exp := &experimentv1.Experiment{}
 	switch err := a.m.db.QueryProto("get_experiment", exp, experimentID); {
 	case err == db.ErrNotFound:
-		return nil, status.Errorf(codes.NotFound, "experiment not found: %d", experimentID)
+		return nil, expNotFound
 	case err != nil:
 		return nil, errors.Wrapf(err,
 			"error fetching experiment from database: %d", experimentID)
+	}
+
+	if ok, err := expauth.AuthZProvider.Get().
+		CanGetExperiment(curUser, model.ExperimentFromProto(exp)); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, expNotFound
 	}
 
 	sort.Slice(exp.TrialIds, func(i, j int) bool {
@@ -77,11 +88,15 @@ func (a *apiServer) getExperiment(experimentID int) (*experimentv1.Experiment, e
 	return exp, nil
 }
 
-// TODO?
+// TODO test
 func (a *apiServer) GetExperiment(
-	_ context.Context, req *apiv1.GetExperimentRequest,
+	ctx context.Context, req *apiv1.GetExperimentRequest,
 ) (*apiv1.GetExperimentResponse, error) {
-	exp, err := a.getExperiment(int(req.ExperimentId))
+	user, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
+	}
+	exp, err := a.getExperiment(*user, int(req.ExperimentId))
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching experiment from db")
 	}
@@ -122,7 +137,6 @@ func (a *apiServer) GetExperiment(
 	return &resp, nil
 }
 
-// TODO info leakage...
 // TODO test
 func (a *apiServer) DeleteExperiment(
 	ctx context.Context, req *apiv1.DeleteExperimentRequest,
@@ -141,6 +155,11 @@ func (a *apiServer) DeleteExperiment(
 		return nil, errors.Wrap(err, "failed to retrieve experiment")
 	}
 
+	if ok, err := expauth.AuthZProvider.Get().CanGetExperiment(*curUser, e); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, status.Errorf(codes.NotFound, "experiment not found")
+	}
 	if err := expauth.AuthZProvider.Get().CanDeleteExperiment(*curUser, e); err != nil {
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
@@ -238,9 +257,9 @@ func (a *apiServer) deleteExperiment(exp *model.Experiment, user *model.User) er
 	return nil
 }
 
-// TODO proto (akw)
+// TODO test
 func (a *apiServer) GetExperiments(
-	_ context.Context, req *apiv1.GetExperimentsRequest,
+	ctx context.Context, req *apiv1.GetExperimentsRequest,
 ) (*apiv1.GetExperimentsResponse, error) {
 	// Construct the experiment filtering expression.
 	var allStates []string
@@ -292,10 +311,11 @@ func (a *apiServer) GetExperiments(
 		)
 	default:
 		orderExpr = fmt.Sprintf("id %s", sortByMap[req.OrderBy])
+
 	}
 
 	resp := &apiv1.GetExperimentsResponse{}
-	return resp, a.m.db.QueryProtof(
+	err := a.m.db.QueryProtof(
 		"get_experiments",
 		[]interface{}{orderExpr},
 		resp,
@@ -310,6 +330,41 @@ func (a *apiServer) GetExperiments(
 		req.Offset,
 		req.Limit,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter to experiments user has access to.
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, err
+	}
+
+	modelExps := make([]*model.Experiment, len(resp.Experiments))
+	for i, e := range resp.Experiments {
+		modelExps[i] = model.ExperimentFromProto(e)
+	}
+	filtered, err := expauth.AuthZProvider.Get().FilterExperiments(*curUser, modelExps)
+	if err != nil {
+		return nil, err
+	}
+	filteredProtoExp := make([]*experimentv1.Experiment, len(filtered))
+	i := 0
+	for j, exp := range filtered {
+		// Find experiment in original list.
+		for {
+			if exp.ID == int(resp.Experiments[i].Id) {
+				break
+			}
+			i++
+		}
+
+		// Add experiment to list we are going to return.
+		filteredProtoExp[j] = resp.Experiments[i]
+	}
+	resp.Experiments = filteredProtoExp
+
+	return resp, nil
 }
 
 // TODO what is this???
@@ -799,7 +854,7 @@ func (a *apiServer) CreateExperiment(
 		}
 	}
 
-	protoExp, err := a.getExperiment(e.ID)
+	protoExp, err := a.getExperiment(*user, e.ID)
 	if err != nil {
 		return nil, err
 	}
