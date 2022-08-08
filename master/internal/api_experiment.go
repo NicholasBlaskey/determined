@@ -88,23 +88,42 @@ func (a *apiServer) getExperiment(
 	return exp, nil
 }
 
-func (a *apiServer) getExperimentWithoutConfig(
-	curUser model.User, expID int,
-) (*model.Experiment, error) {
-	expNotFound := status.Errorf(codes.NotFound, "experiment not found: %d", expID)
-	e, err := a.m.db.ExperimentWithoutConfigByID(expID)
-	if err == db.ErrNotFound { // TODO validate this not being errors.Is
-		return nil, expNotFound
-	} else if err != nil {
-		return nil, err
+func (a *apiServer) getExperimentAndCheckCanDoActions(
+	ctx context.Context,
+	expID int,
+	withConfig bool,
+	actions ...func(model.User, *model.Experiment) error,
+) (*model.Experiment, model.User, error) {
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, model.User{}, err
 	}
 
-	if ok, err := expauth.AuthZProvider.Get().CanGetExperiment(curUser, e); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, expNotFound
+	var e *model.Experiment
+	if withConfig {
+		e, err = a.m.db.ExperimentByID(expID)
+	} else {
+		e, err = a.m.db.ExperimentWithoutConfigByID(expID)
 	}
-	return e, nil
+	expNotFound := status.Errorf(codes.NotFound, "experiment not found: %d", expID)
+	if err == db.ErrNotFound { // TODO validate this doesn't need to be errors.IS
+		return nil, model.User{}, expNotFound
+	} else if err != nil {
+		return nil, model.User{}, err
+	}
+
+	if ok, err := expauth.AuthZProvider.Get().CanGetExperiment(*curUser, e); err != nil {
+		return nil, model.User{}, err
+	} else if !ok {
+		return nil, model.User{}, expNotFound
+	}
+
+	for _, action := range actions {
+		if err = action(*curUser, e); err != nil {
+			return nil, model.User{}, err
+		}
+	}
+	return e, *curUser, nil
 }
 
 // TODO test
@@ -161,30 +180,13 @@ func (a *apiServer) GetExperiment(
 func (a *apiServer) DeleteExperiment(
 	ctx context.Context, req *apiv1.DeleteExperimentRequest,
 ) (*apiv1.DeleteExperimentResponse, error) {
-	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	e, curUser, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false,
+		expauth.AuthZProvider.Get().CanDeleteExperiment)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO refactor thhis
-	// Avoid loading the experiment config for what may be a very old experiment.
-	e, err := a.m.db.ExperimentWithoutConfigByID(int(req.ExperimentId))
-	switch {
-	case errors.Cause(err) == db.ErrNotFound:
-		return nil, status.Errorf(codes.NotFound, "experiment not found")
-	case err != nil:
-		return nil, errors.Wrap(err, "failed to retrieve experiment")
-	}
-
-	if ok, err := expauth.AuthZProvider.Get().CanGetExperiment(*curUser, e); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, status.Errorf(codes.NotFound, "experiment not found")
-	}
-	if err := expauth.AuthZProvider.Get().CanDeleteExperiment(*curUser, e); err != nil {
-		return nil, status.Error(codes.PermissionDenied, err.Error())
-	}
-
+	// TODO potential leak here
 	switch exists, eErr := a.m.db.ExperimentHasCheckpointsInRegistry(int(req.ExperimentId)); {
 	case eErr != nil:
 		return nil, errors.New("failed to check model registry for references")
@@ -201,7 +203,7 @@ func (a *apiServer) DeleteExperiment(
 		return nil, errors.Wrapf(err, "transitioning to %s", e.State)
 	}
 	go func() {
-		if err := a.deleteExperiment(e, curUser); err != nil {
+		if err := a.deleteExperiment(e, &curUser); err != nil {
 			logrus.WithError(err).Errorf("deleting experiment %d", e.ID)
 			e.State = model.DeleteFailedState
 			if err := a.m.db.SaveExperimentState(e); err != nil {
@@ -424,25 +426,11 @@ func (a *apiServer) GetExperimentLabels(_ context.Context,
 }
 
 // TODO test
-// TODO refactor into check actions
 func (a *apiServer) GetExperimentValidationHistory(
 	ctx context.Context, req *apiv1.GetExperimentValidationHistoryRequest,
 ) (*apiv1.GetExperimentValidationHistoryResponse, error) {
-	// TODO
-	/*
-		if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, req.ExperimentId, auth); err != nil {
-			return nil, err
-		}
-	*/
-	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
-	if err != nil {
-		return nil, err
-	}
-	e, err := a.getExperimentWithoutConfig(*curUser, int(req.ExperimentId))
-	if err != nil {
-		return nil, err
-	}
-	if err := expauth.AuthZProvider.Get().CanGetExperimentValidationHistory(*curUser, e); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false,
+		expauth.AuthZProvider.Get().CanGetExperimentValidationHistory); err != nil {
 		return nil, err
 	}
 
@@ -551,11 +539,12 @@ func (a *apiServer) PreviewHPSearch(
 	return &apiv1.PreviewHPSearchResponse{Simulation: protoSim}, nil
 }
 
-// easy
+// TODO test
 func (a *apiServer) ActivateExperiment(
 	ctx context.Context, req *apiv1.ActivateExperimentRequest,
 ) (resp *apiv1.ActivateExperimentResponse, err error) {
-	if err = a.checkExperimentExists(int(req.Id)); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+		expauth.AuthZProvider.Get().CanActivateExperiment); err != nil {
 		return nil, err
 	}
 
@@ -570,11 +559,12 @@ func (a *apiServer) ActivateExperiment(
 	}
 }
 
-// easy
+// TODO test
 func (a *apiServer) PauseExperiment(
 	ctx context.Context, req *apiv1.PauseExperimentRequest,
 ) (resp *apiv1.PauseExperimentResponse, err error) {
-	if err = a.checkExperimentExists(int(req.Id)); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+		expauth.AuthZProvider.Get().CanPauseExperiment); err != nil {
 		return nil, err
 	}
 
@@ -589,11 +579,12 @@ func (a *apiServer) PauseExperiment(
 	}
 }
 
-// easy
+// TODO test
 func (a *apiServer) CancelExperiment(
 	ctx context.Context, req *apiv1.CancelExperimentRequest,
 ) (resp *apiv1.CancelExperimentResponse, err error) {
-	if err = a.checkExperimentExists(int(req.Id)); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+		expauth.AuthZProvider.Get().CanCancelExperiment); err != nil {
 		return nil, err
 	}
 
@@ -605,13 +596,12 @@ func (a *apiServer) CancelExperiment(
 	return resp, err
 }
 
-// easy
+// TODO test
 func (a *apiServer) KillExperiment(
 	ctx context.Context, req *apiv1.KillExperimentRequest,
-) (
-	resp *apiv1.KillExperimentResponse, err error,
-) {
-	if err = a.checkExperimentExists(int(req.Id)); err != nil {
+) (resp *apiv1.KillExperimentResponse, err error) {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+		expauth.AuthZProvider.Get().CanKillExperiment); err != nil {
 		return nil, err
 	}
 
@@ -623,21 +613,21 @@ func (a *apiServer) KillExperiment(
 	return resp, err
 }
 
-// easy
+// TODO test
 func (a *apiServer) ArchiveExperiment(
 	ctx context.Context, req *apiv1.ArchiveExperimentRequest,
 ) (*apiv1.ArchiveExperimentResponse, error) {
 	id := int(req.Id)
-
-	dbExp, err := a.m.db.ExperimentWithoutConfigByID(id)
+	dbExp, _, err := a.getExperimentAndCheckCanDoActions(ctx, id, false,
+		expauth.AuthZProvider.Get().CanArchiveExperiment)
 	if err != nil {
-		return nil, errors.Wrapf(err, "loading experiment %v", id)
+		return nil, err
 	}
+
 	if _, ok := model.TerminalStates[dbExp.State]; !ok {
 		return nil, errors.Errorf("cannot archive experiment %v in non terminate state %v",
 			id, dbExp.State)
 	}
-
 	if dbExp.Archived {
 		return &apiv1.ArchiveExperimentResponse{}, nil
 	}
@@ -652,16 +642,17 @@ func (a *apiServer) ArchiveExperiment(
 	}
 }
 
-// easy
+// TODO test
 func (a *apiServer) UnarchiveExperiment(
 	ctx context.Context, req *apiv1.UnarchiveExperimentRequest,
 ) (*apiv1.UnarchiveExperimentResponse, error) {
 	id := int(req.Id)
-
-	dbExp, err := a.m.db.ExperimentWithoutConfigByID(id)
+	dbExp, _, err := a.getExperimentAndCheckCanDoActions(ctx, id, false,
+		expauth.AuthZProvider.Get().CanUnarchiveExperiment)
 	if err != nil {
-		return nil, errors.Wrapf(err, "loading experiment %v", id)
+		return nil, err
 	}
+
 	if _, ok := model.TerminalStates[dbExp.State]; !ok {
 		return nil, errors.Errorf("cannot unarchive experiment %v in non terminate state %v",
 			id, dbExp.State)
@@ -681,20 +672,26 @@ func (a *apiServer) UnarchiveExperiment(
 	}
 }
 
-// TODO toproto
+// TODO test
 func (a *apiServer) PatchExperiment(
 	ctx context.Context, req *apiv1.PatchExperimentRequest,
 ) (*apiv1.PatchExperimentResponse, error) {
-	var exp experimentv1.Experiment
-	switch err := a.m.db.QueryProto("get_experiment", &exp, req.Experiment.Id); {
-	case err == db.ErrNotFound:
-		return nil, status.Errorf(codes.NotFound, "experiment not found: %d", req.Experiment.Id)
-	case err != nil:
-		return nil, errors.Wrapf(err, "error fetching experiment from database: %d", req.Experiment.Id)
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, err
 	}
+	exp, err := a.getExperiment(*curUser, int(req.Experiment.Id))
+	if err != nil {
+		return nil, err
+	}
+	modelExp := model.ExperimentFromProto(exp)
 
 	madeChanges := false
 	if req.Experiment.Name != nil && exp.Name != req.Experiment.Name.Value {
+		if err = expauth.AuthZProvider.Get().CanSetExperimentsName(*curUser, modelExp); err != nil {
+			return nil, err
+		}
+
 		madeChanges = true
 		if len(strings.TrimSpace(req.Experiment.Name.Value)) == 0 {
 			return nil, status.Errorf(codes.InvalidArgument,
@@ -704,16 +701,28 @@ func (a *apiServer) PatchExperiment(
 	}
 
 	if req.Experiment.Notes != nil && exp.Notes != req.Experiment.Notes.Value {
+		if err = expauth.AuthZProvider.Get().CanSetExperimentsNotes(*curUser, modelExp); err != nil {
+			return nil, err
+		}
+
 		madeChanges = true
 		exp.Notes = req.Experiment.Notes.Value
 	}
 
 	if req.Experiment.Description != nil && exp.Description != req.Experiment.Description.Value {
+		if err = expauth.AuthZProvider.Get().
+			CanSetExperimentsDescription(*curUser, modelExp); err != nil {
+			return nil, err
+		}
 		madeChanges = true
 		exp.Description = req.Experiment.Description.Value
 	}
 
 	if req.Experiment.Labels != nil {
+		if err = expauth.AuthZProvider.Get().CanSetExperimentsLabels(*curUser, modelExp); err != nil {
+			return nil, err
+		}
+
 		var reqLabelList []string
 		for _, el := range req.Experiment.Labels.Values {
 			if _, ok := el.GetKind().(*structpb.Value_StringValue); ok {
@@ -752,7 +761,7 @@ func (a *apiServer) PatchExperiment(
 		}
 	}
 
-	return &apiv1.PatchExperimentResponse{Experiment: &exp}, nil
+	return &apiv1.PatchExperimentResponse{Experiment: exp}, nil
 }
 
 // hmmm

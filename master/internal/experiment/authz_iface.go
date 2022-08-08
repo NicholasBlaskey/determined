@@ -26,6 +26,27 @@ type ExperimentAuthZ interface {
 
 	// POST /api/v1/preview-hp-search
 	CanPreviewHPSearch(curUser model.User) error
+
+	// POST /api/v1/experiments/:exp_id/activate
+	CanActivateExperiment(curUser model.User, e *model.Experiment) error
+
+	// POST /api/v1/experiments/:exp_id/pause
+	CanPauseExperiment(curUser model.User, e *model.Experiment) error
+	// POST /api/v1/experiments/:exp_id/cancel
+	CanCancelExperiment(curUser model.User, e *model.Experiment) error
+	// POST /api/v1/experiments/:exp_id/kill
+	CanKillExperiment(curUser model.User, e *model.Experiment) error
+
+	// POST /api/v1/experiments/:exp_id/archive
+	CanArchiveExperiment(curUser model.User, e *model.Experiment) error
+	// POST /api/v1/experiments/:exp_id/unarchive
+	CanUnarchiveExperiment(curUser model.User, e *model.Experiment) error
+
+	// PATCH /api/v1/experiments/:exp_id/
+	CanSetExperimentsName(curUser model.User, e *model.Experiment) error
+	CanSetExperimentsNotes(curUser model.User, e *model.Experiment) error
+	CanSetExperimentsDescription(curUser model.User, e *model.Experiment) error
+	CanSetExperimentsLabels(curUser model.User, e *model.Experiment) error
 }
 
 // AuthZProvider is the authz registry for experiments.
