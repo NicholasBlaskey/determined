@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 )
 
 // ExperimentAuthZBasic is basic OSS controls.
@@ -86,6 +87,12 @@ func (a *ExperimentAuthZBasic) CanSetExperimentsLabels(
 	curUser model.User, e *model.Experiment,
 ) error {
 	return nil
+}
+
+func (a *ExperimentAuthZBasic) FilterCheckpoints(
+	curUser model.User, e *model.Experiment, checkpoints []*checkpointv1.Checkpoint,
+) ([]*checkpointv1.Checkpoint, error) {
+	return checkpoints, nil
 }
 
 func init() {
