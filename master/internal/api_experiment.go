@@ -764,30 +764,26 @@ func (a *apiServer) PatchExperiment(
 	return &apiv1.PatchExperimentResponse{Experiment: exp}, nil
 }
 
-// hmmm
+// TODO proto check
+// TODO test
 func (a *apiServer) GetExperimentCheckpoints(
 	ctx context.Context, req *apiv1.GetExperimentCheckpointsRequest,
 ) (*apiv1.GetExperimentCheckpointsResponse, error) {
-	ok, err := a.m.db.CheckExperimentExists(int(req.Id))
-	switch {
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to check if experiment exists: %s", err)
-	case !ok:
-		return nil, status.Errorf(codes.NotFound, "experiment %d not found", req.Id)
+	// TODO don't feel great about this condition here?
+	// Is it over optimizing to only load config here?
+	useSearcherSortBy := req.SortBy == apiv1.GetExperimentCheckpointsRequest_SORT_BY_SEARCHER_METRIC
+	exp, curUser, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), useSearcherSortBy)
+	if err != nil {
+		return nil, err
 	}
 
 	// Override the order by for searcher metric.
-	if req.SortBy == apiv1.GetExperimentCheckpointsRequest_SORT_BY_SEARCHER_METRIC {
+	if useSearcherSortBy {
 		if req.OrderBy != apiv1.OrderBy_ORDER_BY_UNSPECIFIED {
 			return nil, status.Error(
 				codes.InvalidArgument,
 				"cannot specify order by which is implied with sort by searcher metric",
 			)
-		}
-
-		exp, err := a.m.db.ExperimentByID(int(req.Id))
-		if err != nil {
-			return nil, fmt.Errorf("scanning for experiment: %w", err)
 		}
 
 		if exp.Config.Searcher().SmallerIsBetter() {
@@ -858,6 +854,10 @@ func (a *apiServer) GetExperimentCheckpoints(
 		}
 	})
 
+	if resp.Checkpoints, err = expauth.AuthZProvider.Get().
+		FilterCheckpoints(curUser, exp, resp.Checkpoints); err != nil {
+		return nil, err
+	}
 	return resp, a.paginate(&resp.Pagination, &resp.Checkpoints, req.Offset, req.Limit)
 }
 

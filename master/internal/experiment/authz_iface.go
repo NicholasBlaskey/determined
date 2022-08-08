@@ -3,6 +3,7 @@ package user
 import (
 	"github.com/determined-ai/determined/master/internal/authz"
 	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 )
 
 // ExperimentAuthZ describes authz methods for experiments.
@@ -47,6 +48,11 @@ type ExperimentAuthZ interface {
 	CanSetExperimentsNotes(curUser model.User, e *model.Experiment) error
 	CanSetExperimentsDescription(curUser model.User, e *model.Experiment) error
 	CanSetExperimentsLabels(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/checkpoints
+	FilterCheckpoints(
+		curUser model.User, e *model.Experiment, checkpoints []*checkpointv1.Checkpoint,
+	) ([]*checkpointv1.Checkpoint, error)
 }
 
 // AuthZProvider is the authz registry for experiments.
