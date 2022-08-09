@@ -4,6 +4,7 @@ import (
 	"github.com/determined-ai/determined/master/internal/authz"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
+	"github.com/determined-ai/determined/proto/pkg/projectv1"
 )
 
 // ExperimentAuthZ describes authz methods for experiments.
@@ -59,14 +60,32 @@ type ExperimentAuthZ interface {
 	CanCreateExperiment(curUser model.User, e *model.Experiment) error
 	CanForkFromExperiment(curUser model.User, e *model.Experiment) error
 
+	// GET /api/v1/experiments/:exp_id/metrics-stream/metric-names
+	CanGetMetricNames(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/metrics-stream/batches
+	CanGetMetricBatches(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/metrics-stream/trials-snapshot
+	CanGetTrialsSnapshot(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/metrics-stream/trials-sample
+	CanGetTrialsSample(curUser model.User, e *model.Experiment) error
+
 	// POST /api/v1/experiments/:exp_id/hyperparameter-importance
 	CanComputeHPImportance(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/{experimentId}/hyperparameter-importance
+	CanGetHPImportance(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/searcher/best_searcher_validation_metric
 	CanGetBestSearcherValidationMetric(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/model_def
 	CanGetModelDef(curUser model.User, e *model.Experiment) error
+
+	// POST /api/v1/experiments/:exp_id/move
+	CanMoveExperiment(curUser model.User, from, to *projectv1.Project, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/file_tree
 	CanGetModelDefTree(curUser model.User, e *model.Experiment) error
