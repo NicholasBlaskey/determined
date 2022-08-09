@@ -95,6 +95,39 @@ func (a *ExperimentAuthZBasic) FilterCheckpoints(
 	return checkpoints, nil
 }
 
+func (a *ExperimentAuthZBasic) CanCreateExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanForkFromExperiment(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanComputeHPImportance(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetBestSearcherValidationMetric(
+	curUser model.User, e *model.Experiment,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetModelDef(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+//
+
+// Do we need to filter the tree?!
+func (a *ExperimentAuthZBasic) CanGetModelDefTree(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetModelDefFile(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
 func init() {
 	AuthZProvider.Register("basic", &ExperimentAuthZBasic{})
 }

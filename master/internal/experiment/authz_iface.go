@@ -29,6 +29,7 @@ type ExperimentAuthZ interface {
 	CanPreviewHPSearch(curUser model.User) error
 
 	// POST /api/v1/experiments/:exp_id/activate
+	// POST /api/v1/experiments
 	CanActivateExperiment(curUser model.User, e *model.Experiment) error
 
 	// POST /api/v1/experiments/:exp_id/pause
@@ -53,6 +54,25 @@ type ExperimentAuthZ interface {
 	FilterCheckpoints(
 		curUser model.User, e *model.Experiment, checkpoints []*checkpointv1.Checkpoint,
 	) ([]*checkpointv1.Checkpoint, error)
+
+	// POST /api/v1/experiments
+	CanCreateExperiment(curUser model.User, e *model.Experiment) error
+	CanForkFromExperiment(curUser model.User, e *model.Experiment) error
+
+	// POST /api/v1/experiments/:exp_id/hyperparameter-importance
+	CanComputeHPImportance(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/searcher/best_searcher_validation_metric
+	CanGetBestSearcherValidationMetric(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/model_def
+	CanGetModelDef(curUser model.User, e *model.Experiment) error
+
+	// GET /api/v1/experiments/:exp_id/file_tree
+	CanGetModelDefTree(curUser model.User, e *model.Experiment) error
+
+	// POST /api/v1/experiments/{experimentId}/file
+	CanGetModelDefFile(curUser model.User, e *model.Experiment) error
 }
 
 // AuthZProvider is the authz registry for experiments.
