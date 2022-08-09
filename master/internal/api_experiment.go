@@ -861,9 +861,16 @@ func (a *apiServer) GetExperimentCheckpoints(
 	return resp, a.paginate(&resp.Pagination, &resp.Checkpoints, req.Offset, req.Limit)
 }
 
+// TODO test
+// TODO project exp leak!
 func (a *apiServer) CreateExperiment(
 	ctx context.Context, req *apiv1.CreateExperimentRequest,
 ) (*apiv1.CreateExperimentResponse, error) {
+	user, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
+	}
+
 	detParams := CreateExperimentParams{
 		ConfigBytes:  req.Config,
 		ModelDef:     filesToArchive(req.ModelDefinition),
@@ -873,10 +880,18 @@ func (a *apiServer) CreateExperiment(
 		parentID := int(req.ParentId)
 		detParams.ParentID = &parentID
 		parentExp := &experimentv1.Experiment{}
-		err := a.m.db.QueryProto("get_experiment", parentExp, req.ParentId)
-		if err != nil {
+		if err := a.m.db.QueryProto(
+			"get_experiment", parentExp, req.ParentId); errors.Is(err, db.ErrNotFound) {
+			return nil, err
+		} else if err != nil {
 			return nil, status.Errorf(codes.Internal, "error retrieving parent experiment: %s", err)
 		}
+
+		if err = expauth.AuthZProvider.Get().
+			CanForkFromExperiment(*user, model.ExperimentFromProto(parentExp)); err != nil {
+			return nil, err
+		}
+
 		if parentExp.Archived {
 			return nil, status.Errorf(codes.Internal, "forking an archived experiment")
 		}
@@ -885,19 +900,20 @@ func (a *apiServer) CreateExperiment(
 				"forking an experiment in an archived workspace/project")
 		}
 	}
+	// TODO validate project experiment! OR we can just pass project into canCreateExperiment.!
+	// I kinda like this since we avoid lazying having to do it. But we still get info leakage.
 	if req.ProjectId > 1 {
 		projectID := int(req.ProjectId)
 		detParams.ProjectID = &projectID
 	}
 
-	user, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
-	}
-
 	dbExp, validateOnly, taskSpec, err := a.m.parseCreateExperiment(&detParams, user)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid experiment: %s", err)
+	}
+
+	if err := expauth.AuthZProvider.Get().CanCreateExperiment(*user, dbExp); err != nil {
+		return nil, err // TODO grpc error
 	}
 
 	if validateOnly {
@@ -911,6 +927,11 @@ func (a *apiServer) CreateExperiment(
 	a.m.system.ActorOf(experimentsAddr.Child(e.ID), e)
 
 	if req.Activate {
+		// TODO race condition here?
+		if err = expauth.AuthZProvider.Get().CanActivateExperiment(*user, dbExp); err != nil {
+			return nil, err
+		}
+
 		_, err = a.ActivateExperiment(ctx, &apiv1.ActivateExperimentRequest{Id: int32(e.ID)})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
@@ -928,6 +949,7 @@ func (a *apiServer) CreateExperiment(
 
 var defaultMetricsStreamPeriod = 30 * time.Second
 
+// WHAT?
 func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	resp apiv1.Determined_MetricNamesServer,
 ) error {
@@ -999,6 +1021,7 @@ func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	}
 }
 
+// WHAT?
 func (a *apiServer) ExpCompareMetricNames(req *apiv1.ExpCompareMetricNamesRequest,
 	resp apiv1.Determined_ExpCompareMetricNamesServer,
 ) error {
@@ -1054,6 +1077,7 @@ func (a *apiServer) ExpCompareMetricNames(req *apiv1.ExpCompareMetricNamesReques
 	}
 }
 
+// What?!
 func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	resp apiv1.Determined_MetricBatchesServer,
 ) error {
@@ -1126,6 +1150,7 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	}
 }
 
+// What?!
 func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	resp apiv1.Determined_TrialsSnapshotServer,
 ) error {
@@ -1361,6 +1386,7 @@ func (a *apiServer) expCompareFetchTrialSample(trialID int32, metricName string,
 	return &trial, nil
 }
 
+// What?!
 func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	resp apiv1.Determined_TrialsSampleServer,
 ) error {
@@ -1468,6 +1494,7 @@ func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	}
 }
 
+// What?!
 func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequest,
 	resp apiv1.Determined_ExpCompareTrialsSampleServer,
 ) error {
@@ -1565,13 +1592,16 @@ func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequ
 	}
 }
 
+// TODO test
 func (a *apiServer) ComputeHPImportance(ctx context.Context,
 	req *apiv1.ComputeHPImportanceRequest,
 ) (*apiv1.ComputeHPImportanceResponse, error) {
 	experimentID := int(req.ExperimentId)
-	if err := a.checkExperimentExists(experimentID); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, experimentID, false,
+		expauth.AuthZProvider.Get().CanComputeHPImportance); err != nil {
 		return nil, err
 	}
+
 	metricName := req.MetricName
 	if metricName == "" {
 		return nil, status.Error(codes.InvalidArgument, "must specify a metric name")
@@ -1610,6 +1640,7 @@ func protoMetricHPI(metricHpi model.MetricHPImportance,
 	}
 }
 
+// what?!
 func (a *apiServer) GetHPImportance(req *apiv1.GetHPImportanceRequest,
 	resp apiv1.Determined_GetHPImportanceServer,
 ) error {
@@ -1677,10 +1708,12 @@ func (a *apiServer) GetHPImportance(req *apiv1.GetHPImportanceRequest,
 	}
 }
 
+// TODO test
 func (a *apiServer) GetBestSearcherValidationMetric(
-	_ context.Context, req *apiv1.GetBestSearcherValidationMetricRequest,
+	ctx context.Context, req *apiv1.GetBestSearcherValidationMetricRequest,
 ) (*apiv1.GetBestSearcherValidationMetricResponse, error) {
-	if err := a.checkExperimentExists(int(req.ExperimentId)); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false,
+		expauth.AuthZProvider.Get().CanGetBestSearcherValidationMetric); err != nil {
 		return nil, err
 	}
 
@@ -1697,9 +1730,15 @@ func (a *apiServer) GetBestSearcherValidationMetric(
 	}, nil
 }
 
+// TODO test
 func (a *apiServer) GetModelDef(
-	_ context.Context, req *apiv1.GetModelDefRequest,
+	ctx context.Context, req *apiv1.GetModelDefRequest,
 ) (*apiv1.GetModelDefResponse, error) {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false,
+		expauth.AuthZProvider.Get().CanGetModelDef); err != nil {
+		return nil, err
+	}
+
 	tgz, err := a.m.db.ExperimentModelDefinitionRaw(int(req.ExperimentId))
 	if err != nil {
 		return nil, errors.Wrapf(err,
@@ -1711,6 +1750,7 @@ func (a *apiServer) GetModelDef(
 	return &apiv1.GetModelDefResponse{B64Tgz: b64Tgz}, nil
 }
 
+// TODO? ===
 func (a *apiServer) MoveExperiment(
 	_ context.Context, req *apiv1.MoveExperimentRequest,
 ) (*apiv1.MoveExperimentResponse, error) {
@@ -1736,9 +1776,15 @@ func (a *apiServer) MoveExperiment(
 		errors.Wrapf(err, "error moving experiment (%d)", req.ExperimentId)
 }
 
+// TODO?
 func (a *apiServer) GetModelDefTree(
-	_ context.Context, req *apiv1.GetModelDefTreeRequest,
+	ctx context.Context, req *apiv1.GetModelDefTreeRequest,
 ) (*apiv1.GetModelDefTreeResponse, error) {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false,
+		expauth.AuthZProvider.Get().CanGetModelDefTree); err != nil {
+		return nil, err
+	}
+
 	modelDefCache := GetModelDefCache()
 	fileTree, err := modelDefCache.FileTreeNested(int(req.ExperimentId))
 	if err != nil {
@@ -1747,9 +1793,15 @@ func (a *apiServer) GetModelDefTree(
 	return &apiv1.GetModelDefTreeResponse{Files: fileTree}, nil
 }
 
+// TODO?
 func (a *apiServer) GetModelDefFile(
-	_ context.Context, req *apiv1.GetModelDefFileRequest,
+	ctx context.Context, req *apiv1.GetModelDefFileRequest,
 ) (*apiv1.GetModelDefFileResponse, error) {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false,
+		expauth.AuthZProvider.Get().CanGetModelDefFile); err != nil {
+		return nil, err
+	}
+
 	modelDefCache := GetModelDefCache()
 	file, err := modelDefCache.FileContent(int(req.ExperimentId), req.Path)
 	if err != nil {
