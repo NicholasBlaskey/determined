@@ -47,6 +47,7 @@ import (
 
 var experimentsAddr = actor.Addr("experiments")
 
+/*
 // TODO?
 func (a *apiServer) checkExperimentExists(id int) error {
 	ok, err := a.m.db.CheckExperimentExists(id)
@@ -59,6 +60,7 @@ func (a *apiServer) checkExperimentExists(id int) error {
 		return nil
 	}
 }
+*/
 
 // TODO test... (also not copying config or a lot of fields right now)
 // THINK IT is relatively fine for now?
@@ -390,8 +392,9 @@ func (a *apiServer) GetExperiments(
 	return resp, nil
 }
 
-// TODO this is hard.
-func (a *apiServer) GetExperimentLabels(_ context.Context,
+// TODO test
+// TODO is this performant enough?
+func (a *apiServer) GetExperimentLabels(ctx context.Context,
 	req *apiv1.GetExperimentLabelsRequest,
 ) (*apiv1.GetExperimentLabelsResponse, error) {
 	/*
@@ -401,16 +404,43 @@ func (a *apiServer) GetExperimentLabels(_ context.Context,
 		}
 	*/
 	// So we could get the list of experiments??? But that doesn't scale...
+	/*
+		resp := &apiv1.GetExperimentLabelsResponse{}
+		var err error
+		labelUsage, err := a.m.db.ExperimentLabelUsage(req.ProjectId)
+		if err != nil {
+			return nil, err
+		}
 
-	resp := &apiv1.GetExperimentLabelsResponse{}
-	var err error
-	labelUsage, err := a.m.db.ExperimentLabelUsage(req.ProjectId)
+		// Convert the label usage map into a sorted list of labels
+		// May add other sorting / pagination options later if needed
+		labels := make([]string, len(labelUsage))
+		i := 0
+		for label := range labelUsage {
+			labels[i] = label
+			i++
+		}
+		sort.Slice(labels, func(i, j int) bool {
+			return labelUsage[labels[i]] > labelUsage[labels[j]]
+		})
+		resp.Labels = labels
+
+		return resp, nil
+	*/
+
+	// TODO is this performant enough?
+	r, err := a.GetExperiments(ctx, &apiv1.GetExperimentsRequest{Limit: -1, ProjectId: req.ProjectId})
 	if err != nil {
 		return nil, err
 	}
+	labelUsage := make(map[string]int)
+	for _, e := range r.Experiments {
+		for _, l := range e.Labels {
+			labelUsage[l]++
+		}
+	}
 
-	// Convert the label usage map into a sorted list of labels
-	// May add other sorting / pagination options later if needed
+	// Return labels.
 	labels := make([]string, len(labelUsage))
 	i := 0
 	for label := range labelUsage {
@@ -420,9 +450,8 @@ func (a *apiServer) GetExperimentLabels(_ context.Context,
 	sort.Slice(labels, func(i, j int) bool {
 		return labelUsage[labels[i]] > labelUsage[labels[j]]
 	})
-	resp.Labels = labels
 
-	return resp, nil
+	return &apiv1.GetExperimentLabelsResponse{Labels: labels}, nil
 }
 
 // TODO test
@@ -949,14 +978,17 @@ func (a *apiServer) CreateExperiment(
 
 var defaultMetricsStreamPeriod = 30 * time.Second
 
-// WHAT?
+// TODO test
+// TODO hard to test
 func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	resp apiv1.Determined_MetricNamesServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if err := a.checkExperimentExists(experimentID); err != nil {
-		return err
+	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+		expauth.AuthZProvider.Get().CanGetMetricNames); err != nil {
+		return err // TODO
 	}
+
 	period := time.Duration(req.PeriodSeconds) * time.Second
 	if period == 0 {
 		period = defaultMetricsStreamPeriod
@@ -1021,7 +1053,8 @@ func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	}
 }
 
-// WHAT?
+// what
+// TODO this is thinking in trial IDs so do we wanna just handle this in API trials?
 func (a *apiServer) ExpCompareMetricNames(req *apiv1.ExpCompareMetricNamesRequest,
 	resp apiv1.Determined_ExpCompareMetricNamesServer,
 ) error {
@@ -1077,14 +1110,17 @@ func (a *apiServer) ExpCompareMetricNames(req *apiv1.ExpCompareMetricNamesReques
 	}
 }
 
-// What?!
+// TODO test
+// TODO hard to test
 func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	resp apiv1.Determined_MetricBatchesServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if err := a.checkExperimentExists(experimentID); err != nil {
-		return err
+	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+		expauth.AuthZProvider.Get().CanGetMetricBatches); err != nil {
+		return err // TODO
 	}
+
 	metricName := req.MetricName
 	if metricName == "" {
 		return status.Error(codes.InvalidArgument, "must specify a metric name")
@@ -1150,14 +1186,17 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	}
 }
 
-// What?!
+// TODO test
+// TODO hard to test
 func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	resp apiv1.Determined_TrialsSnapshotServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if err := a.checkExperimentExists(experimentID); err != nil {
-		return err
+	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+		expauth.AuthZProvider.Get().CanGetTrialsSnapshot); err != nil {
+		return err // TODO
 	}
+
 	metricName := req.MetricName
 	if metricName == "" {
 		return status.Error(codes.InvalidArgument, "must specify a metric name")
@@ -1233,6 +1272,7 @@ func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	}
 }
 
+// ?
 func (a *apiServer) topTrials(experimentID int, maxTrials int, s expconf.SearcherConfig) (
 	trials []int32, err error,
 ) {
@@ -1274,6 +1314,7 @@ func (a *apiServer) topTrials(experimentID int, maxTrials int, s expconf.Searche
 	}
 }
 
+// ?
 func (a *apiServer) fetchTrialSample(trialID int32, metricName string, metricType apiv1.MetricType,
 	maxDatapoints int, startBatches int, endBatches int, currentTrials map[int32]bool,
 	trialCursors map[int32]time.Time,
@@ -1329,6 +1370,7 @@ func (a *apiServer) fetchTrialSample(trialID int32, metricName string, metricTyp
 	return &trial, nil
 }
 
+// ?
 func (a *apiServer) expCompareFetchTrialSample(trialID int32, metricName string,
 	metricType apiv1.MetricType, maxDatapoints int, startBatches int, endBatches int,
 	currentTrials map[int32]bool,
@@ -1386,14 +1428,17 @@ func (a *apiServer) expCompareFetchTrialSample(trialID int32, metricName string,
 	return &trial, nil
 }
 
-// What?!
+// TODO test
+// TODO hard to test
 func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	resp apiv1.Determined_TrialsSampleServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if err := a.checkExperimentExists(experimentID); err != nil {
-		return err
+	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+		expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
+		return err // TODO
 	}
+
 	maxTrials := int(req.MaxTrials)
 	if maxTrials == 0 {
 		maxTrials = 25
@@ -1494,11 +1539,21 @@ func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	}
 }
 
-// What?!
+// TODO test
+// TODO hard to test
+// TODO optimize
 func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequest,
 	resp apiv1.Determined_ExpCompareTrialsSampleServer,
 ) error {
 	experimentIDs := req.ExperimentIds
+	for _, expID := range experimentIDs {
+		// TODO optimize out calling getUser over and over again!?
+		if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), int(expID), false,
+			expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
+			return err // TODO
+		}
+	}
+
 	maxTrials := int(req.MaxTrials)
 	if maxTrials == 0 {
 		maxTrials = 25
@@ -1640,12 +1695,14 @@ func protoMetricHPI(metricHpi model.MetricHPImportance,
 	}
 }
 
-// what?!
+// TODO test
+// TODO hard to test
 func (a *apiServer) GetHPImportance(req *apiv1.GetHPImportanceRequest,
 	resp apiv1.Determined_GetHPImportanceServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if err := a.checkExperimentExists(experimentID); err != nil {
+	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+		expauth.AuthZProvider.Get().CanGetHPImportance); err != nil {
 		return err
 	}
 
@@ -1750,15 +1807,28 @@ func (a *apiServer) GetModelDef(
 	return &apiv1.GetModelDefResponse{B64Tgz: b64Tgz}, nil
 }
 
-// TODO? ===
+// TODO rebase onto master since GetProjectByID will need a user now!
+// TODO test
 func (a *apiServer) MoveExperiment(
-	_ context.Context, req *apiv1.MoveExperimentRequest,
+	ctx context.Context, req *apiv1.MoveExperimentRequest,
 ) (*apiv1.MoveExperimentResponse, error) {
-	p, err := a.GetProjectByID(req.DestinationProjectId)
+	e, curUser, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.ExperimentId), false)
 	if err != nil {
 		return nil, err
 	}
-	if p.Archived {
+	from, err := a.GetProjectByID(int32(e.ProjectID))
+	if err != nil {
+		return nil, err
+	}
+	to, err := a.GetProjectByID(req.DestinationProjectId)
+	if err != nil {
+		return nil, err
+	}
+	if err = expauth.AuthZProvider.Get().CanMoveExperiment(curUser, from, to, e); err != nil {
+		return nil, err
+	}
+
+	if to.Archived {
 		return nil, errors.Errorf("project (%v) is archived and cannot add new experiments.",
 			req.DestinationProjectId)
 	}

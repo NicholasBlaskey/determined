@@ -5,6 +5,7 @@ import (
 
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
+	"github.com/determined-ai/determined/proto/pkg/projectv1"
 )
 
 // ExperimentAuthZBasic is basic OSS controls.
@@ -103,7 +104,29 @@ func (a *ExperimentAuthZBasic) CanForkFromExperiment(curUser model.User, e *mode
 	return nil
 }
 
+func (a *ExperimentAuthZBasic) CanGetMetricNames(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+// ?
+
+func (a *ExperimentAuthZBasic) CanGetMetricBatches(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetTrialsSnapshot(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetTrialsSample(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
 func (a *ExperimentAuthZBasic) CanComputeHPImportance(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetHPImportance(curUser model.User, e *model.Experiment) error {
 	return nil
 }
 
@@ -117,7 +140,11 @@ func (a *ExperimentAuthZBasic) CanGetModelDef(curUser model.User, e *model.Exper
 	return nil
 }
 
-//
+func (a *ExperimentAuthZBasic) CanMoveExperiment(
+	curUser model.User, from, to *projectv1.Project, e *model.Experiment,
+) error {
+	return nil
+}
 
 // Do we need to filter the tree?!
 func (a *ExperimentAuthZBasic) CanGetModelDefTree(curUser model.User, e *model.Experiment) error {
