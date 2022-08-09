@@ -1780,7 +1780,7 @@ func (a *apiServer) MoveExperiment(
 		errors.Wrapf(err, "error moving experiment (%d)", req.ExperimentId)
 }
 
-// TODO?
+// TODO test
 func (a *apiServer) GetModelDefTree(
 	ctx context.Context, req *apiv1.GetModelDefTreeRequest,
 ) (*apiv1.GetModelDefTreeResponse, error) {
@@ -1797,7 +1797,7 @@ func (a *apiServer) GetModelDefTree(
 	return &apiv1.GetModelDefTreeResponse{Files: fileTree}, nil
 }
 
-// TODO?
+// TODO test
 func (a *apiServer) GetModelDefFile(
 	ctx context.Context, req *apiv1.GetModelDefFileRequest,
 ) (*apiv1.GetModelDefFileResponse, error) {
