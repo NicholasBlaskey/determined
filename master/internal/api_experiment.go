@@ -679,7 +679,6 @@ func (a *apiServer) UnarchiveExperiment(
 	}
 }
 
-// TODO test
 func (a *apiServer) PatchExperiment(
 	ctx context.Context, req *apiv1.PatchExperimentRequest,
 ) (*apiv1.PatchExperimentResponse, error) {
@@ -696,7 +695,7 @@ func (a *apiServer) PatchExperiment(
 	madeChanges := false
 	if req.Experiment.Name != nil && exp.Name != req.Experiment.Name.Value {
 		if err = expauth.AuthZProvider.Get().CanSetExperimentsName(*curUser, modelExp); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 
 		madeChanges = true
@@ -709,7 +708,7 @@ func (a *apiServer) PatchExperiment(
 
 	if req.Experiment.Notes != nil && exp.Notes != req.Experiment.Notes.Value {
 		if err = expauth.AuthZProvider.Get().CanSetExperimentsNotes(*curUser, modelExp); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 
 		madeChanges = true
@@ -719,7 +718,7 @@ func (a *apiServer) PatchExperiment(
 	if req.Experiment.Description != nil && exp.Description != req.Experiment.Description.Value {
 		if err = expauth.AuthZProvider.Get().
 			CanSetExperimentsDescription(*curUser, modelExp); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 		madeChanges = true
 		exp.Description = req.Experiment.Description.Value
@@ -727,7 +726,7 @@ func (a *apiServer) PatchExperiment(
 
 	if req.Experiment.Labels != nil {
 		if err = expauth.AuthZProvider.Get().CanSetExperimentsLabels(*curUser, modelExp); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 
 		var reqLabelList []string
@@ -956,15 +955,13 @@ func (a *apiServer) CreateExperiment(
 
 var defaultMetricsStreamPeriod = 30 * time.Second
 
-// TODO test
-// TODO hard to test
 func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	resp apiv1.Determined_MetricNamesServer,
 ) error {
 	experimentID := int(req.ExperimentId)
 	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
 		expauth.AuthZProvider.Get().CanGetMetricNames); err != nil {
-		return err // TODO
+		return err
 	}
 
 	period := time.Duration(req.PeriodSeconds) * time.Second
@@ -1088,8 +1085,6 @@ func (a *apiServer) ExpCompareMetricNames(req *apiv1.ExpCompareMetricNamesReques
 	}
 }
 
-// TODO test
-// TODO hard to test
 func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	resp apiv1.Determined_MetricBatchesServer,
 ) error {
@@ -1164,15 +1159,13 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	}
 }
 
-// TODO test
-// TODO hard to test
 func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	resp apiv1.Determined_TrialsSnapshotServer,
 ) error {
 	experimentID := int(req.ExperimentId)
 	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
 		expauth.AuthZProvider.Get().CanGetTrialsSnapshot); err != nil {
-		return err // TODO
+		return err
 	}
 
 	metricName := req.MetricName
@@ -1406,15 +1399,13 @@ func (a *apiServer) expCompareFetchTrialSample(trialID int32, metricName string,
 	return &trial, nil
 }
 
-// TODO test
-// TODO hard to test
 func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	resp apiv1.Determined_TrialsSampleServer,
 ) error {
 	experimentID := int(req.ExperimentId)
 	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
 		expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
-		return err // TODO
+		return err
 	}
 
 	maxTrials := int(req.MaxTrials)
@@ -1672,8 +1663,6 @@ func protoMetricHPI(metricHpi model.MetricHPImportance,
 	}
 }
 
-// TODO test
-// TODO hard to test
 func (a *apiServer) GetHPImportance(req *apiv1.GetHPImportanceRequest,
 	resp apiv1.Determined_GetHPImportanceServer,
 ) error {
@@ -1821,7 +1810,6 @@ func (a *apiServer) MoveExperiment(
 		errors.Wrapf(err, "error moving experiment (%d)", req.ExperimentId)
 }
 
-// TODO test
 func (a *apiServer) GetModelDefTree(
 	ctx context.Context, req *apiv1.GetModelDefTreeRequest,
 ) (*apiv1.GetModelDefTreeResponse, error) {
@@ -1838,7 +1826,6 @@ func (a *apiServer) GetModelDefTree(
 	return &apiv1.GetModelDefTreeResponse{Files: fileTree}, nil
 }
 
-// TODO test
 func (a *apiServer) GetModelDefFile(
 	ctx context.Context, req *apiv1.GetModelDefFileRequest,
 ) (*apiv1.GetModelDefFileResponse, error) {

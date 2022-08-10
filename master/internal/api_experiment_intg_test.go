@@ -14,9 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	//"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	//"google.golang.org/protobuf/types/known/wrapperspb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	//"github.com/determined-ai/determined/master/internal/config"
 	//"github.com/determined-ai/determined/master/internal/db"
@@ -27,8 +30,20 @@ import (
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
-	//"github.com/determined-ai/determined/proto/pkg/userv1"
+	"github.com/determined-ai/determined/proto/pkg/experimentv1"
 )
+
+type mockStream[T any] struct {
+	ctx context.Context
+}
+
+func (m mockStream[T]) Send(resp T) error             { return nil }
+func (m mockStream[T]) SetHeader(metadata.MD) error   { return nil }
+func (m mockStream[T]) SendHeader(metadata.MD) error  { return nil }
+func (m mockStream[T]) SetTrailer(metadata.MD)        {}
+func (m mockStream[T]) Context() context.Context      { return m.ctx }
+func (m mockStream[T]) SendMsg(mes interface{}) error { return nil }
+func (m mockStream[T]) RecvMsg(mes interface{}) error { return nil }
 
 func expNotFoundError(expID int) error {
 	return status.Errorf(codes.NotFound, "experiment not found: %d", expID)
@@ -156,12 +171,74 @@ func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
 			})
 			return err
 		}},
-		// TODO do patch experiments!
+		{"CanSetExperimentsName", func(id int) error {
+			_, err := api.PatchExperiment(ctx, &apiv1.PatchExperimentRequest{
+				Experiment: &experimentv1.PatchExperiment{
+					Id:   int32(id),
+					Name: wrapperspb.String("toname"),
+				},
+			})
+			return err
+		}},
+		{"CanSetExperimentsNotes", func(id int) error {
+			_, err := api.PatchExperiment(ctx, &apiv1.PatchExperimentRequest{
+				Experiment: &experimentv1.PatchExperiment{
+					Id:    int32(id),
+					Notes: wrapperspb.String("tonotes"),
+				},
+			})
+			return err
+		}},
+		{"CanSetExperimentsDescription", func(id int) error {
+			_, err := api.PatchExperiment(ctx, &apiv1.PatchExperimentRequest{
+				Experiment: &experimentv1.PatchExperiment{
+					Id:          int32(id),
+					Description: wrapperspb.String("todesc"),
+				},
+			})
+			return err
+		}},
+		{"CanSetExperimentsLabels", func(id int) error {
+			l, err := structpb.NewList([]any{"l1", "l2"})
+			require.NoError(t, err)
+			_, err = api.PatchExperiment(ctx, &apiv1.PatchExperimentRequest{
+				Experiment: &experimentv1.PatchExperiment{
+					Id:     int32(id),
+					Labels: l,
+				},
+			})
+			return err
+		}},
+		{"CanGetMetricNames", func(id int) error {
+			return api.MetricNames(&apiv1.MetricNamesRequest{
+				ExperimentId: int32(id),
+			}, mockStream[*apiv1.MetricNamesResponse]{ctx})
+		}},
+		{"CanGetMetricBatches", func(id int) error {
+			return api.MetricBatches(&apiv1.MetricBatchesRequest{
+				ExperimentId: int32(id),
+			}, mockStream[*apiv1.MetricBatchesResponse]{ctx})
+		}},
+		{"CanGetTrialsSnapshot", func(id int) error {
+			return api.TrialsSnapshot(&apiv1.TrialsSnapshotRequest{
+				ExperimentId: int32(id),
+			}, mockStream[*apiv1.TrialsSnapshotResponse]{ctx})
+		}},
+		{"CanGetTrialsSample", func(id int) error {
+			return api.TrialsSample(&apiv1.TrialsSampleRequest{
+				ExperimentId: int32(id),
+			}, mockStream[*apiv1.TrialsSampleResponse]{ctx})
+		}},
 		{"CanComputeHPImportance", func(id int) error {
 			_, err := api.ComputeHPImportance(ctx, &apiv1.ComputeHPImportanceRequest{
 				ExperimentId: int32(id),
 			})
 			return err
+		}},
+		{"CanGetHPImportance", func(id int) error {
+			return api.GetHPImportance(&apiv1.GetHPImportanceRequest{
+				ExperimentId: int32(id),
+			}, mockStream[*apiv1.GetHPImportanceResponse]{ctx})
 		}},
 		{"CanGetBestSearcherValidationMetric", func(id int) error {
 			_, err := api.GetBestSearcherValidationMetric(ctx,
