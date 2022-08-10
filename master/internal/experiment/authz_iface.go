@@ -1,4 +1,4 @@
-package user
+package experiment
 
 import (
 	"github.com/determined-ai/determined/master/internal/authz"

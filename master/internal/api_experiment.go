@@ -47,21 +47,6 @@ import (
 
 var experimentsAddr = actor.Addr("experiments")
 
-/*
-// TODO?
-func (a *apiServer) checkExperimentExists(id int) error {
-	ok, err := a.m.db.CheckExperimentExists(id)
-	switch {
-	case err != nil:
-		return status.Errorf(codes.Internal, "failed to check if experiment exists: %s", err)
-	case !ok:
-		return status.Errorf(codes.NotFound, "experiment %d not found", id)
-	default:
-		return nil
-	}
-}
-*/
-
 // TODO test... (also not copying config or a lot of fields right now)
 // THINK IT is relatively fine for now?
 func (a *apiServer) getExperiment(
@@ -69,18 +54,18 @@ func (a *apiServer) getExperiment(
 ) (*experimentv1.Experiment, error) {
 	expNotFound := status.Errorf(codes.NotFound, "experiment not found: %d", experimentID)
 	exp := &experimentv1.Experiment{}
-	switch err := a.m.db.QueryProto("get_experiment", exp, experimentID); {
-	case err == db.ErrNotFound:
+	if err := a.m.db.QueryProto("get_experiment", exp, experimentID); errors.Is(err, db.ErrNotFound) {
 		return nil, expNotFound
-	case err != nil:
-		return nil, errors.Wrapf(err,
-			"error fetching experiment from database: %d", experimentID)
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "error fetching experiment from database: %d", experimentID)
 	}
 
 	if ok, err := expauth.AuthZProvider.Get().
 		CanGetExperiment(curUser, model.ExperimentFromProto(exp)); err != nil {
+		fmt.Println("CANGET EXP!!!")
 		return nil, err
 	} else if !ok {
+		fmt.Println("CANGET EXP", err)
 		return nil, expNotFound
 	}
 
@@ -128,7 +113,7 @@ func (a *apiServer) getExperimentAndCheckCanDoActions(
 	return e, *curUser, nil
 }
 
-// TODO test
+// TODO proto conversion?!
 func (a *apiServer) GetExperiment(
 	ctx context.Context, req *apiv1.GetExperimentRequest,
 ) (*apiv1.GetExperimentResponse, error) {
@@ -138,7 +123,7 @@ func (a *apiServer) GetExperiment(
 	}
 	exp, err := a.getExperiment(*user, int(req.ExperimentId))
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching experiment from db")
+		return nil, err
 	}
 
 	resp := apiv1.GetExperimentResponse{
