@@ -93,7 +93,7 @@ func (a *apiServer) getExperimentAndCheckCanDoActions(
 		e, err = a.m.db.ExperimentWithoutConfigByID(expID)
 	}
 	expNotFound := status.Errorf(codes.NotFound, "experiment not found: %d", expID)
-	if err == db.ErrNotFound { // TODO validate this doesn't need to be errors.IS
+	if errors.Is(err, db.ErrNotFound) {
 		return nil, model.User{}, expNotFound
 	} else if err != nil {
 		return nil, model.User{}, err
@@ -107,13 +107,14 @@ func (a *apiServer) getExperimentAndCheckCanDoActions(
 
 	for _, action := range actions {
 		if err = action(*curUser, e); err != nil {
-			return nil, model.User{}, err
+			return nil, model.User{}, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 	}
 	return e, *curUser, nil
 }
 
 // TODO proto conversion?!
+// Not entierly happy with it.
 func (a *apiServer) GetExperiment(
 	ctx context.Context, req *apiv1.GetExperimentRequest,
 ) (*apiv1.GetExperimentResponse, error) {
@@ -162,8 +163,7 @@ func (a *apiServer) GetExperiment(
 	return &resp, nil
 }
 
-// TODO refactor to get withut action
-// TODO test
+// TODO check
 func (a *apiServer) DeleteExperiment(
 	ctx context.Context, req *apiv1.DeleteExperimentRequest,
 ) (*apiv1.DeleteExperimentResponse, error) {
@@ -439,7 +439,6 @@ func (a *apiServer) GetExperimentLabels(ctx context.Context,
 	return &apiv1.GetExperimentLabelsResponse{Labels: labels}, nil
 }
 
-// TODO test
 func (a *apiServer) GetExperimentValidationHistory(
 	ctx context.Context, req *apiv1.GetExperimentValidationHistoryRequest,
 ) (*apiv1.GetExperimentValidationHistoryResponse, error) {
@@ -553,7 +552,6 @@ func (a *apiServer) PreviewHPSearch(
 	return &apiv1.PreviewHPSearchResponse{Simulation: protoSim}, nil
 }
 
-// TODO test
 func (a *apiServer) ActivateExperiment(
 	ctx context.Context, req *apiv1.ActivateExperimentRequest,
 ) (resp *apiv1.ActivateExperimentResponse, err error) {
@@ -573,7 +571,6 @@ func (a *apiServer) ActivateExperiment(
 	}
 }
 
-// TODO test
 func (a *apiServer) PauseExperiment(
 	ctx context.Context, req *apiv1.PauseExperimentRequest,
 ) (resp *apiv1.PauseExperimentResponse, err error) {
@@ -593,7 +590,6 @@ func (a *apiServer) PauseExperiment(
 	}
 }
 
-// TODO test
 func (a *apiServer) CancelExperiment(
 	ctx context.Context, req *apiv1.CancelExperimentRequest,
 ) (resp *apiv1.CancelExperimentResponse, err error) {
@@ -610,7 +606,6 @@ func (a *apiServer) CancelExperiment(
 	return resp, err
 }
 
-// TODO test
 func (a *apiServer) KillExperiment(
 	ctx context.Context, req *apiv1.KillExperimentRequest,
 ) (resp *apiv1.KillExperimentResponse, err error) {
@@ -627,7 +622,6 @@ func (a *apiServer) KillExperiment(
 	return resp, err
 }
 
-// TODO test
 func (a *apiServer) ArchiveExperiment(
 	ctx context.Context, req *apiv1.ArchiveExperimentRequest,
 ) (*apiv1.ArchiveExperimentResponse, error) {
@@ -656,7 +650,6 @@ func (a *apiServer) ArchiveExperiment(
 	}
 }
 
-// TODO test
 func (a *apiServer) UnarchiveExperiment(
 	ctx context.Context, req *apiv1.UnarchiveExperimentRequest,
 ) (*apiv1.UnarchiveExperimentResponse, error) {
@@ -1632,7 +1625,6 @@ func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequ
 	}
 }
 
-// TODO test
 func (a *apiServer) ComputeHPImportance(ctx context.Context,
 	req *apiv1.ComputeHPImportanceRequest,
 ) (*apiv1.ComputeHPImportanceResponse, error) {
@@ -1750,7 +1742,6 @@ func (a *apiServer) GetHPImportance(req *apiv1.GetHPImportanceRequest,
 	}
 }
 
-// TODO test
 func (a *apiServer) GetBestSearcherValidationMetric(
 	ctx context.Context, req *apiv1.GetBestSearcherValidationMetricRequest,
 ) (*apiv1.GetBestSearcherValidationMetricResponse, error) {
@@ -1772,7 +1763,6 @@ func (a *apiServer) GetBestSearcherValidationMetric(
 	}, nil
 }
 
-// TODO test
 func (a *apiServer) GetModelDef(
 	ctx context.Context, req *apiv1.GetModelDefRequest,
 ) (*apiv1.GetModelDefResponse, error) {
