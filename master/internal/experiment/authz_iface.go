@@ -16,8 +16,9 @@ type ExperimentAuthZ interface {
 	CanDeleteExperiment(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments
+	// Project can be nil to indicate getting all experiments a user has access to.
 	FilterExperiments(
-		curUser model.User, experiments []*model.Experiment,
+		curUser model.User, project *projectv1.Project, experiments []*model.Experiment,
 	) ([]*model.Experiment, error)
 
 	// TODO (encoding business logic here?!)

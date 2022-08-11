@@ -30,7 +30,9 @@ import (
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
+	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/experimentv1"
+	"github.com/determined-ai/determined/proto/pkg/projectv1"
 )
 
 type mockStream[T any] struct {
@@ -45,21 +47,21 @@ func (m mockStream[T]) Context() context.Context      { return m.ctx }
 func (m mockStream[T]) SendMsg(mes interface{}) error { return nil }
 func (m mockStream[T]) RecvMsg(mes interface{}) error { return nil }
 
-func expNotFoundError(expID int) error {
+func expNotFoundErr(expID int) error {
 	return status.Errorf(codes.NotFound, "experiment not found: %d", expID)
 }
 
 var authZExp *mocks.ExperimentAuthZ
 
 func SetupExpAuthTest(t *testing.T) (
-	*apiServer, *mocks.ExperimentAuthZ, model.User, context.Context,
+	*apiServer, *mocks.ExperimentAuthZ, *mocks.ProjectAuthZ, model.User, context.Context,
 ) {
-	api, _, user, ctx := SetupUserAuthzTest(t)
+	api, projectAuthZ, _, user, ctx := SetupProjectAuthZTest(t)
 	if authZExp == nil {
 		authZExp = &mocks.ExperimentAuthZ{}
 		expauth.AuthZProvider.Register("mock", authZExp)
 	}
-	return api, authZExp, user, ctx
+	return api, authZExp, projectAuthZ, user, ctx
 }
 
 func createTestExp(
@@ -105,16 +107,16 @@ func createTestExp(
 }
 
 func TestAuthZGetExperiment(t *testing.T) {
-	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
 	exp := createTestExp(t, api, curUser)
 
 	// Not found returns same as permission denied.
 	_, err := api.GetExperiment(ctx, &apiv1.GetExperimentRequest{ExperimentId: -999})
-	require.Equal(t, expNotFoundError(-999).Error(), err.Error())
+	require.Equal(t, expNotFoundErr(-999).Error(), err.Error())
 
 	authZExp.On("CanGetExperiment", curUser, mock.Anything).Return(false, nil).Once()
 	_, err = api.GetExperiment(ctx, &apiv1.GetExperimentRequest{ExperimentId: int32(exp.ID)})
-	require.Equal(t, expNotFoundError(exp.ID).Error(), err.Error())
+	require.Equal(t, expNotFoundErr(exp.ID).Error(), err.Error())
 
 	// Error returns error unmodified.
 	expectedErr := fmt.Errorf("canGetExperimentError")
@@ -129,11 +131,12 @@ func TestAuthZGetExperiment(t *testing.T) {
 }
 
 func TestAuthZGetExperiments(t *testing.T) {
-	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+	api, authZExp, authZProject, curUser, ctx := SetupExpAuthTest(t)
 
 	// Returns only what we filter.
+	var proj *projectv1.Project
 	expected := []*model.Experiment{createTestExp(t, api, curUser), createTestExp(t, api, curUser)}
-	authZExp.On("FilterExperiments", curUser, mock.Anything).Return(expected, nil).Once()
+	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(expected, nil).Once()
 	resp, err := api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{Limit: -1})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(resp.Experiments))
@@ -143,13 +146,18 @@ func TestAuthZGetExperiments(t *testing.T) {
 
 	// Error passes right through.
 	expectedErr := fmt.Errorf("filterExperimentsError")
-	authZExp.On("FilterExperiments", curUser, mock.Anything).Return(nil, expectedErr).Once()
+	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(nil, expectedErr).Once()
 	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{})
 	require.Equal(t, expectedErr, err)
+
+	// Project that you do not have access results in not found.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{ProjectId: 1})
+	require.Equal(t, projectNotFoundErr(1), err)
 }
 
 func TestAuthZPreviewHPSearch(t *testing.T) {
-	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
 
 	// Can't preview hp search returns error with PermissionDenied
 	expectedErr := status.Errorf(codes.PermissionDenied, "canPreviewHPSearchError")
@@ -158,20 +166,62 @@ func TestAuthZPreviewHPSearch(t *testing.T) {
 	require.Equal(t, expectedErr.Error(), err.Error())
 }
 
-/*
 func TestAuthZGetExperimentLabels(t *testing.T) {
-	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+	api, authZExp, authZProject, curUser, ctx := SetupExpAuthTest(t)
+
+	var proj *projectv1.Project
+	exps := []*model.Experiment{
+		createTestExp(t, api, curUser, "onlyone", "both"),
+		createTestExp(t, api, curUser, "both"),
+	}
 
 	// Error in FilterExperiments passes through.
 	expectedErr := fmt.Errorf("filterExperimentsError")
-	authZExp.On("FilterExperiments", curUser, mock.Anything).Return(nil, expectedErr).Once()
+	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(nil, expectedErr).Once()
 	_, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
 	require.Equal(t, expectedErr, err)
+
+	// Get labels back from whatever FilterExperiments returns.
+	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(exps, nil).Once()
+	resp, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
+	require.NoError(t, err)
+	require.Equal(t, []string{"both", "onlyone"}, resp.Labels)
+
+	// Project that you do not have access results in not found.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{ProjectId: 1})
+	require.Equal(t, projectNotFoundErr(1), err)
 }
-*/
+
+func TestAuthZGetExperimentCheckpoints(t *testing.T) {
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
+
+	// Experiment can't view results in not found.
+	exp := createTestExp(t, api, curUser)
+	req := &apiv1.GetExperimentCheckpointsRequest{Id: int32(exp.ID)}
+
+	authZExp.On("CanGetExperiment", curUser, exp).Return(false, nil).Once()
+	_, err := api.GetExperimentCheckpoints(ctx, req)
+	require.Equal(t, expNotFoundErr(exp.ID), err)
+
+	// Get whatever checkpoints FilterCheckpoints returns.
+	checkpoints := []*checkpointv1.Checkpoint{{Uuid: "a"}, {Uuid: "b"}}
+	authZExp.On("CanGetExperiment", curUser, exp).Return(true, nil).Once()
+	authZExp.On("FilterCheckpoints", curUser, exp, mock.Anything).Return(checkpoints, nil).Once()
+	resp, err := api.GetExperimentCheckpoints(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, checkpoints, resp.Checkpoints)
+
+	// FilterCheckpoints error passes through.
+	expectedErr := fmt.Errorf("filterCheckpointError")
+	authZExp.On("CanGetExperiment", curUser, exp).Return(true, nil).Once()
+	authZExp.On("FilterCheckpoints", curUser, exp, mock.Anything).Return(nil, expectedErr).Once()
+	_, err = api.GetExperimentCheckpoints(ctx, req)
+	require.Equal(t, expectedErr, err)
+}
 
 func TestAuthZExpCompareTrialsSample(t *testing.T) {
-	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
 
 	exp0 := createTestExp(t, api, curUser)
 	exp1 := createTestExp(t, api, curUser)
@@ -197,7 +247,7 @@ func TestAuthZExpCompareTrialsSample(t *testing.T) {
 }
 
 func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
-	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
 	exp := createTestExp(t, api, curUser)
 
 	cases := []struct {
@@ -347,10 +397,10 @@ func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
 
 	for _, curCase := range cases {
 		// Not found returns same as permission denied.
-		require.Equal(t, expNotFoundError(-999).Error(), curCase.IDToReqCall(-999).Error())
+		require.Equal(t, expNotFoundErr(-999), curCase.IDToReqCall(-999))
 
 		authZExp.On("CanGetExperiment", curUser, mock.Anything).Return(false, nil).Once()
-		require.Equal(t, expNotFoundError(exp.ID).Error(), curCase.IDToReqCall(exp.ID).Error())
+		require.Equal(t, expNotFoundErr(exp.ID), curCase.IDToReqCall(exp.ID))
 
 		// CanGetExperiment error returns unmodified.
 		expectedErr := fmt.Errorf("canGetExperimentError")

@@ -31,7 +31,7 @@ func (a *ExperimentAuthZBasic) CanDeleteExperiment(curUser model.User, e *model.
 }
 
 func (a *ExperimentAuthZBasic) FilterExperiments(
-	curUser model.User, experiments []*model.Experiment,
+	curUser model.User, project *projectv1.Project, experiments []*model.Experiment,
 ) ([]*model.Experiment, error) {
 	return experiments, nil
 }

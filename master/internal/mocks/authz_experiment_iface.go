@@ -3,9 +3,9 @@
 package mocks
 
 import (
-	mock "github.com/stretchr/testify/mock"
-
 	checkpointv1 "github.com/determined-ai/determined/proto/pkg/checkpointv1"
+
+	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/determined-ai/determined/master/pkg/model"
 
@@ -425,13 +425,13 @@ func (_m *ExperimentAuthZ) FilterCheckpoints(curUser model.User, e *model.Experi
 	return r0, r1
 }
 
-// FilterExperiments provides a mock function with given fields: curUser, experiments
-func (_m *ExperimentAuthZ) FilterExperiments(curUser model.User, experiments []*model.Experiment) ([]*model.Experiment, error) {
-	ret := _m.Called(curUser, experiments)
+// FilterExperiments provides a mock function with given fields: curUser, project, experiments
+func (_m *ExperimentAuthZ) FilterExperiments(curUser model.User, project *projectv1.Project, experiments []*model.Experiment) ([]*model.Experiment, error) {
+	ret := _m.Called(curUser, project, experiments)
 
 	var r0 []*model.Experiment
-	if rf, ok := ret.Get(0).(func(model.User, []*model.Experiment) []*model.Experiment); ok {
-		r0 = rf(curUser, experiments)
+	if rf, ok := ret.Get(0).(func(model.User, *projectv1.Project, []*model.Experiment) []*model.Experiment); ok {
+		r0 = rf(curUser, project, experiments)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Experiment)
@@ -439,8 +439,8 @@ func (_m *ExperimentAuthZ) FilterExperiments(curUser model.User, experiments []*
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.User, []*model.Experiment) error); ok {
-		r1 = rf(curUser, experiments)
+	if rf, ok := ret.Get(1).(func(model.User, *projectv1.Project, []*model.Experiment) error); ok {
+		r1 = rf(curUser, project, experiments)
 	} else {
 		r1 = ret.Error(1)
 	}

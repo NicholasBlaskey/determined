@@ -41,6 +41,7 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/experimentv1"
 	"github.com/determined-ai/determined/proto/pkg/jobv1"
+	"github.com/determined-ai/determined/proto/pkg/projectv1"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
@@ -262,14 +263,19 @@ func (a *apiServer) deleteExperiment(exp *model.Experiment, user *model.User) er
 	return nil
 }
 
-// TODO perf check.
 func (a *apiServer) GetExperiments(
 	ctx context.Context, req *apiv1.GetExperimentsRequest,
 ) (*apiv1.GetExperimentsResponse, error) {
-	// Does user have access to project?
 	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
 	if err != nil {
 		return nil, err
+	}
+	var proj *projectv1.Project
+	if req.ProjectId != 0 {
+		proj, err = a.GetProjectByID(req.ProjectId, *curUser)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Construct the experiment filtering expression.
@@ -350,7 +356,7 @@ func (a *apiServer) GetExperiments(
 	for i, e := range resp.Experiments {
 		modelExps[i] = model.ExperimentFromProto(e)
 	}
-	filtered, err := expauth.AuthZProvider.Get().FilterExperiments(*curUser, modelExps)
+	filtered, err := expauth.AuthZProvider.Get().FilterExperiments(*curUser, proj, modelExps)
 	if err != nil {
 		return nil, err
 	}
@@ -732,13 +738,10 @@ func (a *apiServer) PatchExperiment(
 	return &apiv1.PatchExperimentResponse{Experiment: exp}, nil
 }
 
-// TODO proto check
 // TODO test
 func (a *apiServer) GetExperimentCheckpoints(
 	ctx context.Context, req *apiv1.GetExperimentCheckpointsRequest,
 ) (*apiv1.GetExperimentCheckpointsResponse, error) {
-	// TODO don't feel great about this condition here?
-	// Is it over optimizing to only load config here?
 	useSearcherSortBy := req.SortBy == apiv1.GetExperimentCheckpointsRequest_SORT_BY_SEARCHER_METRIC
 	exp, curUser, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), useSearcherSortBy)
 	if err != nil {
@@ -1727,7 +1730,6 @@ func (a *apiServer) GetModelDef(
 	return &apiv1.GetModelDefResponse{B64Tgz: b64Tgz}, nil
 }
 
-// TODO rebase onto master since GetProjectByID will need a user now!
 // TODO test
 func (a *apiServer) MoveExperiment(
 	ctx context.Context, req *apiv1.MoveExperimentRequest,
@@ -1736,11 +1738,11 @@ func (a *apiServer) MoveExperiment(
 	if err != nil {
 		return nil, err
 	}
-	from, err := a.GetProjectByID(int32(e.ProjectID))
+	from, err := a.GetProjectByID(int32(e.ProjectID), curUser)
 	if err != nil {
 		return nil, err
 	}
-	to, err := a.GetProjectByID(req.DestinationProjectId)
+	to, err := a.GetProjectByID(req.DestinationProjectId, curUser)
 	if err != nil {
 		return nil, err
 	}
