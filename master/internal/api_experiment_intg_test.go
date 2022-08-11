@@ -62,7 +62,14 @@ func SetupExpAuthTest(t *testing.T) (
 	return api, authZExp, user, ctx
 }
 
-func createTestExp(t *testing.T, api *apiServer, curUser model.User) *model.Experiment {
+func createTestExp(
+	t *testing.T, api *apiServer, curUser model.User, labels ...string,
+) *model.Experiment {
+	labelMap := make(map[string]bool)
+	for _, l := range labels {
+		labelMap[l] = true
+	}
+
 	exp := &model.Experiment{
 		JobID:                model.JobID(uuid.New().String()),
 		State:                model.PausedState,
@@ -71,6 +78,7 @@ func createTestExp(t *testing.T, api *apiServer, curUser model.User) *model.Expe
 		StartTime:            time.Now(),
 		ModelDefinitionBytes: []byte{10, 11, 12},
 		Config: expconf.ExperimentConfig{
+			RawLabels:     labelMap,
 			RawEntrypoint: &expconf.EntrypointV0{"test"},
 			RawCheckpointStorage: &expconf.CheckpointStorageConfig{
 				RawSharedFSConfig: &expconf.SharedFSConfig{
@@ -89,6 +97,10 @@ func createTestExp(t *testing.T, api *apiServer, curUser model.User) *model.Expe
 		},
 	}
 	require.NoError(t, api.m.db.AddExperiment(exp))
+
+	// Get experiment as our API mostly will to make it easier to mock.
+	exp, err := api.m.db.ExperimentWithoutConfigByID(exp.ID)
+	require.NoError(t, err)
 	return exp
 }
 
@@ -114,6 +126,74 @@ func TestAuthZGetExperiment(t *testing.T) {
 	res, err := api.GetExperiment(ctx, &apiv1.GetExperimentRequest{ExperimentId: int32(exp.ID)})
 	require.NoError(t, err)
 	require.Equal(t, int32(exp.ID), res.Experiment.Id)
+}
+
+func TestAuthZGetExperiments(t *testing.T) {
+	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+
+	// Returns only what we filter.
+	expected := []*model.Experiment{createTestExp(t, api, curUser), createTestExp(t, api, curUser)}
+	authZExp.On("FilterExperiments", curUser, mock.Anything).Return(expected, nil).Once()
+	resp, err := api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{Limit: -1})
+	require.NoError(t, err)
+	require.Equal(t, 2, len(resp.Experiments))
+	for i := range expected {
+		require.Equal(t, int32(expected[i].ID), resp.Experiments[i].Id)
+	}
+
+	// Error passes right through.
+	expectedErr := fmt.Errorf("filterExperimentsError")
+	authZExp.On("FilterExperiments", curUser, mock.Anything).Return(nil, expectedErr).Once()
+	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{})
+	require.Equal(t, expectedErr, err)
+}
+
+func TestAuthZPreviewHPSearch(t *testing.T) {
+	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+
+	// Can't preview hp search returns error with PermissionDenied
+	expectedErr := status.Errorf(codes.PermissionDenied, "canPreviewHPSearchError")
+	authZExp.On("CanPreviewHPSearch", curUser).Return(fmt.Errorf("canPreviewHPSearchError")).Once()
+	_, err := api.PreviewHPSearch(ctx, &apiv1.PreviewHPSearchRequest{})
+	require.Equal(t, expectedErr.Error(), err.Error())
+}
+
+/*
+func TestAuthZGetExperimentLabels(t *testing.T) {
+	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+
+	// Error in FilterExperiments passes through.
+	expectedErr := fmt.Errorf("filterExperimentsError")
+	authZExp.On("FilterExperiments", curUser, mock.Anything).Return(nil, expectedErr).Once()
+	_, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
+	require.Equal(t, expectedErr, err)
+}
+*/
+
+func TestAuthZExpCompareTrialsSample(t *testing.T) {
+	api, authZExp, curUser, ctx := SetupExpAuthTest(t)
+
+	exp0 := createTestExp(t, api, curUser)
+	exp1 := createTestExp(t, api, curUser)
+	req := &apiv1.ExpCompareTrialsSampleRequest{
+		ExperimentIds: []int32{int32(exp0.ID), int32(exp1.ID)},
+	}
+
+	// Can't view first experiment gets error.
+	expectedErr := status.Errorf(codes.PermissionDenied, "firstError")
+	authZExp.On("CanGetExperiment", curUser, exp0).Return(true, nil).Once()
+	authZExp.On("CanGetTrialsSample", curUser, exp0).Return(fmt.Errorf("firstError")).Once()
+	err := api.ExpCompareTrialsSample(req, mockStream[*apiv1.ExpCompareTrialsSampleResponse]{ctx})
+	require.Equal(t, expectedErr.Error(), err.Error())
+
+	// Can't view second experiment gets error.
+	expectedErr = status.Errorf(codes.PermissionDenied, "secondError")
+	authZExp.On("CanGetExperiment", curUser, exp0).Return(true, nil).Once()
+	authZExp.On("CanGetTrialsSample", curUser, exp0).Return(nil).Once()
+	authZExp.On("CanGetExperiment", curUser, exp1).Return(true, nil).Once()
+	authZExp.On("CanGetTrialsSample", curUser, exp1).Return(fmt.Errorf("secondError")).Once()
+	err = api.ExpCompareTrialsSample(req, mockStream[*apiv1.ExpCompareTrialsSampleResponse]{ctx})
+	require.Equal(t, expectedErr.Error(), err.Error())
 }
 
 func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
