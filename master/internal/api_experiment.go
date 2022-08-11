@@ -47,8 +47,6 @@ import (
 
 var experimentsAddr = actor.Addr("experiments")
 
-// TODO test... (also not copying config or a lot of fields right now)
-// THINK IT is relatively fine for now?
 func (a *apiServer) getExperiment(
 	curUser model.User, experimentID int,
 ) (*experimentv1.Experiment, error) {
@@ -113,8 +111,6 @@ func (a *apiServer) getExperimentAndCheckCanDoActions(
 	return e, *curUser, nil
 }
 
-// TODO proto conversion?!
-// Not entierly happy with it.
 func (a *apiServer) GetExperiment(
 	ctx context.Context, req *apiv1.GetExperimentRequest,
 ) (*apiv1.GetExperimentResponse, error) {
@@ -163,7 +159,6 @@ func (a *apiServer) GetExperiment(
 	return &resp, nil
 }
 
-// TODO check
 func (a *apiServer) DeleteExperiment(
 	ctx context.Context, req *apiv1.DeleteExperimentRequest,
 ) (*apiv1.DeleteExperimentResponse, error) {
@@ -173,12 +168,12 @@ func (a *apiServer) DeleteExperiment(
 		return nil, err
 	}
 
-	// TODO potential leak here
 	switch exists, eErr := a.m.db.ExperimentHasCheckpointsInRegistry(int(req.ExperimentId)); {
 	case eErr != nil:
 		return nil, errors.New("failed to check model registry for references")
 	case exists:
-		return nil, status.Errorf(codes.InvalidArgument, "checkpoints are registered as model versions")
+		return nil, status.Errorf(
+			codes.InvalidArgument, "checkpoints are registered as model versions")
 	}
 
 	if !model.ExperimentTransitions[e.State][model.DeletingState] {
@@ -267,10 +262,16 @@ func (a *apiServer) deleteExperiment(exp *model.Experiment, user *model.User) er
 	return nil
 }
 
-// TODO test
+// TODO perf check.
 func (a *apiServer) GetExperiments(
 	ctx context.Context, req *apiv1.GetExperimentsRequest,
 ) (*apiv1.GetExperimentsResponse, error) {
+	// Does user have access to project?
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, err
+	}
+
 	// Construct the experiment filtering expression.
 	var allStates []string
 	for _, state := range req.States {
@@ -325,7 +326,7 @@ func (a *apiServer) GetExperiments(
 	}
 
 	resp := &apiv1.GetExperimentsResponse{}
-	err := a.m.db.QueryProtof(
+	err = a.m.db.QueryProtof(
 		"get_experiments",
 		[]interface{}{orderExpr},
 		resp,
@@ -345,11 +346,6 @@ func (a *apiServer) GetExperiments(
 	}
 
 	// Filter to experiments user has access to.
-	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
-	if err != nil {
-		return nil, err
-	}
-
 	modelExps := make([]*model.Experiment, len(resp.Experiments))
 	for i, e := range resp.Experiments {
 		modelExps[i] = model.ExperimentFromProto(e)
@@ -377,43 +373,10 @@ func (a *apiServer) GetExperiments(
 	return resp, nil
 }
 
-// TODO test
-// TODO is this performant enough?
+// TODO perf check
 func (a *apiServer) GetExperimentLabels(ctx context.Context,
 	req *apiv1.GetExperimentLabelsRequest,
 ) (*apiv1.GetExperimentLabelsResponse, error) {
-	/*
-		curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
-		if err != nil {
-			return nil, err
-		}
-	*/
-	// So we could get the list of experiments??? But that doesn't scale...
-	/*
-		resp := &apiv1.GetExperimentLabelsResponse{}
-		var err error
-		labelUsage, err := a.m.db.ExperimentLabelUsage(req.ProjectId)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert the label usage map into a sorted list of labels
-		// May add other sorting / pagination options later if needed
-		labels := make([]string, len(labelUsage))
-		i := 0
-		for label := range labelUsage {
-			labels[i] = label
-			i++
-		}
-		sort.Slice(labels, func(i, j int) bool {
-			return labelUsage[labels[i]] > labelUsage[labels[j]]
-		})
-		resp.Labels = labels
-
-		return resp, nil
-	*/
-
-	// TODO is this performant enough?
 	r, err := a.GetExperiments(ctx, &apiv1.GetExperimentsRequest{Limit: -1, ProjectId: req.ProjectId})
 	if err != nil {
 		return nil, err
@@ -459,7 +422,6 @@ func (a *apiServer) GetExperimentValidationHistory(
 	return &resp, nil
 }
 
-// TODO test
 func (a *apiServer) PreviewHPSearch(
 	ctx context.Context, req *apiv1.PreviewHPSearchRequest,
 ) (*apiv1.PreviewHPSearchResponse, error) {
@@ -468,7 +430,7 @@ func (a *apiServer) PreviewHPSearch(
 		return nil, err
 	}
 	if err := expauth.AuthZProvider.Get().CanPreviewHPSearch(*curUser); err != nil {
-		return nil, err // TODO
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 
 	bytes, err := protojson.Marshal(req.Config)
@@ -919,7 +881,14 @@ func (a *apiServer) CreateExperiment(
 	}
 
 	if err := expauth.AuthZProvider.Get().CanCreateExperiment(*user, dbExp); err != nil {
-		return nil, err // TODO grpc error
+		return nil, err
+	}
+	// Check user has permission for what they are trying to do
+	// before actually saving the experiment.
+	if req.Activate {
+		if err := expauth.AuthZProvider.Get().CanActivateExperiment(*user, dbExp); err != nil {
+			return nil, err
+		}
 	}
 
 	if validateOnly {
@@ -933,11 +902,6 @@ func (a *apiServer) CreateExperiment(
 	a.m.system.ActorOf(experimentsAddr.Child(e.ID), e)
 
 	if req.Activate {
-		// TODO race condition here?
-		if err = expauth.AuthZProvider.Get().CanActivateExperiment(*user, dbExp); err != nil {
-			return nil, err
-		}
-
 		_, err = a.ActivateExperiment(ctx, &apiv1.ActivateExperimentRequest{Id: int32(e.ID)})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
@@ -1028,8 +992,7 @@ func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	}
 }
 
-// what
-// TODO this is thinking in trial IDs so do we wanna just handle this in API trials?
+// TODO(nick) add trial authz to this.
 func (a *apiServer) ExpCompareMetricNames(req *apiv1.ExpCompareMetricNamesRequest,
 	resp apiv1.Determined_ExpCompareMetricNamesServer,
 ) error {
@@ -1091,7 +1054,7 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	experimentID := int(req.ExperimentId)
 	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
 		expauth.AuthZProvider.Get().CanGetMetricBatches); err != nil {
-		return err // TODO
+		return err
 	}
 
 	metricName := req.MetricName
@@ -1243,7 +1206,6 @@ func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	}
 }
 
-// ?
 func (a *apiServer) topTrials(experimentID int, maxTrials int, s expconf.SearcherConfig) (
 	trials []int32, err error,
 ) {
@@ -1285,7 +1247,6 @@ func (a *apiServer) topTrials(experimentID int, maxTrials int, s expconf.Searche
 	}
 }
 
-// ?
 func (a *apiServer) fetchTrialSample(trialID int32, metricName string, metricType apiv1.MetricType,
 	maxDatapoints int, startBatches int, endBatches int, currentTrials map[int32]bool,
 	trialCursors map[int32]time.Time,
@@ -1341,7 +1302,6 @@ func (a *apiServer) fetchTrialSample(trialID int32, metricName string, metricTyp
 	return &trial, nil
 }
 
-// ?
 func (a *apiServer) expCompareFetchTrialSample(trialID int32, metricName string,
 	metricType apiv1.MetricType, maxDatapoints int, startBatches int, endBatches int,
 	currentTrials map[int32]bool,
@@ -1508,18 +1468,14 @@ func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	}
 }
 
-// TODO test
-// TODO hard to test
-// TODO optimize
 func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequest,
 	resp apiv1.Determined_ExpCompareTrialsSampleServer,
 ) error {
 	experimentIDs := req.ExperimentIds
 	for _, expID := range experimentIDs {
-		// TODO optimize out calling getUser over and over again!?
 		if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), int(expID), false,
 			expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
-			return err // TODO
+			return err
 		}
 	}
 
