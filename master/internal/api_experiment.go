@@ -34,6 +34,7 @@ import (
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/protoutils"
 	"github.com/determined-ai/determined/master/pkg/protoutils/protoless"
+	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/master/pkg/searcher"
@@ -61,10 +62,8 @@ func (a *apiServer) getExperiment(
 
 	if ok, err := expauth.AuthZProvider.Get().
 		CanGetExperiment(curUser, model.ExperimentFromProto(exp)); err != nil {
-		fmt.Println("CANGET EXP!!!")
 		return nil, err
 	} else if !ok {
-		fmt.Println("CANGET EXP", err)
 		return nil, expNotFound
 	}
 
@@ -263,6 +262,7 @@ func (a *apiServer) deleteExperiment(exp *model.Experiment, user *model.User) er
 	return nil
 }
 
+// TODO is incorrect
 func (a *apiServer) GetExperiments(
 	ctx context.Context, req *apiv1.GetExperimentsRequest,
 ) (*apiv1.GetExperimentsResponse, error) {
@@ -738,7 +738,6 @@ func (a *apiServer) PatchExperiment(
 	return &apiv1.PatchExperimentResponse{Experiment: exp}, nil
 }
 
-// TODO test
 func (a *apiServer) GetExperimentCheckpoints(
 	ctx context.Context, req *apiv1.GetExperimentCheckpointsRequest,
 ) (*apiv1.GetExperimentCheckpointsResponse, error) {
@@ -833,7 +832,6 @@ func (a *apiServer) GetExperimentCheckpoints(
 }
 
 // TODO test
-// TODO project exp leak!
 func (a *apiServer) CreateExperiment(
 	ctx context.Context, req *apiv1.CreateExperimentRequest,
 ) (*apiv1.CreateExperimentResponse, error) {
@@ -848,21 +846,15 @@ func (a *apiServer) CreateExperiment(
 		ValidateOnly: req.ValidateOnly,
 	}
 	if req.ParentId != 0 {
-		parentID := int(req.ParentId)
-		detParams.ParentID = &parentID
-		parentExp := &experimentv1.Experiment{}
-		if err := a.m.db.QueryProto(
-			"get_experiment", parentExp, req.ParentId); errors.Is(err, db.ErrNotFound) {
+		detParams.ParentID = ptrs.Ptr(int(req.ParentId))
+		parentExp, err := a.getExperiment(*user, *detParams.ParentID)
+		if err != nil {
 			return nil, err
-		} else if err != nil {
-			return nil, status.Errorf(codes.Internal, "error retrieving parent experiment: %s", err)
 		}
-
 		if err = expauth.AuthZProvider.Get().
 			CanForkFromExperiment(*user, model.ExperimentFromProto(parentExp)); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
-
 		if parentExp.Archived {
 			return nil, status.Errorf(codes.Internal, "forking an archived experiment")
 		}
@@ -871,31 +863,36 @@ func (a *apiServer) CreateExperiment(
 				"forking an experiment in an archived workspace/project")
 		}
 	}
-	// TODO validate project experiment! OR we can just pass project into canCreateExperiment.!
-	// I kinda like this since we avoid lazying having to do it. But we still get info leakage.
 	if req.ProjectId > 1 {
 		projectID := int(req.ProjectId)
 		detParams.ProjectID = &projectID
 	}
 
 	dbExp, validateOnly, taskSpec, err := a.m.parseCreateExperiment(&detParams, user)
-	if err != nil {
+	if errors.Is(err, cantFindProjectError) {
+		return nil, status.Errorf(codes.NotFound, cantFindProjectError.Error())
+	} else if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid experiment: %s", err)
 	}
 
-	if err := expauth.AuthZProvider.Get().CanCreateExperiment(*user, dbExp); err != nil {
+	proj, err := a.GetProjectByID(int32(dbExp.ProjectID), *user)
+	if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
+		return nil, status.Errorf(codes.NotFound, cantFindProjectError.Error())
+	} else if err != nil {
 		return nil, err
+	}
+	if err := expauth.AuthZProvider.Get().CanCreateExperiment(*user, proj, dbExp); err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
+	}
+	if validateOnly {
+		return &apiv1.CreateExperimentResponse{}, nil
 	}
 	// Check user has permission for what they are trying to do
 	// before actually saving the experiment.
 	if req.Activate {
 		if err := expauth.AuthZProvider.Get().CanActivateExperiment(*user, dbExp); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
-	}
-
-	if validateOnly {
-		return &apiv1.CreateExperimentResponse{}, nil
 	}
 
 	e, err := newExperiment(a.m, dbExp, taskSpec)
@@ -1730,7 +1727,6 @@ func (a *apiServer) GetModelDef(
 	return &apiv1.GetModelDefResponse{B64Tgz: b64Tgz}, nil
 }
 
-// TODO test
 func (a *apiServer) MoveExperiment(
 	ctx context.Context, req *apiv1.MoveExperimentRequest,
 ) (*apiv1.MoveExperimentResponse, error) {
@@ -1747,7 +1743,7 @@ func (a *apiServer) MoveExperiment(
 		return nil, err
 	}
 	if err = expauth.AuthZProvider.Get().CanMoveExperiment(curUser, from, to, e); err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 
 	if to.Archived {

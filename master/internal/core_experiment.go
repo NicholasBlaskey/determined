@@ -17,6 +17,7 @@ import (
 
 	"github.com/determined-ai/determined/master/internal/api"
 	"github.com/determined-ai/determined/master/internal/context"
+	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/job"
 	"github.com/determined-ai/determined/master/internal/sproto"
 	"github.com/determined-ai/determined/master/pkg/actor"
@@ -299,9 +300,12 @@ type CreateExperimentParams struct {
 	Workspace     *string         `json:"workspace"`
 }
 
+var cantFindProjectError = fmt.Errorf("unable to find parent workspace and project")
+
 func (m *Master) parseCreateExperiment(params *CreateExperimentParams, user *model.User) (
 	*model.Experiment, bool, *tasks.TaskSpec, error,
 ) {
+	fmt.Println(m.system, "NIL IN PARSE CREATE?")
 	// Read the config as the user provided it.
 	config, err := expconf.ParseAnyExperimentConfigYAML([]byte(params.ConfigBytes))
 	if err != nil {
@@ -381,19 +385,19 @@ func (m *Master) parseCreateExperiment(params *CreateExperimentParams, user *mod
 	// CreateExperimentParams has highest priority (coming from WebUI)
 	projectID := 1
 	if params.ProjectID == nil {
-		if config.Workspace() == "" && config.Project() != "" {
-			return nil, false, nil,
-				errors.New("workspace and project must both be included in config if one is provided")
-		}
-		if config.Workspace() != "" && config.Project() == "" {
+		if config.Workspace() != config.Project() && config.Project() == "" {
+			fmt.Println(config.Workspace(), config.Project())
 			return nil, false, nil,
 				errors.New("workspace and project must both be included in config if one is provided")
 		}
 		if config.Workspace() != "" && config.Project() != "" {
-			projectID, err = m.db.ProjectByName(config.Workspace(), config.Project())
-			if err != nil {
-				return nil, false, nil, errors.Wrapf(
-					err, "unable to find parent workspace and project")
+			if config.Workspace() != "" && config.Project() != "" {
+				projectID, err = m.db.ProjectByName(config.Workspace(), config.Project())
+				if errors.Is(err, db.ErrNotFound) {
+					return nil, false, nil, cantFindProjectError
+				} else if err != nil {
+					return nil, false, nil, errors.Wrapf(err, cantFindProjectError.Error())
+				}
 			}
 		}
 	} else {

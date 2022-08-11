@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -67,36 +68,52 @@ func SetupExpAuthTest(t *testing.T) (
 func createTestExp(
 	t *testing.T, api *apiServer, curUser model.User, labels ...string,
 ) *model.Experiment {
+	return createTestExpWithProjectID(t, api, curUser, 1, labels...)
+}
+
+func minExpConfToYaml(t *testing.T) string {
+	bytes, err := yaml.Marshal(minExpConfig)
+	require.NoError(t, err)
+	return string(bytes)
+}
+
+var minExpConfig = expconf.ExperimentConfig{
+	RawResources: &expconf.ResourcesConfig{
+		RawResourcePool: ptrs.Ptr("kubernetes"),
+	},
+	RawEntrypoint: &expconf.EntrypointV0{"test"},
+	RawCheckpointStorage: &expconf.CheckpointStorageConfig{
+		RawSharedFSConfig: &expconf.SharedFSConfig{
+			RawHostPath: ptrs.Ptr("/"),
+		},
+	},
+	RawHyperparameters: expconf.Hyperparameters{},
+	RawName:            expconf.Name{ptrs.Ptr("name")},
+	RawReproducibility: &expconf.ReproducibilityConfig{ptrs.Ptr(uint32(42))},
+	RawSearcher: &expconf.SearcherConfig{
+		RawMetric: ptrs.Ptr("loss"),
+		RawSingleConfig: &expconf.SingleConfig{
+			&expconf.Length{Units: 10, Unit: "batches"},
+		},
+	},
+}
+
+func createTestExpWithProjectID(
+	t *testing.T, api *apiServer, curUser model.User, projectID int, labels ...string,
+) *model.Experiment {
 	labelMap := make(map[string]bool)
 	for _, l := range labels {
 		labelMap[l] = true
 	}
-
+	minExpConfig.RawLabels = labelMap
 	exp := &model.Experiment{
 		JobID:                model.JobID(uuid.New().String()),
 		State:                model.PausedState,
 		OwnerID:              &curUser.ID,
-		ProjectID:            1,
+		ProjectID:            projectID,
 		StartTime:            time.Now(),
 		ModelDefinitionBytes: []byte{10, 11, 12},
-		Config: expconf.ExperimentConfig{
-			RawLabels:     labelMap,
-			RawEntrypoint: &expconf.EntrypointV0{"test"},
-			RawCheckpointStorage: &expconf.CheckpointStorageConfig{
-				RawSharedFSConfig: &expconf.SharedFSConfig{
-					RawHostPath: ptrs.Ptr("/"),
-				},
-			},
-			RawHyperparameters: expconf.Hyperparameters{},
-			RawName:            expconf.Name{ptrs.Ptr("name")},
-			RawReproducibility: &expconf.ReproducibilityConfig{ptrs.Ptr(uint32(42))},
-			RawSearcher: &expconf.SearcherConfig{
-				RawMetric: ptrs.Ptr("loss"),
-				RawSingleConfig: &expconf.SingleConfig{
-					&expconf.Length{Units: 10, Unit: "batches"},
-				},
-			},
-		},
+		Config:               minExpConfig,
 	}
 	require.NoError(t, api.m.db.AddExperiment(exp))
 
@@ -193,6 +210,73 @@ func TestAuthZGetExperimentLabels(t *testing.T) {
 	require.Equal(t, projectNotFoundErr(1), err)
 }
 
+func TestAuthZCreateExperiment(t *testing.T) {
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
+	forkFrom := createTestExp(t, api, curUser)
+	_, projectID := createProjectAndWorkspace(ctx, t, api)
+
+	// Can't view forked experiment.
+	authZExp.On("CanGetExperiment", curUser, mock.Anything).Return(false, nil).Once()
+	_, err := api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		ParentId: int32(forkFrom.ID),
+	})
+	require.Equal(t, expNotFoundErr(forkFrom.ID), err)
+
+	// Can't fork from experiment.
+	expectedErr := status.Errorf(codes.PermissionDenied, "canForkExperimentError")
+	authZExp.On("CanGetExperiment", curUser, mock.Anything).Return(true, nil).Once()
+	authZExp.On("CanForkFromExperiment", curUser, mock.Anything).
+		Return(fmt.Errorf("canForkExperimentError")).Once()
+	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		ParentId: int32(forkFrom.ID),
+	})
+	require.Equal(t, expectedErr, err)
+
+	// Can't view project passed in.
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		ProjectId: int32(projectID),
+		Config:    minExpConfToYaml(t),
+	})
+	require.Equal(t, status.Errorf(codes.NotFound, cantFindProjectError.Error()), err)
+
+	// Can't view project passed in from config.
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		Config: minExpConfToYaml(t) + "project: Uncategorized\nworkspace: Uncategorized",
+	})
+	require.Equal(t, status.Errorf(codes.NotFound, cantFindProjectError.Error()), err)
+
+	// Same as passing in a non existant project.
+	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		Config: minExpConfToYaml(t) + "project: doesntexist123\nworkspace: doesntexist123",
+	})
+	require.Equal(t, status.Errorf(codes.NotFound, cantFindProjectError.Error()), err)
+
+	// Can't create experiment deny.
+	expectedErr = status.Errorf(codes.PermissionDenied, "canCreateExperimentError")
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	authZExp.On("CanCreateExperiment", curUser, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("canCreateExperimentError")).Once()
+	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		ProjectId: int32(projectID),
+		Config:    minExpConfToYaml(t),
+	})
+	require.Equal(t, expectedErr, err)
+
+	// Can't activate experiment deny.
+	expectedErr = status.Errorf(codes.PermissionDenied, "canActivateExperimentError")
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	authZExp.On("CanCreateExperiment", curUser, mock.Anything, mock.Anything).Return(nil).Once()
+	authZExp.On("CanActivateExperiment", curUser, mock.Anything, mock.Anything).Return(
+		fmt.Errorf("canActivateExperimentError")).Once()
+	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
+		Activate: true,
+		Config:   minExpConfToYaml(t),
+	})
+	require.Equal(t, expectedErr, err)
+}
+
 func TestAuthZGetExperimentCheckpoints(t *testing.T) {
 	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
 
@@ -213,9 +297,11 @@ func TestAuthZGetExperimentCheckpoints(t *testing.T) {
 	require.Equal(t, checkpoints, resp.Checkpoints)
 
 	// FilterCheckpoints error passes through.
+	req.SortBy = apiv1.GetExperimentCheckpointsRequest_SORT_BY_SEARCHER_METRIC
 	expectedErr := fmt.Errorf("filterCheckpointError")
-	authZExp.On("CanGetExperiment", curUser, exp).Return(true, nil).Once()
-	authZExp.On("FilterCheckpoints", curUser, exp, mock.Anything).Return(nil, expectedErr).Once()
+	authZExp.On("CanGetExperiment", curUser, mock.Anything).Return(true, nil).Once()
+	authZExp.On("FilterCheckpoints", curUser, mock.Anything, mock.Anything).
+		Return(nil, expectedErr).Once()
 	_, err = api.GetExperimentCheckpoints(ctx, req)
 	require.Equal(t, expectedErr, err)
 }
@@ -243,6 +329,52 @@ func TestAuthZExpCompareTrialsSample(t *testing.T) {
 	authZExp.On("CanGetExperiment", curUser, exp1).Return(true, nil).Once()
 	authZExp.On("CanGetTrialsSample", curUser, exp1).Return(fmt.Errorf("secondError")).Once()
 	err = api.ExpCompareTrialsSample(req, mockStream[*apiv1.ExpCompareTrialsSampleResponse]{ctx})
+	require.Equal(t, expectedErr.Error(), err.Error())
+}
+
+func TestAuthZMoveExperiment(t *testing.T) {
+	// Setup.
+	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
+
+	_, projectID := createProjectAndWorkspace(ctx, t, api)
+	_, destProjectID := createProjectAndWorkspace(ctx, t, api)
+
+	exp := createTestExpWithProjectID(t, api, curUser, projectID)
+	req := &apiv1.MoveExperimentRequest{
+		ExperimentId:         int32(exp.ID),
+		DestinationProjectId: int32(destProjectID),
+	}
+
+	// Can't view experiment returns exp not found
+	authZExp.On("CanGetExperiment", curUser, exp).Return(false, nil).Once()
+	_, err := api.MoveExperiment(ctx, req)
+	require.Equal(t, expNotFoundErr(exp.ID), err)
+
+	// Can't view source project returns project not found.
+	authZExp.On("CanGetExperiment", curUser, exp).Return(true, nil).Once()
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err = api.MoveExperiment(ctx, req)
+	require.Equal(t, projectNotFoundErr(projectID), err)
+
+	// Can't view destination project returns project not found.
+	// Get project to be used for mock check.
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	resp, err := api.GetProject(ctx, &apiv1.GetProjectRequest{Id: int32(int32(destProjectID))})
+	require.NoError(t, err)
+
+	authZExp.On("CanGetExperiment", curUser, exp).Return(true, nil).Once()
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	projectAuthZ.On("CanGetProject", curUser, resp.Project).Return(false, nil).Once()
+	_, err = api.MoveExperiment(ctx, req)
+	require.Equal(t, projectNotFoundErr(destProjectID), err)
+
+	// Can't move project error returns PermissionDenied.
+	expectedErr := status.Errorf(codes.PermissionDenied, "canMoveExperimentError")
+	authZExp.On("CanGetExperiment", curUser, exp).Return(true, nil).Once()
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Twice()
+	authZExp.On("CanMoveExperiment", curUser, mock.Anything, mock.Anything, exp).
+		Return(fmt.Errorf("canMoveExperimentError")).Once()
+	_, err = api.MoveExperiment(ctx, req)
 	require.Equal(t, expectedErr.Error(), err.Error())
 }
 

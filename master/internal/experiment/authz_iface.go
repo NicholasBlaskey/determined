@@ -58,7 +58,7 @@ type ExperimentAuthZ interface {
 	) ([]*checkpointv1.Checkpoint, error)
 
 	// POST /api/v1/experiments
-	CanCreateExperiment(curUser model.User, e *model.Experiment) error
+	CanCreateExperiment(curUser model.User, proj *projectv1.Project, e *model.Experiment) error
 	CanForkFromExperiment(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/metrics-stream/metric-names

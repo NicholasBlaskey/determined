@@ -11,11 +11,6 @@ import (
 // ExperimentAuthZBasic is basic OSS controls.
 type ExperimentAuthZBasic struct{}
 
-/*
-func CanGetExperiment(curUser model.User) error {
-}
-*/
-
 func (a *ExperimentAuthZBasic) CanGetExperiment(
 	curUser model.User, e *model.Experiment,
 ) (canGetExp bool, serverError error) {
@@ -96,7 +91,9 @@ func (a *ExperimentAuthZBasic) FilterCheckpoints(
 	return checkpoints, nil
 }
 
-func (a *ExperimentAuthZBasic) CanCreateExperiment(curUser model.User, e *model.Experiment) error {
+func (a *ExperimentAuthZBasic) CanCreateExperiment(
+	curUser model.User, proj *projectv1.Project, e *model.Experiment,
+) error {
 	return nil
 }
 

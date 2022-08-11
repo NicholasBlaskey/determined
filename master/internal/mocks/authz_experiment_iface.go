@@ -73,13 +73,13 @@ func (_m *ExperimentAuthZ) CanComputeHPImportance(curUser model.User, e *model.E
 	return r0
 }
 
-// CanCreateExperiment provides a mock function with given fields: curUser, e
-func (_m *ExperimentAuthZ) CanCreateExperiment(curUser model.User, e *model.Experiment) error {
-	ret := _m.Called(curUser, e)
+// CanCreateExperiment provides a mock function with given fields: curUser, proj, e
+func (_m *ExperimentAuthZ) CanCreateExperiment(curUser model.User, proj *projectv1.Project, e *model.Experiment) error {
+	ret := _m.Called(curUser, proj, e)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.User, *model.Experiment) error); ok {
-		r0 = rf(curUser, e)
+	if rf, ok := ret.Get(0).(func(model.User, *projectv1.Project, *model.Experiment) error); ok {
+		r0 = rf(curUser, proj, e)
 	} else {
 		r0 = ret.Error(0)
 	}
