@@ -831,7 +831,6 @@ func (a *apiServer) GetExperimentCheckpoints(
 	return resp, a.paginate(&resp.Pagination, &resp.Checkpoints, req.Offset, req.Limit)
 }
 
-// TODO test
 func (a *apiServer) CreateExperiment(
 	ctx context.Context, req *apiv1.CreateExperimentRequest,
 ) (*apiv1.CreateExperimentResponse, error) {

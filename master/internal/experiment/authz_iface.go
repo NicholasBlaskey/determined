@@ -50,6 +50,7 @@ type ExperimentAuthZ interface {
 	CanSetExperimentsName(curUser model.User, e *model.Experiment) error
 	CanSetExperimentsNotes(curUser model.User, e *model.Experiment) error
 	CanSetExperimentsDescription(curUser model.User, e *model.Experiment) error
+	// TODO LABELS?!
 	CanSetExperimentsLabels(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/checkpoints
@@ -83,6 +84,7 @@ type ExperimentAuthZ interface {
 	CanGetBestSearcherValidationMetric(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/model_def
+	// GET /experiments/:exp_id/model_def
 	CanGetModelDef(curUser model.User, e *model.Experiment) error
 
 	// POST /api/v1/experiments/:exp_id/move
@@ -92,7 +94,17 @@ type ExperimentAuthZ interface {
 	CanGetModelDefTree(curUser model.User, e *model.Experiment) error
 
 	// POST /api/v1/experiments/{experimentId}/file
+	// GET /experiments/:exp_id/file/download
 	CanGetModelDefFile(curUser model.User, e *model.Experiment) error
+
+	// GET /experiments/:exp_id/preview_gc
+	CanGetExperimentsCheckpointsToGC(curUser model.User, e *model.Experiment) error
+
+	// PATCH /experiments/:exp_id
+	CanSetExperimentsMaxSlots(curUser model.User, e *model.Experiment, slots int) error
+	CanSetExperimentsWeight(curUser model.User, e *model.Experiment, weight float64) error
+	CanSetExperimentsPriority(curUser model.User, e *model.Experiment, priority int) error
+	CanSetExperimentsCheckpointGCPolicy(curUser model.User, e *model.Experiment) error
 }
 
 // AuthZProvider is the authz registry for experiments.

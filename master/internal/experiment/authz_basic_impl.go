@@ -105,8 +105,6 @@ func (a *ExperimentAuthZBasic) CanGetMetricNames(curUser model.User, e *model.Ex
 	return nil
 }
 
-// ?
-
 func (a *ExperimentAuthZBasic) CanGetMetricBatches(curUser model.User, e *model.Experiment) error {
 	return nil
 }
@@ -143,12 +141,41 @@ func (a *ExperimentAuthZBasic) CanMoveExperiment(
 	return nil
 }
 
-// Do we need to filter the tree?!
 func (a *ExperimentAuthZBasic) CanGetModelDefTree(curUser model.User, e *model.Experiment) error {
 	return nil
 }
 
 func (a *ExperimentAuthZBasic) CanGetModelDefFile(curUser model.User, e *model.Experiment) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanGetExperimentsCheckpointsToGC(
+	curUser model.User, e *model.Experiment,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsMaxSlots(
+	curUser model.User, e *model.Experiment, slots int,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsWeight(
+	curUser model.User, e *model.Experiment, weight float64,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsPriority(
+	curUser model.User, e *model.Experiment, priority int,
+) error {
+	return nil
+}
+
+func (a *ExperimentAuthZBasic) CanSetExperimentsCheckpointGCPolicy(
+	curUser model.User, e *model.Experiment,
+) error {
 	return nil
 }
 
