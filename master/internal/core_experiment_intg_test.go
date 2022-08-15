@@ -5,6 +5,7 @@ package internal
 
 import (
 	//"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	//"time"
@@ -35,13 +36,77 @@ func expNotFoundErrEcho(id int) error {
 func SetupExpAuthTestEcho(t *testing.T) (
 	*apiServer, *mocks.ExperimentAuthZ, *mocks.ProjectAuthZ, model.User, echo.Context,
 ) {
+	api, authZExp, projectAuthZ, user, _ := SetupExpAuthTest(t)
+
 	e := echo.New()
 	c := e.NewContext(nil, nil)
 	ctx := &context.DetContext{Context: c}
-	ctx.SetUser(model.User{})
+	ctx.SetUser(user)
 
-	api, authZExp, projectAuthZ, user, _ := SetupExpAuthTest(t)
 	return api, authZExp, projectAuthZ, user, ctx
+}
+
+func echoPostExperiment(
+	ctx echo.Context, api *apiServer, t *testing.T, params CreateExperimentParams,
+) error {
+	bytes, err := json.Marshal(params)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPatch, "/",
+		strings.NewReader(string(bytes)))
+	ctx.SetRequest(req)
+	_, err = api.m.postExperiment(ctx)
+	return err
+}
+
+func TestAuthZPostExperimentEcho(t *testing.T) {
+	api, authZExp, _, curUser, ctx := SetupExpAuthTestEcho(t)
+
+	_, _, _, _, grpcCtx := SetupExpAuthTest(t)
+	_, projectID := createProjectAndWorkspace(grpcCtx, t, api)
+
+	// Can't view project passed in.
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	err := echoPostExperiment(ctx, api, t, CreateExperimentParams{
+		ConfigBytes: minExpConfToYaml(t),
+		ProjectID:   &projectID,
+	})
+	require.Equal(t, echo.NewHTTPError(http.StatusNotFound, cantFindProjectError).Error(), err.Error())
+
+	// Can't view project passed in from config.
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	err = echoPostExperiment(ctx, api, t, CreateExperimentParams{
+		ConfigBytes: minExpConfToYaml(t) + "project: Uncategorized\nworkspace: Uncategorized",
+	})
+	require.Equal(t, echo.NewHTTPError(http.StatusNotFound, cantFindProjectError).Error(), err.Error())
+
+	// Same as passing in a non existant project.
+	err = echoPostExperiment(ctx, api, t, CreateExperimentParams{
+		ConfigBytes: minExpConfToYaml(t) + "project: doesnotexist\nworkspace: doesnotexist",
+	})
+	require.Equal(t, echo.NewHTTPError(http.StatusNotFound, cantFindProjectError).Error(), err.Error())
+
+	// Can't create experiment deny.
+	expectedErr := echo.NewHTTPError(http.StatusForbidden, "canCreateExperimentError")
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	authZExp.On("CanCreateExperiment", curUser, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("canCreateExperimentError")).Once()
+	err = echoPostExperiment(ctx, api, t, CreateExperimentParams{
+		ConfigBytes: minExpConfToYaml(t),
+	})
+	require.Equal(t, expectedErr, err)
+
+	// Can't activate experiment deny.
+	expectedErr = echo.NewHTTPError(http.StatusForbidden, "canActivateExperimentError")
+	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	authZExp.On("CanCreateExperiment", curUser, mock.Anything, mock.Anything).Return(nil).Once()
+	authZExp.On("CanActivateExperiment", curUser, mock.Anything, mock.Anything).
+		Return(fmt.Errorf("canActivateExperimentError")).Once()
+	err = echoPostExperiment(ctx, api, t, CreateExperimentParams{
+		Activate:    true,
+		ConfigBytes: minExpConfToYaml(t),
+	})
+	require.Equal(t, expectedErr, err)
 }
 
 func TestAuthZGetExperimentAndCanDoActionsEcho(t *testing.T) {
@@ -121,6 +186,13 @@ func TestAuthZGetExperimentAndCanDoActionsEcho(t *testing.T) {
 			ctx.SetRequest(req)
 			_, err := api.m.patchExperiment(ctx)
 			return err
+		}, []any{mock.Anything, mock.Anything}},
+		{"CanForkFromExperiment", func(id int) error {
+			_, _, _, _, ctx := SetupExpAuthTestEcho(t)
+			return echoPostExperiment(ctx, api, t, CreateExperimentParams{
+				ConfigBytes: minExpConfToYaml(t),
+				ParentID:    &id,
+			})
 		}, []any{mock.Anything, mock.Anything}},
 	}
 
