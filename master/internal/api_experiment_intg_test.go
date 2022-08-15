@@ -536,8 +536,7 @@ func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
 
 		// CanGetExperiment error returns unmodified.
 		expectedErr := fmt.Errorf("canGetExperimentError")
-		authZExp.On("CanGetExperiment", curUser, mock.Anything).
-			Return(false, expectedErr).Once()
+		authZExp.On("CanGetExperiment", curUser, mock.Anything).Return(false, expectedErr).Once()
 		require.Equal(t, expectedErr, curCase.IDToReqCall(exp.ID))
 
 		// Deny returns error with PermissionDenied.

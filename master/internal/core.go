@@ -999,13 +999,9 @@ func (m *Master) Run(ctx context.Context) error {
 	m.echo.GET("/logs", api.Route(m.getMasterLogs), authFuncs...)
 
 	experimentsGroup := m.echo.Group("/experiments", authFuncs...)
-	// TODO test
 	experimentsGroup.GET("/:experiment_id/model_def", m.getExperimentModelDefinition)
-	// TODO test
 	experimentsGroup.GET("/:experiment_id/file/download", m.getExperimentModelFile)
-	// TODO test
 	experimentsGroup.GET("/:experiment_id/preview_gc", api.Route(m.getExperimentCheckpointsToGC))
-	// TODO test
 	experimentsGroup.PATCH("/:experiment_id", api.Route(m.patchExperiment))
 	// TODO test
 	experimentsGroup.POST("", api.Route(m.postExperiment))

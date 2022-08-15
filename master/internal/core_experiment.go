@@ -82,7 +82,7 @@ func echoGetExperimentAndCheckCanDoActions(
 	c echo.Context, m *Master, expID int, actions ...func(model.User, *model.Experiment) error,
 ) (*model.Experiment, model.User, error) {
 	user := c.(*context.DetContext).MustGetUser()
-	expNotFound := echo.NewHTTPError(http.StatusForbidden, "experiment not found: %d", expID)
+	expNotFound := echo.NewHTTPError(http.StatusNotFound, "experiment not found: %d", expID)
 	e, err := m.db.ExperimentByID(expID)
 	if errors.Is(err, db.ErrNotFound) {
 		return nil, model.User{}, expNotFound
@@ -97,7 +97,7 @@ func echoGetExperimentAndCheckCanDoActions(
 
 	for _, action := range actions {
 		if err := action(user, e); err != nil {
-			return nil, model.User{}, err
+			return nil, model.User{}, echo.NewHTTPError(http.StatusForbidden, err.Error())
 		}
 	}
 	return e, user, nil
@@ -211,7 +211,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 	if err := api.BindArgs(&args, c); err != nil {
 		return nil, err
 	}
-	e, user, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID)
+	dbExp, user, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,11 +235,6 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	dbExp, err := m.db.ExperimentByID(args.ExperimentID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "loading experiment %v", args.ExperimentID)
-	}
-
 	agentUserGroup, err := m.db.AgentUserGroup(*dbExp.OwnerID)
 	if err != nil {
 		return nil, errors.Errorf("cannot find user and group for experiment %v", dbExp.OwnerID)
@@ -258,7 +253,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 		resources := dbExp.Config.Resources()
 		if patch.Resources.MaxSlots.IsPresent {
 			if err = expauth.AuthZProvider.Get().
-				CanSetExperimentsMaxSlots(user, e, *patch.Resources.MaxSlots.Value); err != nil {
+				CanSetExperimentsMaxSlots(user, dbExp, *patch.Resources.MaxSlots.Value); err != nil {
 				return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
 			}
 
@@ -266,7 +261,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 		}
 		if patch.Resources.Weight != nil {
 			if err = expauth.AuthZProvider.Get().
-				CanSetExperimentsWeight(user, e, *patch.Resources.Weight); err != nil {
+				CanSetExperimentsWeight(user, dbExp, *patch.Resources.Weight); err != nil {
 				return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
 			}
 
@@ -274,7 +269,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 		}
 		if patch.Resources.Priority != nil {
 			if err = expauth.AuthZProvider.Get().
-				CanSetExperimentsPriority(user, e, *patch.Resources.Priority); err != nil {
+				CanSetExperimentsPriority(user, dbExp, *patch.Resources.Priority); err != nil {
 				return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
 			}
 
@@ -284,7 +279,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 	}
 	if patch.CheckpointStorage != nil {
 		if err = expauth.AuthZProvider.Get().
-			CanSetExperimentsCheckpointGCPolicy(user, e); err != nil {
+			CanSetExperimentsCheckpointGCPolicy(user, dbExp); err != nil {
 			return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
 		}
 
