@@ -22,7 +22,6 @@ import (
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/commonv1"
-	"github.com/determined-ai/determined/proto/pkg/experimentv1"
 	"github.com/determined-ai/determined/proto/pkg/modelv1"
 	"github.com/determined-ai/determined/proto/pkg/trialv1"
 )
