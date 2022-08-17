@@ -1,4 +1,5 @@
 import { Button, Dropdown, Menu, Space } from 'antd';
+import type { MenuProps } from 'antd';
 import { FilterDropdownProps, SorterResult } from 'antd/lib/table/interface';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -28,9 +29,9 @@ import Icon from 'shared/components/Icon/Icon';
 import { isEqual } from 'shared/utils/data';
 import { ErrorType } from 'shared/utils/error';
 import { validateDetApiEnum } from 'shared/utils/service';
+import { alphaNumericSorter } from 'shared/utils/sort';
 import { ModelItem } from 'types';
 import handleError from 'utils/error';
-import { alphaNumericSorter } from 'utils/sort';
 import { getDisplayName } from 'utils/user';
 
 import css from './ModelRegistry.module.scss';
@@ -43,7 +44,7 @@ import settingsConfig, {
 const filterKeys: Array<keyof Settings> = [ 'tags', 'name', 'users', 'description' ];
 
 const ModelRegistry: React.FC = () => {
-  const { users } = useStore();
+  const { users, auth: { user } } = useStore();
   const [ models, setModels ] = useState<ModelItem[]>([]);
   const [ tags, setTags ] = useState<string[]>([]);
   const [ isLoading, setIsLoading ] = useState(true);
@@ -255,21 +256,31 @@ const ModelRegistry: React.FC = () => {
     resetSettings([ ...filterKeys, 'tableOffset' ]);
   }, [ resetSettings ]);
 
-  const ModelActionMenu = useCallback((record: ModelItem) => (
-    <Menu>
-      <Menu.Item
-        key="switch-archived"
-        onClick={() => switchArchived(record)}>
-        {record.archived ? 'Unarchive' : 'Archive'}
-      </Menu.Item>
-      <Menu.Item
-        danger
-        key="delete-model"
-        onClick={() => showConfirmDelete(record)}>
-        Delete Model
-      </Menu.Item>
-    </Menu>
-  ), [ showConfirmDelete, switchArchived ]);
+  const ModelActionMenu = useCallback((record: ModelItem) => {
+    enum MenuKey {
+      SWITCH_ARCHIVED = 'switch-archived',
+      DELETE_MODEL = 'delete-model',
+    }
+
+    const funcs = {
+      [MenuKey.SWITCH_ARCHIVED]: () => { switchArchived(record); },
+      [MenuKey.DELETE_MODEL]: () => { showConfirmDelete(record); },
+    };
+
+    const onItemClick: MenuProps['onClick'] = (e) => {
+      funcs[e.key as MenuKey]();
+    };
+
+    const menuItems: MenuProps['items'] = [
+      { key: MenuKey.SWITCH_ARCHIVED, label: record.archived ? 'Unarchive' : 'Archive' },
+    ];
+
+    if (user?.id === record.userId || user?.isAdmin) {
+      menuItems.push({ danger: true, key: MenuKey.DELETE_MODEL, label: 'Delete Model' });
+    }
+
+    return <Menu items={menuItems} onClick={onItemClick} />;
+  }, [ showConfirmDelete, switchArchived, user?.id, user?.isAdmin ]);
 
   const columns = useMemo(() => {
     const tagsRenderer = (value: string, record: ModelItem) => (

@@ -1,7 +1,7 @@
 import { Input } from 'antd';
 import React, { useCallback } from 'react';
 
-import CopyButton from 'components/CopyButton';
+import CopyButton from 'shared/components/CopyButton';
 import useModal, { ModalHooks as Hooks, ModalCloseReason } from 'shared/hooks/useModal/useModal';
 import { copyToClipboard } from 'shared/utils/dom';
 import { ModelVersion } from 'types';
@@ -41,7 +41,6 @@ const useModalModelDownload = ({ onClose }: Props = {}): ModalHooks => {
 
   const getModalProps = useCallback((version: ModelVersion) => {
     return {
-      bodyStyle: { padding: 0 },
       cancelText: 'Okay',
       closable: true,
       content: getModalContent(version),

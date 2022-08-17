@@ -57,7 +57,12 @@ def make_interactive_task_url(
         public_url, task_type, task_id, wait_path_url, service_address
     )
     task_web_url = "{}/interactive/{}/{}/{}/{}/{}".format(
-        public_url, task_id, task_type, description, resource_pool, parse.quote_plus(wait_page_url)
+        public_url,
+        task_id,
+        task_type,
+        parse.quote(description),
+        resource_pool,
+        parse.quote_plus(wait_page_url),
     )
     return task_web_url
 
@@ -140,9 +145,14 @@ def do_request(
     except requests.exceptions.RequestException as e:
         raise errors.BadRequestException(str(e))
 
-    def _get_message(r: requests.models.Response) -> str:
+    def _get_error_str(r: requests.models.Response) -> str:
         try:
-            return str(_json.loads(r.text).get("message"))
+            json_resp = _json.loads(r.text)
+            mes = json_resp.get("message")
+            if mes is not None:
+                return str(mes)
+            # Try getting GRPC error description if message does not exist.
+            return str(json_resp.get("error").get("error"))
         except Exception:
             return ""
 
@@ -150,7 +160,7 @@ def do_request(
         username = ""
         if auth is not None:
             username = auth.get_session_user()
-        raise errors.ForbiddenException(username=username, message=_get_message(r))
+        raise errors.ForbiddenException(username=username, message=_get_error_str(r))
     elif r.status_code == 404:
         raise errors.NotFoundException(r)
     elif r.status_code >= 300:

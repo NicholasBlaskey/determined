@@ -8,7 +8,7 @@ import yaml
 
 from determined.cli import render
 from determined.cli.session import setup_session
-from determined.cli.util import format_args, pagination_args
+from determined.cli.util import format_args, pagination_args_fetchone
 from determined.common.api import authentication, bindings
 from determined.common.declarative_argparse import Arg, Cmd, Group
 from determined.common.experimental import Session
@@ -84,7 +84,7 @@ def update(args: Namespace) -> None:
         aheadOf=args.ahead_of,
     )
     bindings.post_UpdateJobQueue(
-        setup_session(args), body=bindings.v1UpdateJobQueueRequest([update])
+        setup_session(args), body=bindings.v1UpdateJobQueueRequest(updates=[update])
     )
 
 
@@ -113,7 +113,7 @@ def _single_update(
         behindOf=behind_of if behind_of != "" else None,
         aheadOf=ahead_of if ahead_of != "" else None,
     )
-    bindings.post_UpdateJobQueue(session, body=bindings.v1UpdateJobQueueRequest([update]))
+    bindings.post_UpdateJobQueue(session, body=bindings.v1UpdateJobQueueRequest(updates=[update]))
 
 
 def check_is_priority(pools: bindings.v1GetResourcePoolsResponse, resource_pool: str) -> bool:
@@ -176,7 +176,7 @@ args_description = [
                         type=str,
                         help="The target resource pool, if any.",
                     ),
-                    *pagination_args,
+                    *pagination_args_fetchone,
                     Group(
                         format_args["json"],
                         format_args["yaml"],
