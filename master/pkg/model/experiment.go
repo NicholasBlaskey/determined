@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/logv1"
@@ -295,6 +296,40 @@ type Experiment struct {
 	OwnerID              *UserID    `db:"owner_id"`
 	Username             string     `db:"username"`
 	ProjectID            int        `db:"project_id"`
+}
+
+func ExperimentFromProto(e *experimentv1.Experiment) *Experiment {
+	var uid *UserID
+	if e.UserId != 0 {
+		uid = ptrs.Ptr(UserID(e.UserId))
+	}
+	var endTime *time.Time
+	if e.EndTime != nil {
+		endTime = ptrs.Ptr(e.EndTime.AsTime())
+	}
+	var parentID *int
+	if e.ForkedFrom != nil {
+		parentID = ptrs.Ptr(int(e.ForkedFrom.Value))
+	}
+
+	return &Experiment{
+		ID:    int(e.Id),
+		JobID: JobID(e.JobId),
+		State: StateFromProto(e.State),
+		Notes: e.Notes,
+		// Config: e.Config,
+		// OriginalConfig:
+		// ModelDefinitionBytes:
+		StartTime: e.StartTime.AsTime(),
+		EndTime:   endTime,
+		ParentID:  parentID,
+		Archived:  e.Archived,
+		// GitRemote:
+		// GitCommitDate
+		OwnerID:   uid,
+		Username:  e.Username,
+		ProjectID: int(e.ProjectId),
+	}
 }
 
 // ExperimentDescriptor is a minimal description of an experiment.
