@@ -19,9 +19,12 @@ import (
 	"github.com/determined-ai/determined/master/internal/config"
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/mocks"
+	"github.com/determined-ai/determined/master/internal/sproto"
 	"github.com/determined-ai/determined/master/internal/user"
+	"github.com/determined-ai/determined/master/pkg/actor"
 	"github.com/determined-ai/determined/master/pkg/etc"
 	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/master/pkg/tasks"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/userv1"
 )
@@ -29,6 +32,7 @@ import (
 var (
 	pgDB      *db.PgDB
 	authzUser *mocks.UserAuthZ = &mocks.UserAuthZ{}
+	system    *actor.System
 )
 
 func SetupUserAuthzTest(t *testing.T) (*apiServer, *mocks.UserAuthZ, model.User, context.Context) {
@@ -39,13 +43,24 @@ func SetupUserAuthzTest(t *testing.T) (*apiServer, *mocks.UserAuthZ, model.User,
 
 		user.AuthZProvider.Register("mock", authzUser)
 		config.GetMasterConfig().Security.AuthZ = config.AuthZConfig{Type: "mock"}
+
+		system = actor.NewSystem("mock")
+		system.ActorOf(sproto.K8sRMAddr, actor.ActorFunc(func(context *actor.Context) error {
+			return nil
+		}))
 	}
 
 	api := &apiServer{m: &Master{
-		db: pgDB,
+		system: system,
+		db:     pgDB,
 		config: &config.Config{
-			InternalConfig: config.InternalConfig{},
+			InternalConfig:        config.InternalConfig{},
+			TaskContainerDefaults: model.TaskContainerDefaultsConfig{},
+			ResourceConfig: &config.ResourceConfig{
+				ResourceManager: &config.ResourceManagerConfig{},
+			},
 		},
+		taskSpec: &tasks.TaskSpec{},
 	}}
 
 	user, err := pgDB.UserByUsername("determined")
