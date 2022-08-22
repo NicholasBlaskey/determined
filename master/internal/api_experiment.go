@@ -60,8 +60,12 @@ func (a *apiServer) getExperiment(
 		return nil, errors.Wrapf(err, "error fetching experiment from database: %d", experimentID)
 	}
 
+	modelExp, err := model.ExperimentFromProto(exp)
+	if err != nil {
+		return nil, err
+	}
 	if ok, err := expauth.AuthZProvider.Get().
-		CanGetExperiment(curUser, model.ExperimentFromProto(exp)); err != nil {
+		CanGetExperiment(curUser, modelExp); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, expNotFound
@@ -97,7 +101,8 @@ func (a *apiServer) getExperimentAndCheckCanDoActions(
 		return nil, model.User{}, err
 	}
 
-	if ok, err := expauth.AuthZProvider.Get().CanGetExperiment(*curUser, e); err != nil {
+	var ok bool
+	if ok, err = expauth.AuthZProvider.Get().CanGetExperiment(*curUser, e); err != nil {
 		return nil, model.User{}, err
 	} else if !ok {
 		return nil, model.User{}, expNotFound
@@ -345,7 +350,6 @@ func (a *apiServer) GetExperiments(
 		)
 	default:
 		orderExpr = fmt.Sprintf("id %s", sortByMap[req.OrderBy])
-
 	}
 	query = query.OrderExpr(orderExpr)
 
@@ -443,7 +447,7 @@ func experimentsPagination(query *bun.SelectQuery, offset, limit int) (*apiv1.Pa
 	}, nil
 }
 
-// TODO perf check
+// TODO perf check.
 func (a *apiServer) GetExperimentLabels(ctx context.Context,
 	req *apiv1.GetExperimentLabelsRequest,
 ) (*apiv1.GetExperimentLabelsResponse, error) {
@@ -499,7 +503,7 @@ func (a *apiServer) PreviewHPSearch(
 	if err != nil {
 		return nil, err
 	}
-	if err := expauth.AuthZProvider.Get().CanPreviewHPSearch(*curUser); err != nil {
+	if err = expauth.AuthZProvider.Get().CanPreviewHPSearch(*curUser); err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 
@@ -587,7 +591,7 @@ func (a *apiServer) PreviewHPSearch(
 func (a *apiServer) ActivateExperiment(
 	ctx context.Context, req *apiv1.ActivateExperimentRequest,
 ) (resp *apiv1.ActivateExperimentResponse, err error) {
-	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
 		expauth.AuthZProvider.Get().CanActivateExperiment); err != nil {
 		return nil, err
 	}
@@ -606,7 +610,7 @@ func (a *apiServer) ActivateExperiment(
 func (a *apiServer) PauseExperiment(
 	ctx context.Context, req *apiv1.PauseExperimentRequest,
 ) (resp *apiv1.PauseExperimentResponse, err error) {
-	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
 		expauth.AuthZProvider.Get().CanPauseExperiment); err != nil {
 		return nil, err
 	}
@@ -625,7 +629,7 @@ func (a *apiServer) PauseExperiment(
 func (a *apiServer) CancelExperiment(
 	ctx context.Context, req *apiv1.CancelExperimentRequest,
 ) (resp *apiv1.CancelExperimentResponse, err error) {
-	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
 		expauth.AuthZProvider.Get().CanCancelExperiment); err != nil {
 		return nil, err
 	}
@@ -641,7 +645,7 @@ func (a *apiServer) CancelExperiment(
 func (a *apiServer) KillExperiment(
 	ctx context.Context, req *apiv1.KillExperimentRequest,
 ) (resp *apiv1.KillExperimentResponse, err error) {
-	if _, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
+	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id), false,
 		expauth.AuthZProvider.Get().CanKillExperiment); err != nil {
 		return nil, err
 	}
@@ -722,7 +726,10 @@ func (a *apiServer) PatchExperiment(
 	if err != nil {
 		return nil, err
 	}
-	modelExp := model.ExperimentFromProto(exp)
+	modelExp, err := model.ExperimentFromProto(exp)
+	if err != nil {
+		return nil, err
+	}
 
 	madeChanges := false
 	if req.Experiment.Name != nil && exp.Name != req.Experiment.Name.Value {
@@ -829,7 +836,7 @@ func (a *apiServer) GetExperimentCheckpoints(
 
 	resp := &apiv1.GetExperimentCheckpointsResponse{}
 	resp.Checkpoints = []*checkpointv1.Checkpoint{}
-	switch err := a.m.db.QueryProto("get_checkpoints_for_experiment", &resp.Checkpoints, req.Id); {
+	switch err = a.m.db.QueryProto("get_checkpoints_for_experiment", &resp.Checkpoints, req.Id); {
 	case err == db.ErrNotFound:
 		return nil, status.Errorf(
 			codes.NotFound, "no checkpoints found for experiment %d", req.Id)
@@ -910,12 +917,20 @@ func (a *apiServer) CreateExperiment(
 	}
 	if req.ParentId != 0 {
 		detParams.ParentID = ptrs.Ptr(int(req.ParentId))
-		parentExp, err := a.getExperiment(*user, *detParams.ParentID)
+		// Can't use getExperimentAndCheckDoActions since model.Experiment doesn't have ParentArchived.
+		var parentExp *experimentv1.Experiment
+		parentExp, err = a.getExperiment(*user, *detParams.ParentID)
 		if err != nil {
 			return nil, err
 		}
+		var modelExp *model.Experiment
+		modelExp, err = model.ExperimentFromProto(parentExp)
+		if err != nil {
+			return nil, err
+		}
+
 		if err = expauth.AuthZProvider.Get().
-			CanForkFromExperiment(*user, model.ExperimentFromProto(parentExp)); err != nil {
+			CanForkFromExperiment(*user, modelExp); err != nil {
 			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 		if parentExp.Archived {
@@ -932,19 +947,19 @@ func (a *apiServer) CreateExperiment(
 	}
 
 	dbExp, validateOnly, taskSpec, err := a.m.parseCreateExperiment(&detParams, user)
-	if errors.Is(err, cantFindProjectError) {
-		return nil, status.Errorf(codes.NotFound, cantFindProjectError.Error())
+	if errors.Is(err, errCantFindProject) {
+		return nil, status.Errorf(codes.NotFound, errCantFindProject.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid experiment: %s", err)
 	}
 
 	proj, err := a.GetProjectByID(int32(dbExp.ProjectID), *user)
 	if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
-		return nil, status.Errorf(codes.NotFound, cantFindProjectError.Error())
+		return nil, status.Errorf(codes.NotFound, errCantFindProject.Error())
 	} else if err != nil {
 		return nil, err
 	}
-	if err := expauth.AuthZProvider.Get().CanCreateExperiment(*user, proj, dbExp); err != nil {
+	if err = expauth.AuthZProvider.Get().CanCreateExperiment(*user, proj, dbExp); err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 	if validateOnly {
@@ -953,7 +968,7 @@ func (a *apiServer) CreateExperiment(
 	// Check user has permission for what they are trying to do
 	// before actually saving the experiment.
 	if req.Activate {
-		if err := expauth.AuthZProvider.Get().CanActivateExperiment(*user, dbExp); err != nil {
+		if err = expauth.AuthZProvider.Get().CanActivateExperiment(*user, dbExp); err != nil {
 			return nil, status.Errorf(codes.PermissionDenied, err.Error())
 		}
 	}

@@ -230,7 +230,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 			SaveTrialLatest    int `json:"save_trial_latest"`
 		} `json:"checkpoint_storage"`
 	}{}
-	if err := api.BindPatch(&patch, c); err != nil {
+	if err = api.BindPatch(&patch, c); err != nil {
 		return nil, err
 	}
 
@@ -361,7 +361,7 @@ type CreateExperimentParams struct {
 	Workspace     *string         `json:"workspace"`
 }
 
-var cantFindProjectError = fmt.Errorf("unable to find parent workspace and project")
+var errCantFindProject = fmt.Errorf("unable to find parent workspace and project")
 
 func (m *Master) parseCreateExperiment(params *CreateExperimentParams, user *model.User) (
 	*model.Experiment, bool, *tasks.TaskSpec, error,
@@ -450,13 +450,11 @@ func (m *Master) parseCreateExperiment(params *CreateExperimentParams, user *mod
 				errors.New("workspace and project must both be included in config if one is provided")
 		}
 		if config.Workspace() != "" && config.Project() != "" {
-			if config.Workspace() != "" && config.Project() != "" {
-				projectID, err = m.db.ProjectByName(config.Workspace(), config.Project())
-				if errors.Is(err, db.ErrNotFound) {
-					return nil, false, nil, cantFindProjectError
-				} else if err != nil {
-					return nil, false, nil, errors.Wrapf(err, cantFindProjectError.Error())
-				}
+			projectID, err = m.db.ProjectByName(config.Workspace(), config.Project())
+			if errors.Is(err, db.ErrNotFound) {
+				return nil, false, nil, errCantFindProject
+			} else if err != nil {
+				return nil, false, nil, errors.Wrapf(err, errCantFindProject.Error())
 			}
 		}
 	} else {
@@ -489,34 +487,35 @@ func (m *Master) postExperiment(c echo.Context) (interface{}, error) {
 		return nil, errors.Wrap(err, "invalid experiment params")
 	}
 	if params.ParentID != nil {
-		if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, *params.ParentID,
+		if _, _, err = echoGetExperimentAndCheckCanDoActions(c, m, *params.ParentID,
 			expauth.AuthZProvider.Get().CanForkFromExperiment); err != nil {
 			return nil, err
 		}
 	}
 
 	dbExp, validateOnly, taskSpec, err := m.parseCreateExperiment(&params, &user)
-	if errors.Is(err, cantFindProjectError) {
-		return nil, echo.NewHTTPError(http.StatusNotFound, cantFindProjectError.Error())
+	if errors.Is(err, errCantFindProject) {
+		return nil, echo.NewHTTPError(http.StatusNotFound, errCantFindProject.Error())
 	} else if err != nil {
 		return nil, echo.NewHTTPError(http.StatusBadRequest, errors.Wrap(err, "invalid experiment"))
 	}
 
 	// Can we view the project that the experiment will be created in?
 	p := &projectv1.Project{}
-	if err := m.db.QueryProto("get_project", p, dbExp.ProjectID); errors.Is(err, db.ErrNotFound) {
-		return nil, echo.NewHTTPError(http.StatusNotFound, cantFindProjectError.Error())
+	if err = m.db.QueryProto("get_project", p, dbExp.ProjectID); errors.Is(err, db.ErrNotFound) {
+		return nil, echo.NewHTTPError(http.StatusNotFound, errCantFindProject.Error())
 	} else if err != nil {
 		return nil, err
 	}
-	if ok, err := project.AuthZProvider.Get().CanGetProject(user, p); err != nil {
+	var ok bool
+	if ok, err = project.AuthZProvider.Get().CanGetProject(user, p); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, echo.NewHTTPError(http.StatusNotFound, cantFindProjectError.Error())
+		return nil, echo.NewHTTPError(http.StatusNotFound, errCantFindProject.Error())
 	}
 
 	// Can we create the experiment?
-	if err := expauth.AuthZProvider.Get().CanCreateExperiment(user, p, dbExp); err != nil {
+	if err = expauth.AuthZProvider.Get().CanCreateExperiment(user, p, dbExp); err != nil {
 		return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
 	}
 	if validateOnly {
@@ -525,7 +524,7 @@ func (m *Master) postExperiment(c echo.Context) (interface{}, error) {
 	// Check user has permission for what they are trying to do
 	// before actually saving the experiment.
 	if params.Activate {
-		if err := expauth.AuthZProvider.Get().CanActivateExperiment(user, dbExp); err != nil {
+		if err = expauth.AuthZProvider.Get().CanActivateExperiment(user, dbExp); err != nil {
 			return nil, echo.NewHTTPError(http.StatusForbidden, err.Error())
 		}
 	}

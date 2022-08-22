@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -298,7 +299,8 @@ type Experiment struct {
 	ProjectID            int        `db:"project_id"`
 }
 
-func ExperimentFromProto(e *experimentv1.Experiment) *Experiment {
+// ExperimentFromProto converts a experimentv1.Experiment to a model.Experiment.
+func ExperimentFromProto(e *experimentv1.Experiment) (*Experiment, error) {
 	var uid *UserID
 	if e.UserId != 0 {
 		uid = ptrs.Ptr(UserID(e.UserId))
@@ -312,13 +314,22 @@ func ExperimentFromProto(e *experimentv1.Experiment) *Experiment {
 		parentID = ptrs.Ptr(int(e.ForkedFrom.Value))
 	}
 
+	bytes, err := json.Marshal(e.Config)
+	if err != nil {
+		return nil, err
+	}
+	var config expconf.ExperimentConfig
+	if err = json.Unmarshal(bytes, &config); err != nil {
+		return nil, err
+	}
+
 	return &Experiment{
-		ID:    int(e.Id),
-		JobID: JobID(e.JobId),
-		State: StateFromProto(e.State),
-		Notes: e.Notes,
-		// Config: e.Config,
-		// OriginalConfig:
+		ID:             int(e.Id),
+		JobID:          JobID(e.JobId),
+		State:          StateFromProto(e.State),
+		Notes:          e.Notes,
+		Config:         config,
+		OriginalConfig: e.OriginalConfig,
 		// ModelDefinitionBytes:
 		StartTime: e.StartTime.AsTime(),
 		EndTime:   endTime,
@@ -329,7 +340,7 @@ func ExperimentFromProto(e *experimentv1.Experiment) *Experiment {
 		OwnerID:   uid,
 		Username:  e.Username,
 		ProjectID: int(e.ProjectId),
-	}
+	}, nil
 }
 
 // ExperimentDescriptor is a minimal description of an experiment.

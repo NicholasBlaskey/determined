@@ -45,28 +45,25 @@ func SetupAPITest(t *testing.T) (*apiServer, model.User, context.Context) {
 		require.NoError(t, etc.SetRootPath("../static/srv"))
 
 		system = actor.NewSystem("mock")
-		ref, _ := system.ActorOf(sproto.K8sRMAddr, actor.ActorFunc(func(context *actor.Context) error {
-			return nil
-		}))
+		ref, _ := system.ActorOf(sproto.K8sRMAddr, actor.ActorFunc(
+			func(context *actor.Context) error {
+				return nil
+			}))
 		mockRM = rm.WrapRMActor(ref)
 	}
 
-	c := &config.Config{
-		InternalConfig:        config.InternalConfig{},
-		TaskContainerDefaults: model.TaskContainerDefaultsConfig{},
-		ResourceConfig: &config.ResourceConfig{
-			ResourceManager: &config.ResourceManagerConfig{},
-		},
-	}
 	api := &apiServer{
 		m: &Master{
 			system: system,
 			db:     pgDB,
 			rm:     mockRM,
-			// rm:     rm.WrapRMActor(sproto.K8sRMAddr),
-			// rm: rm.NewKubernetesResourceManager(system, pgDB, nil, c.ResourceConfig,
-			//	&aproto.MasterSetAgentOptions{}, nil),
-			config:   c,
+			config: &config.Config{
+				InternalConfig:        config.InternalConfig{},
+				TaskContainerDefaults: model.TaskContainerDefaultsConfig{},
+				ResourceConfig: &config.ResourceConfig{
+					ResourceManager: &config.ResourceManagerConfig{},
+				},
+			},
 			taskSpec: &tasks.TaskSpec{},
 		},
 	}
