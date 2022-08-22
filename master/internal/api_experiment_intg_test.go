@@ -11,22 +11,10 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
-
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-
-	"github.com/determined-ai/determined/master/internal/db"
-	"github.com/determined-ai/determined/master/pkg/model"
-	"github.com/determined-ai/determined/master/pkg/ptrs"
-	"github.com/determined-ai/determined/master/pkg/schemas"
-	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
-	"github.com/determined-ai/determined/proto/pkg/apiv1"
-	"github.com/determined-ai/determined/proto/pkg/experimentv1"
-	"github.com/determined-ai/determined/proto/pkg/userv1"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/uuid"
@@ -35,24 +23,23 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	//"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	//"google.golang.org/protobuf/types/known/wrapperspb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	//"github.com/determined-ai/determined/master/internal/config"
-	//"github.com/determined-ai/determined/master/internal/db"
+	"github.com/determined-ai/determined/master/internal/db"
 	expauth "github.com/determined-ai/determined/master/internal/experiment"
 	"github.com/determined-ai/determined/master/internal/mocks"
-	//"github.com/determined-ai/determined/master/internal/user"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
+	"github.com/determined-ai/determined/master/pkg/schemas"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/experimentv1"
-	"github.com/determined-ai/determined/proto/pkg/projectv1"
+	//"github.com/determined-ai/determined/proto/pkg/projectv1"
+	"github.com/determined-ai/determined/proto/pkg/userv1"
 )
 
 type mockStream[T any] struct {
@@ -107,7 +94,6 @@ var minExpConfig = expconf.ExperimentConfig{
 		},
 	},
 	RawHyperparameters: expconf.Hyperparameters{},
-	RawName:            expconf.Name{ptrs.Ptr("name")},
 	RawReproducibility: &expconf.ReproducibilityConfig{ptrs.Ptr(uint32(42))},
 	RawSearcher: &expconf.SearcherConfig{
 		RawMetric: ptrs.Ptr("loss"),
@@ -480,7 +466,10 @@ func createTestExpWithProjectID(
 		ProjectID:            projectID,
 		StartTime:            time.Now(),
 		ModelDefinitionBytes: []byte{10, 11, 12},
-		Config:               minExpConfig,
+		Config: schemas.Merge(minExpConfig, expconf.ExperimentConfig{
+			RawDescription: ptrs.Ptr("desc"),
+			RawName:        expconf.Name{ptrs.Ptr("name")},
+		}).(expconf.ExperimentConfig),
 	}
 	require.NoError(t, api.m.db.AddExperiment(exp))
 
@@ -514,6 +503,7 @@ func TestAuthZGetExperiment(t *testing.T) {
 	require.Equal(t, int32(exp.ID), res.Experiment.Id)
 }
 
+/*
 func TestAuthZGetExperiments(t *testing.T) {
 	api, authZExp, authZProject, curUser, ctx := SetupExpAuthTest(t)
 
@@ -539,6 +529,7 @@ func TestAuthZGetExperiments(t *testing.T) {
 	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{ProjectId: 1})
 	require.Equal(t, projectNotFoundErr(1), err)
 }
+*/
 
 func TestAuthZPreviewHPSearch(t *testing.T) {
 	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
@@ -550,6 +541,7 @@ func TestAuthZPreviewHPSearch(t *testing.T) {
 	require.Equal(t, expectedErr.Error(), err.Error())
 }
 
+/*
 func TestAuthZGetExperimentLabels(t *testing.T) {
 	api, authZExp, authZProject, curUser, ctx := SetupExpAuthTest(t)
 
@@ -576,6 +568,7 @@ func TestAuthZGetExperimentLabels(t *testing.T) {
 	_, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{ProjectId: 1})
 	require.Equal(t, projectNotFoundErr(1), err)
 }
+*/
 
 func TestAuthZCreateExperiment(t *testing.T) {
 	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)

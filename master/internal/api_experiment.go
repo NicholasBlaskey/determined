@@ -43,7 +43,6 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/experimentv1"
 	"github.com/determined-ai/determined/proto/pkg/jobv1"
-	"github.com/determined-ai/determined/proto/pkg/projectv1"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
