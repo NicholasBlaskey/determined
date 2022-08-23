@@ -43,6 +43,7 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/experimentv1"
 	"github.com/determined-ai/determined/proto/pkg/jobv1"
+	"github.com/determined-ai/determined/proto/pkg/projectv1"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 )
@@ -447,33 +448,59 @@ func experimentsPagination(query *bun.SelectQuery, offset, limit int) (*apiv1.Pa
 	}, nil
 }
 
-// TODO perf check.
 func (a *apiServer) GetExperimentLabels(ctx context.Context,
 	req *apiv1.GetExperimentLabelsRequest,
 ) (*apiv1.GetExperimentLabelsResponse, error) {
-	r, err := a.GetExperiments(ctx, &apiv1.GetExperimentsRequest{Limit: -1, ProjectId: req.ProjectId})
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
 	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
+	}
+
+	resp := &apiv1.GetExperimentLabelsResponse{}
+	var labels [][]string
+	query := db.Bun().NewSelect().
+		Table("experiments").
+		Model(&labels).
+		ColumnExpr("config->'labels' AS labels").
+		Distinct()
+
+	var proj *projectv1.Project
+	if req.ProjectId != 0 {
+		proj, err = a.GetProjectByID(req.ProjectId, *curUser)
+		if err != nil {
+			return nil, err
+		}
+
+		query = query.Where("project_id = ?", req.ProjectId)
+	}
+
+	if query, err = expauth.AuthZProvider.Get().
+		FilterExperimentLabelsQuery(*curUser, proj, query); err != nil {
 		return nil, err
 	}
+
+	if err = query.Scan(ctx); err != nil {
+		return nil, err
+	}
+
+	// Sort labels by usage.
 	labelUsage := make(map[string]int)
-	for _, e := range r.Experiments {
-		for _, l := range e.Labels {
+	for _, labelArr := range labels {
+		for _, l := range labelArr {
 			labelUsage[l]++
 		}
 	}
 
-	// Return labels.
-	labels := make([]string, len(labelUsage))
+	resp.Labels = make([]string, len(labelUsage))
 	i := 0
 	for label := range labelUsage {
-		labels[i] = label
+		resp.Labels[i] = label
 		i++
 	}
-	sort.Slice(labels, func(i, j int) bool {
-		return labelUsage[labels[i]] > labelUsage[labels[j]]
+	sort.Slice(resp.Labels, func(i, j int) bool {
+		return labelUsage[resp.Labels[i]] > labelUsage[resp.Labels[j]]
 	})
-
-	return &apiv1.GetExperimentLabelsResponse{Labels: labels}, nil
+	return resp, nil
 }
 
 func (a *apiServer) GetExperimentValidationHistory(

@@ -1,6 +1,8 @@
 package experiment
 
 import (
+	"github.com/uptrace/bun"
+
 	"github.com/determined-ai/determined/master/internal/authz"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
@@ -21,8 +23,11 @@ type ExperimentAuthZ interface {
 		curUser model.User, project *projectv1.Project, experiments []*model.Experiment,
 	) ([]*model.Experiment, error)
 
-	// TODO (encoding business logic here?!)
 	// GET /api/v1/experiments/labels
+	// "proj" being nil indicates searching across all projects.
+	FilterExperimentLabelsQuery(
+		curUser model.User, proj *projectv1.Project, query *bun.SelectQuery,
+	) (*bun.SelectQuery, error)
 
 	// GET /api/v1/experiments/:exp_id/validation_history
 	CanGetExperimentValidationHistory(curUser model.User, e *model.Experiment) error

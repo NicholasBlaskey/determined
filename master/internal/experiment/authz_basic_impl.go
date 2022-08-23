@@ -3,6 +3,8 @@ package experiment
 import (
 	"fmt"
 
+	"github.com/uptrace/bun"
+
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/projectv1"
@@ -33,6 +35,13 @@ func (a *ExperimentAuthZBasic) FilterExperiments(
 	curUser model.User, project *projectv1.Project, experiments []*model.Experiment,
 ) ([]*model.Experiment, error) {
 	return experiments, nil
+}
+
+// FilterExperimentLabelsQuery returns the query unmodified.
+func (a *ExperimentAuthZBasic) FilterExperimentLabelsQuery(
+	curUser model.User, proj *projectv1.Project, query *bun.SelectQuery,
+) (*bun.SelectQuery, error) {
+	return query, nil
 }
 
 // CanGetExperimentValidationHistory always returns a nil error.

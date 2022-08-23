@@ -42,12 +42,18 @@ func SetupProjectAuthZTest(
 }
 
 func createProjectAndWorkspace(ctx context.Context, t *testing.T, api *apiServer) (int, int) {
-	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything, mock.Anything).Return(nil).Once()
+	if workspaceAuthZ != nil {
+		workspaceAuthZ.On("CanCreateWorkspace", mock.Anything, mock.Anything).Return(nil).Once()
+	}
 	wresp, werr := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
 	require.NoError(t, werr)
 
-	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
-	projectAuthZ.On("CanCreateProject", mock.Anything, mock.Anything).Return(nil).Once()
+	if workspaceAuthZ != nil {
+		workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
+	}
+	if projectAuthZ != nil {
+		projectAuthZ.On("CanCreateProject", mock.Anything, mock.Anything).Return(nil).Once()
+	}
 	resp, err := api.PostProject(ctx, &apiv1.PostProjectRequest{
 		Name: uuid.New().String(), WorkspaceId: wresp.Workspace.Id,
 	})

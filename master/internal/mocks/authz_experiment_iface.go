@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	bun "github.com/uptrace/bun"
+
 	checkpointv1 "github.com/determined-ai/determined/proto/pkg/checkpointv1"
 
 	mock "github.com/stretchr/testify/mock"
@@ -488,6 +490,29 @@ func (_m *ExperimentAuthZ) FilterCheckpoints(curUser model.User, e *model.Experi
 	var r1 error
 	if rf, ok := ret.Get(1).(func(model.User, *model.Experiment, []*checkpointv1.Checkpoint) error); ok {
 		r1 = rf(curUser, e, checkpoints)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// FilterExperimentLabelsQuery provides a mock function with given fields: curUser, proj, query
+func (_m *ExperimentAuthZ) FilterExperimentLabelsQuery(curUser model.User, proj *projectv1.Project, query *bun.SelectQuery) (*bun.SelectQuery, error) {
+	ret := _m.Called(curUser, proj, query)
+
+	var r0 *bun.SelectQuery
+	if rf, ok := ret.Get(0).(func(model.User, *projectv1.Project, *bun.SelectQuery) *bun.SelectQuery); ok {
+		r0 = rf(curUser, proj, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*bun.SelectQuery)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(model.User, *projectv1.Project, *bun.SelectQuery) error); ok {
+		r1 = rf(curUser, proj, query)
 	} else {
 		r1 = ret.Error(1)
 	}

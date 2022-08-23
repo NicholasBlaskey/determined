@@ -11,6 +11,8 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/uptrace/bun"
+
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -23,9 +25,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	//"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	//"google.golang.org/protobuf/types/known/wrapperspb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/determined-ai/determined/master/internal/db"
@@ -38,7 +38,6 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
 	"github.com/determined-ai/determined/proto/pkg/experimentv1"
-	//"github.com/determined-ai/determined/proto/pkg/projectv1"
 	"github.com/determined-ai/determined/proto/pkg/userv1"
 )
 
@@ -101,6 +100,45 @@ var minExpConfig = expconf.ExperimentConfig{
 			&expconf.Length{Units: 10, Unit: "batches"},
 		},
 	},
+}
+
+func TestGetExperimentLabels(t *testing.T) {
+	api, curUser, ctx := SetupAPITest(t)
+	_, p0 := createProjectAndWorkspace(ctx, t, api)
+	_, p1 := createProjectAndWorkspace(ctx, t, api)
+
+	var labels []string
+	for i := 0; i <= 3; i++ {
+		labels = append(labels, uuid.New().String())
+	}
+
+	// Labels returned in sorted order by frequency.
+	createTestExpWithProjectID(t, api, curUser, p0, labels[0], labels[1])
+	createTestExpWithProjectID(t, api, curUser, p0, labels[0])
+	resp, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{ProjectId: int32(p0)})
+	require.NoError(t, err)
+	require.Equal(t, labels[:2], resp.Labels)
+
+	// Exact label arrays don't count multiple times
+	// (behaviour is kinda weird since Postgres can save
+	// ["a", "b"] either as ["b", "a"] or ["a", "b"] breaking this distinct).
+	createTestExpWithProjectID(t, api, curUser, p0, labels[2])
+	createTestExpWithProjectID(t, api, curUser, p0, labels[2])
+	createTestExpWithProjectID(t, api, curUser, p0, labels[2])
+	resp, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{ProjectId: int32(p0)})
+	require.NoError(t, err)
+	require.Equal(t, labels[0], resp.Labels[0])
+
+	// Second project.
+	createTestExpWithProjectID(t, api, curUser, p1, labels[3])
+	resp, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{ProjectId: int32(p1)})
+	require.NoError(t, err)
+	require.Equal(t, []string{labels[3]}, resp.Labels)
+
+	// No project specified returns at least all of our labels from both projects.
+	resp, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
+	require.NoError(t, err)
+	require.Subset(t, resp.Labels, labels)
 }
 
 func TestGetExperiments(t *testing.T) {
@@ -458,7 +496,7 @@ func createTestExpWithProjectID(
 	for _, l := range labels {
 		labelMap[l] = true
 	}
-	minExpConfig.RawLabels = labelMap
+
 	exp := &model.Experiment{
 		JobID:                model.JobID(uuid.New().String()),
 		State:                model.PausedState,
@@ -467,6 +505,7 @@ func createTestExpWithProjectID(
 		StartTime:            time.Now(),
 		ModelDefinitionBytes: []byte{10, 11, 12},
 		Config: schemas.Merge(minExpConfig, expconf.ExperimentConfig{
+			RawLabels:      labelMap,
 			RawDescription: ptrs.Ptr("desc"),
 			RawName:        expconf.Name{ptrs.Ptr("name")},
 		}).(expconf.ExperimentConfig),
@@ -541,34 +580,44 @@ func TestAuthZPreviewHPSearch(t *testing.T) {
 	require.Equal(t, expectedErr.Error(), err.Error())
 }
 
-/*
 func TestAuthZGetExperimentLabels(t *testing.T) {
 	api, authZExp, authZProject, curUser, ctx := SetupExpAuthTest(t)
+	_, projectID := createProjectAndWorkspace(ctx, t, api)
+	exp0Label := uuid.New().String()
+	exp0 := createTestExpWithProjectID(t, api, curUser, projectID, exp0Label)
+	createTestExpWithProjectID(t, api, curUser, projectID, uuid.New().String())
 
-	var proj *projectv1.Project
-	exps := []*model.Experiment{
-		createTestExp(t, api, curUser, "onlyone", "both"),
-		createTestExp(t, api, curUser, "both"),
-	}
+	// Can't view project gets a 404.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{
+		ProjectId: int32(projectID),
+	})
+	require.Equal(t, projectNotFoundErr(projectID).Error(), err.Error())
 
-	// Error in FilterExperiments passes through.
-	expectedErr := fmt.Errorf("filterExperimentsError")
-	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(nil, expectedErr).Once()
-	_, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
+	// Error from FilterExperimentsLabelsQuery passes through.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	expectedErr := fmt.Errorf("filterExperimentLabelsQueryError")
+	authZExp.On("FilterExperimentLabelsQuery", curUser, mock.Anything, mock.Anything).
+		Return(nil, expectedErr).Once()
+	_, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{
+		ProjectId: int32(projectID),
+	})
 	require.Equal(t, expectedErr, err)
 
-	// Get labels back from whatever FilterExperiments returns.
-	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(exps, nil).Once()
-	resp, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
+	// Filter only to only one experiment ID.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	resQuery := &bun.SelectQuery{}
+	authZExp.On("FilterExperimentLabelsQuery", curUser, mock.Anything, mock.Anything).
+		Return(resQuery, nil).Once().Run(func(args mock.Arguments) {
+		q := args.Get(2).(*bun.SelectQuery)
+		*resQuery = *q.Where("id = ?", exp0.ID)
+	})
+	res, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{
+		ProjectId: int32(projectID),
+	})
 	require.NoError(t, err)
-	require.Equal(t, []string{"both", "onlyone"}, resp.Labels)
-
-	// Project that you do not have access results in not found.
-	authZProject.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
-	_, err = api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{ProjectId: 1})
-	require.Equal(t, projectNotFoundErr(1), err)
+	require.Equal(t, []string{exp0Label}, res.Labels)
 }
-*/
 
 func TestAuthZCreateExperiment(t *testing.T) {
 	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
@@ -598,20 +647,20 @@ func TestAuthZCreateExperiment(t *testing.T) {
 		ProjectId: int32(projectID),
 		Config:    minExpConfToYaml(t),
 	})
-	require.Equal(t, status.Errorf(codes.NotFound, cantFindProjectError.Error()), err)
+	require.Equal(t, status.Errorf(codes.NotFound, errCantFindProject.Error()), err)
 
 	// Can't view project passed in from config.
 	projectAuthZ.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
 	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
 		Config: minExpConfToYaml(t) + "project: Uncategorized\nworkspace: Uncategorized",
 	})
-	require.Equal(t, status.Errorf(codes.NotFound, cantFindProjectError.Error()), err)
+	require.Equal(t, status.Errorf(codes.NotFound, errCantFindProject.Error()), err)
 
 	// Same as passing in a non existant project.
 	_, err = api.CreateExperiment(ctx, &apiv1.CreateExperimentRequest{
 		Config: minExpConfToYaml(t) + "project: doesntexist123\nworkspace: doesntexist123",
 	})
-	require.Equal(t, status.Errorf(codes.NotFound, cantFindProjectError.Error()), err)
+	require.Equal(t, status.Errorf(codes.NotFound, errCantFindProject.Error()), err)
 
 	// Can't create experiment deny.
 	expectedErr = status.Errorf(codes.PermissionDenied, "canCreateExperimentError")
