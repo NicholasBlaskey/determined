@@ -724,6 +724,8 @@ func TestAuthZExpCompareTrialsSample(t *testing.T) {
 	exp1 := createTestExp(t, api, curUser)
 	req := &apiv1.ExpCompareTrialsSampleRequest{
 		ExperimentIds: []int32{int32(exp0.ID), int32(exp1.ID)},
+		MetricName:    "name",
+		MetricType:    apiv1.MetricType_METRIC_TYPE_TRAINING,
 	}
 
 	// Can't view first experiment gets error.
@@ -890,16 +892,22 @@ func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
 		{"CanGetMetricBatches", func(id int) error {
 			return api.MetricBatches(&apiv1.MetricBatchesRequest{
 				ExperimentId: int32(id),
+				MetricName:   "name",
+				MetricType:   apiv1.MetricType_METRIC_TYPE_TRAINING,
 			}, mockStream[*apiv1.MetricBatchesResponse]{ctx})
 		}},
 		{"CanGetTrialsSnapshot", func(id int) error {
 			return api.TrialsSnapshot(&apiv1.TrialsSnapshotRequest{
 				ExperimentId: int32(id),
+				MetricName:   "name",
+				MetricType:   apiv1.MetricType_METRIC_TYPE_TRAINING,
 			}, mockStream[*apiv1.TrialsSnapshotResponse]{ctx})
 		}},
 		{"CanGetTrialsSample", func(id int) error {
 			return api.TrialsSample(&apiv1.TrialsSampleRequest{
 				ExperimentId: int32(id),
+				MetricName:   "name",
+				MetricType:   apiv1.MetricType_METRIC_TYPE_TRAINING,
 			}, mockStream[*apiv1.TrialsSampleResponse]{ctx})
 		}},
 		{"CanComputeHPImportance", func(id int) error {

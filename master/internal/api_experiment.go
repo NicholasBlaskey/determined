@@ -1036,34 +1036,47 @@ func (a *apiServer) CreateExperiment(
 	}, nil
 }
 
-var defaultMetricsStreamPeriod = 30 * time.Second
+var (
+	defaultMetricsStreamPeriod = 30 * time.Second
+	recheckAuthPeriod          = 5 * time.Minute
+)
 
 func (a *apiServer) MetricNames(req *apiv1.MetricNamesRequest,
 	resp apiv1.Determined_MetricNamesServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
-		expauth.AuthZProvider.Get().CanGetMetricNames); err != nil {
-		return err
-	}
-
 	period := time.Duration(req.PeriodSeconds) * time.Second
 	if period == 0 {
 		period = defaultMetricsStreamPeriod
 	}
 
-	config, err := a.m.db.ExperimentConfig(experimentID)
-	if err != nil {
-		return errors.Wrapf(err,
-			"error fetching experiment config from database: %d", experimentID)
-	}
-	searcherMetric := config.Searcher().Metric()
-
 	seenTrain := make(map[string]bool)
 	seenValid := make(map[string]bool)
 	var tStartTime time.Time
 	var vStartTime time.Time
+
+	var timeSinceLastAuth time.Time
+	var config expconf.ExperimentConfig
+	var searcherMetric string
 	for {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(),
+				experimentID, false, expauth.AuthZProvider.Get().CanGetMetricNames); err != nil {
+				return err
+			}
+
+			if timeSinceLastAuth == (time.Time{}) { // Initialzation.
+				var err error
+				config, err = a.m.db.ExperimentConfig(experimentID)
+				if err != nil {
+					return errors.Wrapf(err,
+						"error fetching experiment config from database: %d", experimentID)
+				}
+				searcherMetric = config.Searcher().Metric()
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		var response apiv1.MetricNamesResponse
 		response.SearcherMetric = searcherMetric
 
@@ -1171,11 +1184,6 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	resp apiv1.Determined_MetricBatchesServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
-		expauth.AuthZProvider.Get().CanGetMetricBatches); err != nil {
-		return err
-	}
-
 	metricName := req.MetricName
 	if metricName == "" {
 		return status.Error(codes.InvalidArgument, "must specify a metric name")
@@ -1189,9 +1197,18 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 		period = defaultMetricsStreamPeriod
 	}
 
+	var timeSinceLastAuth time.Time
 	seenBatches := make(map[int32]bool)
 	var startTime time.Time
 	for {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+				expauth.AuthZProvider.Get().CanGetMetricBatches); err != nil {
+				return err
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		var response apiv1.MetricBatchesResponse
 
 		var newBatches []int32
@@ -1245,11 +1262,6 @@ func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	resp apiv1.Determined_TrialsSnapshotServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
-		expauth.AuthZProvider.Get().CanGetTrialsSnapshot); err != nil {
-		return err
-	}
-
 	metricName := req.MetricName
 	if metricName == "" {
 		return status.Error(codes.InvalidArgument, "must specify a metric name")
@@ -1277,10 +1289,17 @@ func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 		maxBatches = math.MaxInt32
 	}
 
+	var timeSinceLastAuth time.Time
 	var startTime time.Time
 	for {
-		var response apiv1.TrialsSnapshotResponse
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+				expauth.AuthZProvider.Get().CanGetTrialsSnapshot); err != nil {
+				return err
+			}
+		}
 
+		var response apiv1.TrialsSnapshotResponse
 		var newTrials []*apiv1.TrialsSnapshotResponse_Trial
 		var endTime time.Time
 		var err error
@@ -1482,11 +1501,6 @@ func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	resp apiv1.Determined_TrialsSampleServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
-		expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
-		return err
-	}
-
 	maxTrials := int(req.MaxTrials)
 	if maxTrials == 0 {
 		maxTrials = 25
@@ -1514,15 +1528,29 @@ func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 		return status.Error(codes.InvalidArgument, "must specify a metric name")
 	}
 
-	config, err := a.m.db.ExperimentConfig(experimentID)
-	if err != nil {
-		return errors.Wrapf(err, "error fetching experiment config from database")
-	}
-	searcherConfig := config.Searcher()
-
+	var timeSinceLastAuth time.Time
+	var config expconf.ExperimentConfig
+	var searcherConfig expconf.SearcherConfig
 	trialCursors := make(map[int32]time.Time)
 	currentTrials := make(map[int32]bool)
 	for {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+				expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
+				return err
+			}
+
+			if timeSinceLastAuth == (time.Time{}) { // Initialzation.
+				var err error
+				config, err = a.m.db.ExperimentConfig(experimentID)
+				if err != nil {
+					return errors.Wrapf(err, "error fetching experiment config from database")
+				}
+				searcherConfig = config.Searcher()
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		var response apiv1.TrialsSampleResponse
 		var promotedTrials []int32
 		var demotedTrials []int32
@@ -1591,13 +1619,6 @@ func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequ
 	resp apiv1.Determined_ExpCompareTrialsSampleServer,
 ) error {
 	experimentIDs := req.ExperimentIds
-	for _, expID := range experimentIDs {
-		if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), int(expID), false,
-			expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
-			return err
-		}
-	}
-
 	maxTrials := int(req.MaxTrials)
 	if maxTrials == 0 {
 		maxTrials = 25
@@ -1625,9 +1646,20 @@ func (a *apiServer) ExpCompareTrialsSample(req *apiv1.ExpCompareTrialsSampleRequ
 		return status.Error(codes.InvalidArgument, "must specify a metric name")
 	}
 
+	var timeSinceLastAuth time.Time
 	trialCursors := make(map[int32]time.Time)
 	currentTrials := make(map[int32]bool)
 	for {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			for _, expID := range experimentIDs {
+				if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), int(expID), false,
+					expauth.AuthZProvider.Get().CanGetTrialsSample); err != nil {
+					return err
+				}
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		var response apiv1.ExpCompareTrialsSampleResponse
 		var promotedTrials []int32
 		var demotedTrials []int32
@@ -1742,17 +1774,21 @@ func (a *apiServer) GetHPImportance(req *apiv1.GetHPImportanceRequest,
 	resp apiv1.Determined_GetHPImportanceServer,
 ) error {
 	experimentID := int(req.ExperimentId)
-	if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
-		expauth.AuthZProvider.Get().CanGetHPImportance); err != nil {
-		return err
-	}
-
 	period := time.Duration(req.PeriodSeconds) * time.Second
 	if period == 0 {
 		period = defaultMetricsStreamPeriod
 	}
 
+	var timeSinceLastAuth time.Time
 	for {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID, false,
+				expauth.AuthZProvider.Get().CanGetHPImportance); err != nil {
+				return err
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		var response apiv1.GetHPImportanceResponse
 
 		result, err := a.m.db.GetHPImportance(experimentID)
