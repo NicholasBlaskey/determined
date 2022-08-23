@@ -542,33 +542,38 @@ func TestAuthZGetExperiment(t *testing.T) {
 	require.Equal(t, int32(exp.ID), res.Experiment.Id)
 }
 
-/*
 func TestAuthZGetExperiments(t *testing.T) {
 	api, authZExp, authZProject, curUser, ctx := SetupExpAuthTest(t)
+	_, projectID := createProjectAndWorkspace(ctx, t, api)
+	exp0 := createTestExpWithProjectID(t, api, curUser, projectID)
+	createTestExpWithProjectID(t, api, curUser, projectID, uuid.New().String())
 
-	// Returns only what we filter.
-	var proj *projectv1.Project
-	expected := []*model.Experiment{createTestExp(t, api, curUser), createTestExp(t, api, curUser)}
-	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(expected, nil).Once()
-	resp, err := api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{Limit: -1})
-	require.NoError(t, err)
-	require.Equal(t, 2, len(resp.Experiments))
-	for i := range expected {
-		require.Equal(t, int32(expected[i].ID), resp.Experiments[i].Id)
-	}
+	// Can't view project gets a 404.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
+	_, err := api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{ProjectId: int32(projectID)})
+	require.Equal(t, projectNotFoundErr(projectID).Error(), err.Error())
 
-	// Error passes right through.
-	expectedErr := fmt.Errorf("filterExperimentsError")
-	authZExp.On("FilterExperiments", curUser, proj, mock.Anything).Return(nil, expectedErr).Once()
-	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{})
+	// Error from FilterExperimentsQuery passes through.
+	authZProject.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
+	expectedErr := fmt.Errorf("filterExperimentsQueryError")
+	authZExp.On("FilterExperimentsQuery", curUser, mock.Anything, mock.Anything).
+		Return(nil, expectedErr).Once()
+	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{ProjectId: int32(projectID)})
 	require.Equal(t, expectedErr, err)
 
-	// Project that you do not have access results in not found.
-	authZProject.On("CanGetProject", curUser, mock.Anything).Return(false, nil).Once()
-	_, err = api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{ProjectId: 1})
-	require.Equal(t, projectNotFoundErr(1), err)
+	// Filter only to only one experiment ID.
+	resQuery := &bun.SelectQuery{}
+	authZExp.On("FilterExperimentsQuery", curUser, mock.Anything, mock.Anything).
+		Return(resQuery, nil).Once().Run(func(args mock.Arguments) {
+		q := args.Get(2).(*bun.SelectQuery)
+		*resQuery = *q.Where("e.id = ?", exp0.ID)
+	})
+	res, err := api.GetExperiments(ctx, &apiv1.GetExperimentsRequest{})
+	require.NoError(t, err)
+	require.Equal(t, 1, int(res.Pagination.Total))
+	require.Len(t, res.Experiments, 1)
+	require.Equal(t, exp0.ID, int(res.Experiments[0].Id))
 }
-*/
 
 func TestAuthZPreviewHPSearch(t *testing.T) {
 	api, authZExp, _, curUser, ctx := SetupExpAuthTest(t)
@@ -605,16 +610,13 @@ func TestAuthZGetExperimentLabels(t *testing.T) {
 	require.Equal(t, expectedErr, err)
 
 	// Filter only to only one experiment ID.
-	authZProject.On("CanGetProject", curUser, mock.Anything).Return(true, nil).Once()
 	resQuery := &bun.SelectQuery{}
 	authZExp.On("FilterExperimentLabelsQuery", curUser, mock.Anything, mock.Anything).
 		Return(resQuery, nil).Once().Run(func(args mock.Arguments) {
 		q := args.Get(2).(*bun.SelectQuery)
 		*resQuery = *q.Where("id = ?", exp0.ID)
 	})
-	res, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{
-		ProjectId: int32(projectID),
-	})
+	res, err := api.GetExperimentLabels(ctx, &apiv1.GetExperimentLabelsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, []string{exp0Label}, res.Labels)
 }

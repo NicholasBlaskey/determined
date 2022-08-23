@@ -520,22 +520,22 @@ func (_m *ExperimentAuthZ) FilterExperimentLabelsQuery(curUser model.User, proj 
 	return r0, r1
 }
 
-// FilterExperiments provides a mock function with given fields: curUser, project, experiments
-func (_m *ExperimentAuthZ) FilterExperiments(curUser model.User, project *projectv1.Project, experiments []*model.Experiment) ([]*model.Experiment, error) {
-	ret := _m.Called(curUser, project, experiments)
+// FilterExperimentsQuery provides a mock function with given fields: curUser, proj, query
+func (_m *ExperimentAuthZ) FilterExperimentsQuery(curUser model.User, proj *projectv1.Project, query *bun.SelectQuery) (*bun.SelectQuery, error) {
+	ret := _m.Called(curUser, proj, query)
 
-	var r0 []*model.Experiment
-	if rf, ok := ret.Get(0).(func(model.User, *projectv1.Project, []*model.Experiment) []*model.Experiment); ok {
-		r0 = rf(curUser, project, experiments)
+	var r0 *bun.SelectQuery
+	if rf, ok := ret.Get(0).(func(model.User, *projectv1.Project, *bun.SelectQuery) *bun.SelectQuery); ok {
+		r0 = rf(curUser, proj, query)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Experiment)
+			r0 = ret.Get(0).(*bun.SelectQuery)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.User, *projectv1.Project, []*model.Experiment) error); ok {
-		r1 = rf(curUser, project, experiments)
+	if rf, ok := ret.Get(1).(func(model.User, *projectv1.Project, *bun.SelectQuery) error); ok {
+		r1 = rf(curUser, proj, query)
 	} else {
 		r1 = ret.Error(1)
 	}

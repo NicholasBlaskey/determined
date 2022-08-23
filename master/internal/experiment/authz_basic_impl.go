@@ -30,14 +30,14 @@ func (a *ExperimentAuthZBasic) CanDeleteExperiment(curUser model.User, e *model.
 	return nil
 }
 
-// FilterExperiments returns TODO to bun.
-func (a *ExperimentAuthZBasic) FilterExperiments(
-	curUser model.User, project *projectv1.Project, experiments []*model.Experiment,
-) ([]*model.Experiment, error) {
-	return experiments, nil
+// FilterExperimentsQuery returns the query unmodified and a nil error.
+func (a *ExperimentAuthZBasic) FilterExperimentsQuery(
+	curUser model.User, proj *projectv1.Project, query *bun.SelectQuery,
+) (*bun.SelectQuery, error) {
+	return query, nil
 }
 
-// FilterExperimentLabelsQuery returns the query unmodified.
+// FilterExperimentLabelsQuery returns the query unmodified and a nil error.
 func (a *ExperimentAuthZBasic) FilterExperimentLabelsQuery(
 	curUser model.User, proj *projectv1.Project, query *bun.SelectQuery,
 ) (*bun.SelectQuery, error) {

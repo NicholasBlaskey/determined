@@ -386,11 +386,25 @@ func (a *apiServer) GetExperiments(
 	if len(req.UserIds) > 0 {
 		query = query.Where("e.owner_id IN (?)", bun.In(req.UserIds))
 	}
+
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
+	}
+	var proj *projectv1.Project
 	if req.ProjectId != 0 {
-		query = query.Where("e.project_id = ?", req.ProjectId)
+		proj, err = a.GetProjectByID(req.ProjectId, *curUser)
+		if err != nil {
+			return nil, err
+		}
+
+		query = query.Where("project_id = ?", req.ProjectId)
+	}
+	if query, err = expauth.AuthZProvider.Get().
+		FilterExperimentsQuery(*curUser, proj, query); err != nil {
+		return nil, err
 	}
 
-	var err error
 	resp.Pagination, err = experimentsPagination(query, int(req.Offset), int(req.Limit))
 	if err != nil {
 		return nil, err
