@@ -77,12 +77,19 @@ func ParseExperimentsQuery(apiCtx echo.Context) (*ExperimentRequestQuery, error)
 	return &queries, nil
 }
 
-func echoGetExperimentAndCheckCanDoActions(
-	c echo.Context, m *Master, expID int, actions ...func(model.User, *model.Experiment) error,
+func echoGetExperimentAndCheckCanDoActions(c echo.Context, m *Master,
+	expID int, withConfig bool, actions ...func(model.User, *model.Experiment) error,
 ) (*model.Experiment, model.User, error) {
 	user := c.(*context.DetContext).MustGetUser()
+	var err error
+	var e *model.Experiment
+	if withConfig {
+		e, err = m.db.ExperimentByID(expID)
+	} else {
+		e, err = m.db.ExperimentWithoutConfigByID(expID)
+	}
+
 	expNotFound := echo.NewHTTPError(http.StatusNotFound, "experiment not found: %d", expID)
-	e, err := m.db.ExperimentByID(expID)
 	if errors.Is(err, db.ErrNotFound) {
 		return nil, model.User{}, expNotFound
 	} else if err != nil {
@@ -112,7 +119,7 @@ func (m *Master) getExperimentCheckpointsToGC(c echo.Context) (interface{}, erro
 	if err := api.BindArgs(&args, c); err != nil {
 		return nil, err
 	}
-	if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID,
+	if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID, false,
 		expauth.AuthZProvider.Get().CanGetExperimentsCheckpointsToGC); err != nil {
 		return nil, err
 	}
@@ -139,7 +146,7 @@ func (m *Master) getExperimentModelFile(c echo.Context) error {
 	if err := api.BindArgs(&args, c); err != nil {
 		return err
 	}
-	if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID,
+	if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID, false,
 		expauth.AuthZProvider.Get().CanGetModelDefFile); err != nil {
 		return err
 	}
@@ -165,7 +172,7 @@ func (m *Master) getExperimentModelDefinition(c echo.Context) error {
 	if err := api.BindArgs(&args, c); err != nil {
 		return err
 	}
-	if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID,
+	if _, _, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID, false,
 		expauth.AuthZProvider.Get().CanGetModelDef); err != nil {
 		return err
 	}
@@ -210,7 +217,7 @@ func (m *Master) patchExperiment(c echo.Context) (interface{}, error) {
 	if err := api.BindArgs(&args, c); err != nil {
 		return nil, err
 	}
-	dbExp, user, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID)
+	dbExp, user, err := echoGetExperimentAndCheckCanDoActions(c, m, args.ExperimentID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +494,7 @@ func (m *Master) postExperiment(c echo.Context) (interface{}, error) {
 		return nil, errors.Wrap(err, "invalid experiment params")
 	}
 	if params.ParentID != nil {
-		if _, _, err = echoGetExperimentAndCheckCanDoActions(c, m, *params.ParentID,
+		if _, _, err = echoGetExperimentAndCheckCanDoActions(c, m, *params.ParentID, false,
 			expauth.AuthZProvider.Get().CanForkFromExperiment); err != nil {
 			return nil, err
 		}

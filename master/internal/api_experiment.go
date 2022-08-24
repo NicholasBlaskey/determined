@@ -533,7 +533,6 @@ func (a *apiServer) GetExperimentValidationHistory(
 		return nil, errors.Wrapf(err,
 			"error fetching validation history for experiment from database: %d", req.ExperimentId)
 	}
-
 	return &resp, nil
 }
 
@@ -708,11 +707,11 @@ func (a *apiServer) ArchiveExperiment(
 	if err != nil {
 		return nil, err
 	}
-
 	if _, ok := model.TerminalStates[dbExp.State]; !ok {
 		return nil, errors.Errorf("cannot archive experiment %v in non terminate state %v",
 			id, dbExp.State)
 	}
+
 	if dbExp.Archived {
 		return &apiv1.ArchiveExperimentResponse{}, nil
 	}
@@ -1297,6 +1296,7 @@ func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 				expauth.AuthZProvider.Get().CanGetTrialsSnapshot); err != nil {
 				return err
 			}
+			timeSinceLastAuth = time.Now()
 		}
 
 		var response apiv1.TrialsSnapshotResponse

@@ -55,7 +55,6 @@ type ExperimentAuthZ interface {
 	CanSetExperimentsName(curUser model.User, e *model.Experiment) error
 	CanSetExperimentsNotes(curUser model.User, e *model.Experiment) error
 	CanSetExperimentsDescription(curUser model.User, e *model.Experiment) error
-	// TODO LABELS?!
 	CanSetExperimentsLabels(curUser model.User, e *model.Experiment) error
 
 	// GET /api/v1/experiments/:exp_id/checkpoints

@@ -4,29 +4,21 @@
 package internal
 
 import (
-	//"context"
 	"encoding/json"
 	"fmt"
-	"testing"
-	//"time"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"testing"
 
 	"github.com/labstack/echo/v4"
 
-	//"github.com/ghodss/yaml"
-	//"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/determined-ai/determined/master/internal/context"
 	"github.com/determined-ai/determined/master/internal/mocks"
 	"github.com/determined-ai/determined/master/pkg/model"
-	//"github.com/determined-ai/determined/proto/pkg/apiv1"
-	//"github.com/determined-ai/determined/proto/pkg/checkpointv1"
-	//"github.com/determined-ai/determined/proto/pkg/experimentv1"
-	//"github.com/determined-ai/determined/proto/pkg/projectv1"
 )
 
 func expNotFoundErrEcho(id int) error {
