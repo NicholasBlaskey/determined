@@ -1019,7 +1019,9 @@ func (m *Master) Run(ctx context.Context) error {
 	searcherGroup.POST("/preview", api.Route(m.getSearcherPreview))
 
 	trialsGroup := m.echo.Group("/trials", authFuncs...)
+	// TODO
 	trialsGroup.GET("/:trial_id", api.Route(m.getTrial))
+	// TODO
 	trialsGroup.GET("/:trial_id/metrics", api.Route(m.getTrialMetrics))
 
 	resourcesGroup := m.echo.Group("/resources", authFuncs...)

@@ -23,6 +23,7 @@ import (
 	"github.com/determined-ai/determined/master/internal/lttb"
 	"github.com/determined-ai/determined/master/internal/sproto"
 	"github.com/determined-ai/determined/master/internal/task"
+	trialauth "github.com/determined-ai/determined/master/internal/trial"
 	"github.com/determined-ai/determined/master/pkg/actor"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/protoutils"
@@ -66,6 +67,7 @@ type TrialLogBackend interface {
 	DeleteTrialLogs(trialIDs []int) error
 }
 
+// TODO auth
 func (a *apiServer) TrialLogs(
 	req *apiv1.TrialLogsRequest, resp apiv1.Determined_TrialLogsServer,
 ) error {
@@ -244,6 +246,7 @@ func constructTrialLogsFilters(req *apiv1.TrialLogsRequest) ([]api.Filter, error
 	return filters, nil
 }
 
+// TODO auth
 func (a *apiServer) TrialLogsFields(
 	req *apiv1.TrialLogsFieldsRequest, resp apiv1.Determined_TrialLogsFieldsServer,
 ) error {
@@ -303,6 +306,7 @@ func (a *apiServer) TrialLogsFields(
 	})
 }
 
+// TODO auth
 func (a *apiServer) GetTrialCheckpoints(
 	_ context.Context, req *apiv1.GetTrialCheckpointsRequest,
 ) (*apiv1.GetTrialCheckpointsResponse, error) {
@@ -368,6 +372,7 @@ func (a *apiServer) GetTrialCheckpoints(
 	return resp, a.paginate(&resp.Pagination, &resp.Checkpoints, req.Offset, req.Limit)
 }
 
+// TODO auth
 func (a *apiServer) KillTrial(
 	ctx context.Context, req *apiv1.KillTrialRequest,
 ) (*apiv1.KillTrialResponse, error) {
@@ -390,6 +395,7 @@ func (a *apiServer) KillTrial(
 	return &apiv1.KillTrialResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) GetExperimentTrials(
 	_ context.Context, req *apiv1.GetExperimentTrialsRequest,
 ) (*apiv1.GetExperimentTrialsResponse, error) {
@@ -482,10 +488,12 @@ func (a *apiServer) GetExperimentTrials(
 	return resp, nil
 }
 
-func (a *apiServer) GetTrial(_ context.Context, req *apiv1.GetTrialRequest) (
+// TODO auth
+func (a *apiServer) GetTrial(ctx context.Context, req *apiv1.GetTrialRequest) (
 	*apiv1.GetTrialResponse, error,
 ) {
 	resp := &apiv1.GetTrialResponse{Trial: &trialv1.Trial{}}
+	errTrialNotFound := status.Errorf(codes.NotFound, "trial %d not found:", req.TrialId)
 	switch err := a.m.db.QueryProtof(
 		"proto_get_trials_plus",
 		[]any{"($1::int, $2::int)"},
@@ -494,10 +502,22 @@ func (a *apiServer) GetTrial(_ context.Context, req *apiv1.GetTrialRequest) (
 		1,
 	); {
 	case err == db.ErrNotFound:
-		return nil, status.Errorf(codes.NotFound, "trial %d not found:", req.TrialId)
+		return nil, errTrialNotFound
 	case err != nil:
 		return nil, errors.Wrapf(err, "failed to get trial %d", req.TrialId)
 	}
+
+	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
+	if err != nil {
+		return nil, err
+	}
+	if ok, err := trialauth.AuthZProvider.Get().CanGetTrial(*curUser,
+		model.TrialFromProto(resp.Trial)); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errTrialNotFound
+	}
+
 	return resp, nil
 }
 
@@ -517,6 +537,7 @@ func (a *apiServer) appendToMetrics(metrics []*apiv1.SummarizedMetric, m *apiv1.
 	return metrics
 }
 
+// TODO auth
 func (a *apiServer) MultiTrialSample(trialID int32, metricNames []string,
 	metricType apiv1.MetricType, maxDatapoints int, startBatches int,
 	endBatches int, logScale bool,
@@ -558,6 +579,7 @@ func (a *apiServer) MultiTrialSample(trialID int32, metricNames []string,
 	return metrics, nil
 }
 
+// TODO auth
 func (a *apiServer) SummarizeTrial(_ context.Context,
 	req *apiv1.SummarizeTrialRequest,
 ) (*apiv1.SummarizeTrialResponse, error) {
@@ -580,6 +602,7 @@ func (a *apiServer) SummarizeTrial(_ context.Context,
 	return resp, nil
 }
 
+// TODO auth
 func (a *apiServer) CompareTrials(_ context.Context,
 	req *apiv1.CompareTrialsRequest,
 ) (*apiv1.CompareTrialsResponse, error) {
@@ -605,6 +628,7 @@ func (a *apiServer) CompareTrials(_ context.Context,
 	return &apiv1.CompareTrialsResponse{Trials: trials}, nil
 }
 
+// TODO auth
 func (a *apiServer) GetTrialWorkloads(_ context.Context, req *apiv1.GetTrialWorkloadsRequest) (
 	*apiv1.GetTrialWorkloadsResponse, error,
 ) {
@@ -643,6 +667,7 @@ func (a *apiServer) GetTrialWorkloads(_ context.Context, req *apiv1.GetTrialWork
 	return resp, nil
 }
 
+// TODO auth
 func (a *apiServer) GetTrialProfilerMetrics(
 	req *apiv1.GetTrialProfilerMetricsRequest,
 	resp apiv1.Determined_GetTrialProfilerMetricsServer,
@@ -691,6 +716,7 @@ func (a *apiServer) GetTrialProfilerMetrics(
 	})
 }
 
+// TODO auth
 func (a *apiServer) GetTrialProfilerAvailableSeries(
 	req *apiv1.GetTrialProfilerAvailableSeriesRequest,
 	resp apiv1.Determined_GetTrialProfilerAvailableSeriesServer,
@@ -730,6 +756,7 @@ func (a *apiServer) GetTrialProfilerAvailableSeries(
 	})
 }
 
+// TODO auth
 func (a *apiServer) PostTrialProfilerMetricsBatch(
 	_ context.Context,
 	req *apiv1.PostTrialProfilerMetricsBatchRequest,
@@ -780,6 +807,7 @@ func (a *apiServer) PostTrialProfilerMetricsBatch(
 	return &apiv1.PostTrialProfilerMetricsBatchResponse{}, errs.ErrorOrNil()
 }
 
+// TODO auth
 func (a *apiServer) AllocationPreemptionSignal(
 	ctx context.Context,
 	req *apiv1.AllocationPreemptionSignalRequest,
@@ -812,6 +840,7 @@ func (a *apiServer) AllocationPreemptionSignal(
 	}
 }
 
+// TODO auth
 func (a *apiServer) AckAllocationPreemptionSignal(
 	_ context.Context, req *apiv1.AckAllocationPreemptionSignalRequest,
 ) (*apiv1.AckAllocationPreemptionSignalResponse, error) {
@@ -832,6 +861,7 @@ func (a *apiServer) AckAllocationPreemptionSignal(
 	return &apiv1.AckAllocationPreemptionSignalResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) AllocationPendingPreemptionSignal(
 	ctx context.Context,
 	req *apiv1.AllocationPendingPreemptionSignalRequest,
@@ -846,6 +876,7 @@ func (a *apiServer) AllocationPendingPreemptionSignal(
 	return &apiv1.AllocationPendingPreemptionSignalResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) MarkAllocationResourcesDaemon(
 	_ context.Context, req *apiv1.MarkAllocationResourcesDaemonRequest,
 ) (*apiv1.MarkAllocationResourcesDaemonResponse, error) {
@@ -867,6 +898,7 @@ func (a *apiServer) MarkAllocationResourcesDaemon(
 	return &apiv1.MarkAllocationResourcesDaemonResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) GetCurrentTrialSearcherOperation(
 	_ context.Context, req *apiv1.GetCurrentTrialSearcherOperationRequest,
 ) (*apiv1.GetCurrentTrialSearcherOperationResponse, error) {
@@ -896,6 +928,7 @@ func (a *apiServer) GetCurrentTrialSearcherOperation(
 	}, nil
 }
 
+// TODO auth
 func (a *apiServer) CompleteTrialSearcherValidation(
 	_ context.Context, req *apiv1.CompleteTrialSearcherValidationRequest,
 ) (*apiv1.CompleteTrialSearcherValidationResponse, error) {
@@ -918,6 +951,7 @@ func (a *apiServer) CompleteTrialSearcherValidation(
 	return &apiv1.CompleteTrialSearcherValidationResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) ReportTrialSearcherEarlyExit(
 	_ context.Context, req *apiv1.ReportTrialSearcherEarlyExitRequest,
 ) (*apiv1.ReportTrialSearcherEarlyExitResponse, error) {
@@ -939,6 +973,7 @@ func (a *apiServer) ReportTrialSearcherEarlyExit(
 	return &apiv1.ReportTrialSearcherEarlyExitResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) ReportTrialProgress(
 	_ context.Context, req *apiv1.ReportTrialProgressRequest,
 ) (*apiv1.ReportTrialProgressResponse, error) {
@@ -960,6 +995,7 @@ func (a *apiServer) ReportTrialProgress(
 	return &apiv1.ReportTrialProgressResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) ReportTrialTrainingMetrics(
 	ctx context.Context, req *apiv1.ReportTrialTrainingMetricsRequest,
 ) (*apiv1.ReportTrialTrainingMetricsResponse, error) {
@@ -972,6 +1008,7 @@ func (a *apiServer) ReportTrialTrainingMetrics(
 	return &apiv1.ReportTrialTrainingMetricsResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) ReportTrialValidationMetrics(
 	ctx context.Context, req *apiv1.ReportTrialValidationMetricsRequest,
 ) (*apiv1.ReportTrialValidationMetricsResponse, error) {
@@ -984,6 +1021,7 @@ func (a *apiServer) ReportTrialValidationMetrics(
 	return &apiv1.ReportTrialValidationMetricsResponse{}, nil
 }
 
+// TODO auth
 func (a *apiServer) ReportCheckpoint(
 	ctx context.Context, req *apiv1.ReportCheckpointRequest,
 ) (*apiv1.ReportCheckpointResponse, error) {
@@ -1041,6 +1079,7 @@ func checkpointV2FromProtoWithDefaults(p *checkpointv1.Checkpoint) (*model.Check
 	return c, nil
 }
 
+// TODO auth
 func (a *apiServer) AllocationRendezvousInfo(
 	ctx context.Context, req *apiv1.AllocationRendezvousInfoRequest,
 ) (*apiv1.AllocationRendezvousInfoResponse, error) {
@@ -1080,6 +1119,7 @@ func (a *apiServer) AllocationRendezvousInfo(
 	}
 }
 
+// TODO auth
 func (a *apiServer) PostTrialRunnerMetadata(
 	_ context.Context, req *apiv1.PostTrialRunnerMetadataRequest,
 ) (*apiv1.PostTrialRunnerMetadataResponse, error) {

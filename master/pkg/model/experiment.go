@@ -425,6 +425,30 @@ type Trial struct {
 	JobID JobID
 }
 
+func TrialFromProto(t *trialv1.Trial) *Trial {
+	return nil
+	/*
+		// TODO
+
+		   var startTime time.Time
+		var endTime *time.Time
+
+		return &Trial{
+			ID:                    t.Id,
+			TaskID:                model.TaskID(t.TaskId),
+			RequestID:             nil,
+			ExperimentID:          t.ExperimentId,
+			State:                 tState, // TODO
+			StartTime:             startTime,
+			EndTime:               endTime,
+			HParams:               t.Hparams,
+			WarmStartCheckpointID: t.WarmStartCheckpointUuid, // Why is this a string?
+			Seed:                  0,                         // TODO
+			JobID:                 model.JobID{},             // TODO
+		}
+	*/
+}
+
 // NewTrial creates a new trial in the active state.  Note that the trial ID
 // will not be set.
 func NewTrial(
