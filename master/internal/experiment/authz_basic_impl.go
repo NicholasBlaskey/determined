@@ -235,6 +235,13 @@ func (a *ExperimentAuthZBasic) CanSetExperimentsCheckpointGCPolicy(
 	return nil
 }
 
+// CanSetExperimentsCheckpointGCPolicy always returns a nil error.
+func (a *ExperimentAuthZBasic) CanGetExperimentsTrials(
+	curUser model.User, e *model.Experiment,
+) error {
+	return nil
+}
+
 func init() {
 	AuthZProvider.Register("basic", &ExperimentAuthZBasic{})
 }

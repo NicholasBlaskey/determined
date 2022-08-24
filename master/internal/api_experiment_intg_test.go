@@ -944,6 +944,12 @@ func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
 			})
 			return err
 		}},
+		{"CanGetExperimentsTrials", func(id int) error {
+			_, err := api.GetExperimentTrials(ctx, &apiv1.GetExperimentTrialsRequest{
+				ExperimentId: int32(id),
+			})
+			return err
+		}},
 	}
 
 	for _, curCase := range cases {

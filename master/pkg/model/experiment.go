@@ -425,28 +425,32 @@ type Trial struct {
 	JobID JobID
 }
 
+// TrialFromProto converts from trialv1.Trial to model.Trial.
+// JobID, RequestID, WarmStartCheckpointID, Seed are not set due to trialv1.Trial
+// not containing these fields or wrong data type.
 func TrialFromProto(t *trialv1.Trial) *Trial {
-	return nil
-	/*
-		// TODO
+	var startTime time.Time
+	var endTime *time.Time
+	if t.StartTime != nil { // Should never be nil but our proto has nullable.
+		startTime = t.StartTime.AsTime()
+	}
+	if t.EndTime != nil {
+		endTime = ptrs.Ptr(t.EndTime.AsTime())
+	}
 
-		   var startTime time.Time
-		var endTime *time.Time
-
-		return &Trial{
-			ID:                    t.Id,
-			TaskID:                model.TaskID(t.TaskId),
-			RequestID:             nil,
-			ExperimentID:          t.ExperimentId,
-			State:                 tState, // TODO
-			StartTime:             startTime,
-			EndTime:               endTime,
-			HParams:               t.Hparams,
-			WarmStartCheckpointID: t.WarmStartCheckpointUuid, // Why is this a string?
-			Seed:                  0,                         // TODO
-			JobID:                 model.JobID{},             // TODO
-		}
-	*/
+	return &Trial{
+		ID:           int(t.Id),
+		TaskID:       TaskID(t.TaskId),
+		ExperimentID: int(t.ExperimentId),
+		State:        StateFromProto(t.State),
+		StartTime:    startTime,
+		EndTime:      endTime,
+		HParams:      t.Hparams.AsMap(),
+		// RequestID:
+		// WarmStartCheckpointID:
+		// Seed:
+		// JobID:
+	}
 }
 
 // NewTrial creates a new trial in the active state.  Note that the trial ID
