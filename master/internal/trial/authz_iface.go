@@ -20,7 +20,7 @@ type TrialAuthZ interface {
 	CanGetTrial(curUser model.User, trial *model.Trial) (canGetTrial bool, serverError error)
 
 	// GET /api/v1/trials/:trial_id/summarize
-	CanGetTrialSummary(curUser model.User, trial *model.Trial) error
+	CanGetTrialsSummary(curUser model.User, trial *model.Trial) error
 
 	// GET /api/v1/trials/:trial_id/workloads
 	CanGetTrialsWorkloads(curUser model.User, trial *model.Trial) error

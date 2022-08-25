@@ -76,7 +76,8 @@ func (a *apiServer) getTrialAndCheckCanDoActions(
 		return model.User{}, nil, err
 	}
 
-	if ok, err := trialauth.AuthZProvider.Get().CanGetTrial(*curUser, t); err != nil {
+	var ok bool
+	if ok, err = trialauth.AuthZProvider.Get().CanGetTrial(*curUser, t); err != nil {
 		return model.User{}, nil, err
 	} else if !ok {
 		return model.User{}, nil, notFound
@@ -99,8 +100,7 @@ type TrialLogBackend interface {
 	DeleteTrialLogs(trialIDs []int) error
 }
 
-// TODO test
-// TODO streaming endpoints (wait we need to recheck everything...)
+// TODO check in middle
 func (a *apiServer) TrialLogs(
 	req *apiv1.TrialLogsRequest, resp apiv1.Determined_TrialLogsServer,
 ) error {
@@ -277,7 +277,7 @@ func constructTrialLogsFilters(req *apiv1.TrialLogsRequest) ([]api.Filter, error
 	return filters, nil
 }
 
-// TODO test
+// TODO check in the middle
 func (a *apiServer) TrialLogsFields(
 	req *apiv1.TrialLogsFieldsRequest, resp apiv1.Determined_TrialLogsFieldsServer,
 ) error {
@@ -338,7 +338,6 @@ func (a *apiServer) TrialLogsFields(
 	})
 }
 
-// TODO test
 func (a *apiServer) GetTrialCheckpoints(
 	ctx context.Context, req *apiv1.GetTrialCheckpointsRequest,
 ) (*apiv1.GetTrialCheckpointsResponse, error) {
@@ -402,7 +401,6 @@ func (a *apiServer) GetTrialCheckpoints(
 	return resp, a.paginate(&resp.Pagination, &resp.Checkpoints, req.Offset, req.Limit)
 }
 
-// TODO test
 func (a *apiServer) KillTrial(
 	ctx context.Context, req *apiv1.KillTrialRequest,
 ) (*apiv1.KillTrialResponse, error) {
@@ -423,7 +421,6 @@ func (a *apiServer) KillTrial(
 	return &apiv1.KillTrialResponse{}, nil
 }
 
-// TODO move to api_experiments.go
 func (a *apiServer) GetExperimentTrials(
 	ctx context.Context, req *apiv1.GetExperimentTrialsRequest,
 ) (*apiv1.GetExperimentTrialsResponse, error) {
@@ -513,7 +510,7 @@ func (a *apiServer) GetExperimentTrials(
 	return resp, nil
 }
 
-// TODO test
+// TODO kinda messy
 func (a *apiServer) GetTrial(ctx context.Context, req *apiv1.GetTrialRequest) (
 	*apiv1.GetTrialResponse, error,
 ) {
@@ -528,7 +525,7 @@ func (a *apiServer) GetTrial(ctx context.Context, req *apiv1.GetTrialRequest) (
 		req.TrialId,
 		1,
 	); {
-	case err == db.ErrNotFound:
+	case errors.Is(err, db.ErrNotFound):
 		return nil, errTrialNotFound
 	case err != nil:
 		return nil, errors.Wrapf(err, "failed to get trial %d", req.TrialId)
@@ -605,8 +602,7 @@ func (a *apiServer) multiTrialSample(trialID int32, metricNames []string,
 	return metrics, nil
 }
 
-// TODO test
-// TODO refactor
+// TODO kinda messy
 func (a *apiServer) SummarizeTrial(
 	ctx context.Context, req *apiv1.SummarizeTrialRequest,
 ) (*apiv1.SummarizeTrialResponse, error) {
@@ -619,7 +615,6 @@ func (a *apiServer) SummarizeTrial(
 		return nil, errors.Wrapf(err, "failed to get trial %d", req.TrialId)
 	}
 
-	// TODO gross!
 	curUser, _, err := grpcutil.GetUser(ctx, a.m.db, &a.m.config.InternalConfig.ExternalSessions)
 	if err != nil {
 		return nil, err
@@ -630,7 +625,7 @@ func (a *apiServer) SummarizeTrial(
 	} else if !ok {
 		return nil, notFound
 	}
-	if err = trialauth.AuthZProvider.Get().CanGetTrialSummary(*curUser, t); err != nil {
+	if err = trialauth.AuthZProvider.Get().CanGetTrialsSummary(*curUser, t); err != nil {
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
@@ -645,8 +640,10 @@ func (a *apiServer) SummarizeTrial(
 	return resp, nil
 }
 
-// TODO test
+// maybe make a compare trials with []trialID or something?!
+// Since this is a lot of data supposedly / can be a lot of data.
 // TODO refactor
+// TODO perf
 func (a *apiServer) CompareTrials(ctx context.Context,
 	req *apiv1.CompareTrialsRequest,
 ) (*apiv1.CompareTrialsResponse, error) {
@@ -666,14 +663,13 @@ func (a *apiServer) CompareTrials(ctx context.Context,
 			return nil, errors.Wrapf(err, "failed to get trial %d", trialID)
 		}
 
-		// TODO gross!
 		t := model.TrialFromProto(container.Trial)
 		if ok, err := trialauth.AuthZProvider.Get().CanGetTrial(*curUser, t); err != nil {
 			return nil, err
 		} else if !ok {
 			return nil, notFound
 		}
-		if err = trialauth.AuthZProvider.Get().CanGetTrialSummary(*curUser, t); err != nil {
+		if err = trialauth.AuthZProvider.Get().CanGetTrialsSummary(*curUser, t); err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 
@@ -689,7 +685,6 @@ func (a *apiServer) CompareTrials(ctx context.Context,
 	return &apiv1.CompareTrialsResponse{Trials: trials}, nil
 }
 
-// TODO test
 func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWorkloadsRequest) (
 	*apiv1.GetTrialWorkloadsResponse, error,
 ) {
@@ -733,13 +728,13 @@ func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWo
 	return resp, nil
 }
 
-// TODO test
+// TODO check in the middle
 func (a *apiServer) GetTrialProfilerMetrics(
 	req *apiv1.GetTrialProfilerMetricsRequest,
 	resp apiv1.Determined_GetTrialProfilerMetricsServer,
 ) error {
 	if _, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.Labels.TrialId),
-		trialauth.AuthZProvider.Get().CanGetTrialsWorkloads); err != nil {
+		trialauth.AuthZProvider.Get().CanGetTrialsProfilerMetrics); err != nil {
 		return err
 	}
 
@@ -780,13 +775,13 @@ func (a *apiServer) GetTrialProfilerMetrics(
 	})
 }
 
-// TODO test
+// TODO check in the middle
 func (a *apiServer) GetTrialProfilerAvailableSeries(
 	req *apiv1.GetTrialProfilerAvailableSeriesRequest,
 	resp apiv1.Determined_GetTrialProfilerAvailableSeriesServer,
 ) error {
 	if _, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.TrialId),
-		trialauth.AuthZProvider.Get().CanGetTrialsWorkloads); err != nil {
+		trialauth.AuthZProvider.Get().CanGetTrialsProfilerAvailableSeries); err != nil {
 		return err
 	}
 
@@ -818,11 +813,9 @@ func (a *apiServer) GetTrialProfilerAvailableSeries(
 	})
 }
 
-// TODO test
-// TODO is perf ok?
+// TODO perf
 func (a *apiServer) PostTrialProfilerMetricsBatch(
-	ctx context.Context,
-	req *apiv1.PostTrialProfilerMetricsBatchRequest,
+	ctx context.Context, req *apiv1.PostTrialProfilerMetricsBatchRequest,
 ) (*apiv1.PostTrialProfilerMetricsBatchResponse, error) {
 	var errs *multierror.Error
 	existingTrials := map[int]bool{}
@@ -957,12 +950,11 @@ func (a *apiServer) MarkAllocationResourcesDaemon(
 	return &apiv1.MarkAllocationResourcesDaemonResponse{}, nil
 }
 
-// TODO test
 func (a *apiServer) GetCurrentTrialSearcherOperation(
 	ctx context.Context, req *apiv1.GetCurrentTrialSearcherOperationRequest,
 ) (*apiv1.GetCurrentTrialSearcherOperationResponse, error) {
 	_, t, err := a.getTrialAndCheckCanDoActions(ctx, int(req.TrialId),
-		trialauth.AuthZProvider.Get().CanPostTrialsProfilerMetricsBatch)
+		trialauth.AuthZProvider.Get().CanGetTrialsSearcherOperation)
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +982,6 @@ func (a *apiServer) GetCurrentTrialSearcherOperation(
 	}, nil
 }
 
-// TODO test
 func (a *apiServer) CompleteTrialSearcherValidation(
 	ctx context.Context, req *apiv1.CompleteTrialSearcherValidationRequest,
 ) (*apiv1.CompleteTrialSearcherValidationResponse, error) {
@@ -1016,7 +1007,6 @@ func (a *apiServer) CompleteTrialSearcherValidation(
 	return &apiv1.CompleteTrialSearcherValidationResponse{}, nil
 }
 
-// TODO test
 func (a *apiServer) ReportTrialSearcherEarlyExit(
 	ctx context.Context, req *apiv1.ReportTrialSearcherEarlyExitRequest,
 ) (*apiv1.ReportTrialSearcherEarlyExitResponse, error) {
@@ -1041,7 +1031,6 @@ func (a *apiServer) ReportTrialSearcherEarlyExit(
 	return &apiv1.ReportTrialSearcherEarlyExitResponse{}, nil
 }
 
-// TODO test
 func (a *apiServer) ReportTrialProgress(
 	ctx context.Context, req *apiv1.ReportTrialProgressRequest,
 ) (*apiv1.ReportTrialProgressResponse, error) {
@@ -1066,7 +1055,6 @@ func (a *apiServer) ReportTrialProgress(
 	return &apiv1.ReportTrialProgressResponse{}, nil
 }
 
-// TODO test
 func (a *apiServer) ReportTrialTrainingMetrics(
 	ctx context.Context, req *apiv1.ReportTrialTrainingMetricsRequest,
 ) (*apiv1.ReportTrialTrainingMetricsResponse, error) {
@@ -1082,7 +1070,6 @@ func (a *apiServer) ReportTrialTrainingMetrics(
 	return &apiv1.ReportTrialTrainingMetricsResponse{}, nil
 }
 
-// TODO test
 func (a *apiServer) ReportTrialValidationMetrics(
 	ctx context.Context, req *apiv1.ReportTrialValidationMetricsRequest,
 ) (*apiv1.ReportTrialValidationMetricsResponse, error) {
@@ -1197,7 +1184,6 @@ func (a *apiServer) AllocationRendezvousInfo(
 	}
 }
 
-// TODO test
 func (a *apiServer) PostTrialRunnerMetadata(
 	ctx context.Context, req *apiv1.PostTrialRunnerMetadataRequest,
 ) (*apiv1.PostTrialRunnerMetadataResponse, error) {

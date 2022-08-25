@@ -25,7 +25,7 @@ func (a *TrialAuthZBasic) CanGetTrial(
 	return true, nil
 }
 
-func (a *TrialAuthZBasic) CanGetTrialSummary(curUser model.User, trial *model.Trial) error {
+func (a *TrialAuthZBasic) CanGetTrialsSummary(curUser model.User, trial *model.Trial) error {
 	return nil
 }
 
