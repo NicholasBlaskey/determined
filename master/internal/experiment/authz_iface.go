@@ -110,7 +110,7 @@ type ExperimentAuthZ interface {
 	CanSetExperimentsPriority(curUser model.User, e *model.Experiment, priority int) error
 	CanSetExperimentsCheckpointGCPolicy(curUser model.User, e *model.Experiment) error
 
-	// /api/v1/experiments/:exp_id/trials
+	// GET /api/v1/experiments/:exp_id/trials
 	CanGetExperimentsTrials(curUser model.User, e *model.Experiment) error
 }
 
