@@ -45,8 +45,7 @@ const (
 var (
 	trialLogsBatchMissWaitTime = time.Second
 
-	distinctFieldBatchWaitTime = 5 * time.Second
-
+	distinctFieldBatchWaitTime            = 5 * time.Second
 	trialProfilerMetricsBatchMissWaitTime = 5 * time.Second
 
 	// TrialAvailableSeriesBatchWaitTime is exported to be changed by tests.
@@ -100,7 +99,7 @@ type TrialLogBackend interface {
 	DeleteTrialLogs(trialIDs []int) error
 }
 
-// TODO check in middle
+// TODO refactor -- don't love it being in 3 places now
 func (a *apiServer) TrialLogs(
 	req *apiv1.TrialLogsRequest, resp apiv1.Determined_TrialLogsServer,
 ) error {
@@ -191,8 +190,17 @@ func (a *apiServer) legacyTrialLogs(
 		return
 	}
 
+	var timeSinceLastAuth time.Time
 	var followState interface{}
 	fetch := func(r api.BatchRequest) (api.Batch, error) {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getTrialAndCheckCanDoActions(ctx, int(req.TrialId),
+				trialauth.AuthZProvider.Get().CanGetTrialLogs); err != nil {
+				return nil, err
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		switch {
 		case r.Follow, r.Limit > trialLogsBatchSize:
 			r.Limit = trialLogsBatchSize
@@ -277,7 +285,8 @@ func constructTrialLogsFilters(req *apiv1.TrialLogsRequest) ([]api.Filter, error
 	return filters, nil
 }
 
-// TODO check in the middle
+// TODO awkward right now since check is in 3 places and hard to test.
+// Not sure if we can better though.
 func (a *apiServer) TrialLogsFields(
 	req *apiv1.TrialLogsFieldsRequest, resp apiv1.Determined_TrialLogsFieldsServer,
 ) error {
@@ -291,10 +300,20 @@ func (a *apiServer) TrialLogsFields(
 	defer cancel()
 
 	// Stream fields from trial logs table, just to support pre-task-logs trials with old logs.
+	var oldTimeSinceLastAuth time.Time
 	resOld := make(chan api.BatchResult)
 	go api.NewBatchStreamProcessor(
 		api.BatchRequest{Follow: req.Follow},
 		func(lr api.BatchRequest) (api.Batch, error) {
+			if time.Now().Sub(oldTimeSinceLastAuth) >= recheckAuthPeriod {
+				_, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.TrialId),
+					trialauth.AuthZProvider.Get().CanGetTrialLogs)
+				if err != nil {
+					return nil, err
+				}
+				oldTimeSinceLastAuth = time.Now()
+			}
+
 			fields, err := a.m.trialLogBackend.TrialLogsFields(int(req.TrialId))
 			return api.ToBatchOfOne(fields), err
 		},
@@ -305,10 +324,20 @@ func (a *apiServer) TrialLogsFields(
 	).Run(ctx, resOld)
 
 	// Also stream fields from task logs table, for ordinary logs (as they are written now).
+	var newTimeSinceLastAuth time.Time
 	resNew := make(chan api.BatchResult)
 	go api.NewBatchStreamProcessor(
 		api.BatchRequest{Follow: req.Follow},
 		func(lr api.BatchRequest) (api.Batch, error) {
+			if time.Now().Sub(newTimeSinceLastAuth) >= recheckAuthPeriod {
+				_, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.TrialId),
+					trialauth.AuthZProvider.Get().CanGetTrialLogs)
+				if err != nil {
+					return nil, err
+				}
+				newTimeSinceLastAuth = time.Now()
+			}
+
 			fields, err := a.m.taskLogBackend.TaskLogsFields(trial.TaskID)
 			return api.ToBatchOfOne(&apiv1.TrialLogsFieldsResponse{
 				AgentIds:     fields.AgentIds,
@@ -728,22 +757,25 @@ func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWo
 	return resp, nil
 }
 
-// TODO check in the middle
 func (a *apiServer) GetTrialProfilerMetrics(
 	req *apiv1.GetTrialProfilerMetricsRequest,
 	resp apiv1.Determined_GetTrialProfilerMetricsServer,
 ) error {
-	if _, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.Labels.TrialId),
-		trialauth.AuthZProvider.Get().CanGetTrialsProfilerMetrics); err != nil {
-		return err
-	}
-
 	labelsJSON, err := protojson.Marshal(req.Labels)
 	if err != nil {
 		return fmt.Errorf("failed to marshal labels: %w", err)
 	}
 
+	var timeSinceLastAuth time.Time
 	fetch := func(lr api.BatchRequest) (api.Batch, error) {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.Labels.TrialId),
+				trialauth.AuthZProvider.Get().CanGetTrialsProfilerMetrics); err != nil {
+				return nil, err
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		switch {
 		case lr.Follow, lr.Limit > trialProfilerMetricsBatchSize:
 			lr.Limit = trialProfilerMetricsBatchSize
@@ -775,17 +807,20 @@ func (a *apiServer) GetTrialProfilerMetrics(
 	})
 }
 
-// TODO check in the middle
 func (a *apiServer) GetTrialProfilerAvailableSeries(
 	req *apiv1.GetTrialProfilerAvailableSeriesRequest,
 	resp apiv1.Determined_GetTrialProfilerAvailableSeriesServer,
 ) error {
-	if _, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.TrialId),
-		trialauth.AuthZProvider.Get().CanGetTrialsProfilerAvailableSeries); err != nil {
-		return err
-	}
-
+	var timeSinceLastAuth time.Time
 	fetch := func(_ api.BatchRequest) (api.Batch, error) {
+		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+			if _, _, err := a.getTrialAndCheckCanDoActions(resp.Context(), int(req.TrialId),
+				trialauth.AuthZProvider.Get().CanGetTrialsProfilerAvailableSeries); err != nil {
+				return nil, err
+			}
+			timeSinceLastAuth = time.Now()
+		}
+
 		var labels apiv1.GetTrialProfilerAvailableSeriesResponse
 		return api.ToBatchOfOne(&labels), a.m.db.QueryProto(
 			"get_trial_available_series",

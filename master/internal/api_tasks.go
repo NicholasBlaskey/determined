@@ -217,6 +217,7 @@ func (a *apiServer) taskLogs(
 
 	var followState interface{}
 	fetch := func(r api.BatchRequest) (api.Batch, error) {
+		// TODO(nblaskey) AuthZ this since API trials uses this.
 		switch {
 		case r.Follow, r.Limit > taskLogsBatchSize:
 			r.Limit = taskLogsBatchSize
