@@ -8,11 +8,11 @@ import "determined/workspace/v1/workspace.proto";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Note is a user comment connected to a project.
 message Note {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "name", "contents" ] }
   };
   // The name or title of the note.
@@ -23,7 +23,7 @@ message Note {
 
 // Project is a named collection of experiments.
 message Project {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: {
       required: [
         "archived",
@@ -44,7 +44,7 @@ message Project {
   // The unique id of the project.
   int32 id = 1;
   // The unique name of the project.
-  string name = 2 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+  string name = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     min_length: 1
   }];
   // The id of the associated workspace.
@@ -77,7 +77,7 @@ message Project {
 
 // ProjectModel is a checkpoint associated with a project.
 message ProjectModel {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "name", "checkpoint" ] }
   };
   // Name of the saved checkpoint.

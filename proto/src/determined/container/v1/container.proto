@@ -4,7 +4,7 @@ package determined.container.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/containerv1";
 
 import "determined/device/v1/device.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // The current state of the container.
 enum State {
@@ -27,7 +27,7 @@ enum State {
 // Container is a Docker container that is either scheduled to run or is
 // currently running on a set of slots.
 message Container {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "id", "state" ] }
   };
   // The id of the task that is currently managing this container.

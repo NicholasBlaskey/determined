@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,9 +34,9 @@ type errorMessage struct {
 
 func errorHandler(
 	_ context.Context, _ *runtime.ServeMux, m runtime.Marshaler,
-	w http.ResponseWriter, _ *http.Request, e error,
+	w http.ResponseWriter, req *http.Request, e error,
 ) {
-	w.Header().Set("Content-type", m.ContentType())
+	w.Header().Set("Content-type", m.ContentType(req.Header.Get("Content-Type")))
 	w.WriteHeader(runtime.HTTPStatusFromCode(status.Code(e)))
 
 	s := status.Convert(e)

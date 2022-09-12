@@ -3,7 +3,7 @@ syntax = "proto3";
 package determined.workspace.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/workspacev1";
 
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/protobuf/wrappers.proto";
 
 // WorkspaceState is used to track progress during a deletion.
@@ -20,7 +20,7 @@ enum WorkspaceState {
 
 // Workspace is a named collection of projects.
 message Workspace {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: {
       required: [
         "archived",
@@ -40,7 +40,7 @@ message Workspace {
   // The unique id of the workspace.
   int32 id = 1;
   // The unique name of the workspace.
-  string name = 2 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+  string name = 2 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
     min_length: 1
   }];
   // Whether this workspace is archived or not.

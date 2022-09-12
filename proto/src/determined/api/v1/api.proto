@@ -4,7 +4,7 @@ package determined.api.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/apiv1";
 
 import "google/api/annotations.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 import "determined/api/v1/agent.proto";
 import "determined/api/v1/auth.proto";
@@ -26,7 +26,7 @@ import "determined/api/v1/user.proto";
 import "determined/api/v1/workspace.proto";
 import "determined/api/v1/resourcepool.proto";
 
-option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Determined API (Beta)"
     description: "Determined helps deep learning teams train models more "
@@ -81,7 +81,7 @@ service Determined {
       post: "/api/v1/auth/login"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Authentication"
       security: {}
     };
@@ -91,7 +91,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/auth/user"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Authentication"
     };
   }
@@ -100,7 +100,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/auth/logout"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Authentication"
     };
   }
@@ -110,7 +110,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/users"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -119,7 +119,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/users/setting",
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -129,7 +129,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/users/setting/reset",
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -140,7 +140,7 @@ service Determined {
       post: "/api/v1/users/setting",
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -149,7 +149,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/users/{user_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -159,7 +159,7 @@ service Determined {
       post: "/api/v1/users"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -170,7 +170,7 @@ service Determined {
       post: "/api/v1/users/{user_id}/password"
       body: "password"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -180,7 +180,7 @@ service Determined {
       patch: "/api/v1/users/{user_id}",
       body: "user"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Users"
     };
   }
@@ -189,7 +189,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/master/telemetry"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
       security: {}
     };
@@ -199,7 +199,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/master"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
       security: {}
     };
@@ -210,7 +210,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/master/config"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -219,7 +219,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/master/logs"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -228,7 +228,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/agents"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -237,7 +237,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/agents/{agent_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -246,7 +246,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/agents/{agent_id}/slots"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -255,7 +255,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/agents/{agent_id}/slots/{slot_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -264,7 +264,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/agents/{agent_id}/enable"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -274,7 +274,7 @@ service Determined {
       post: "/api/v1/agents/{agent_id}/disable"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -283,7 +283,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/agents/{agent_id}/slots/{slot_id}/enable"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -292,7 +292,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/agents/{agent_id}/slots/{slot_id}/disable"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -304,7 +304,7 @@ service Determined {
       post: "/api/v1/experiments"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -313,7 +313,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -322,7 +322,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -331,7 +331,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/model_def"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -341,7 +341,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/file_tree"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -352,7 +352,7 @@ service Determined {
       post: "/api/v1/experiments/{experiment_id}/file"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -362,7 +362,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiment/labels"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -372,7 +372,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/validation-history"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -382,7 +382,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{id}/activate"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -392,7 +392,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{id}/pause"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -402,7 +402,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{id}/cancel"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -411,7 +411,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{id}/kill"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -421,7 +421,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{id}/archive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -431,7 +431,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{id}/unarchive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -442,7 +442,7 @@ service Determined {
       patch: "/api/v1/experiments/{experiment.id}"
       body: "experiment"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -452,7 +452,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/experiments/{experiment_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -462,7 +462,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/searcher/best_searcher_validation_metric"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -473,7 +473,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{id}/checkpoints"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -485,7 +485,7 @@ service Determined {
       post: "/api/v1/preview-hp-search"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -496,7 +496,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/trials"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Trials", "Experiments" ]
     };
   }
@@ -506,7 +506,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/compare"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Trials", "Experiments" ]
     };
   }
@@ -515,7 +515,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Trials", "Experiments" ]
     };
   }
@@ -525,7 +525,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}/workloads"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Trials", "Internal" ]
     };
   }
@@ -534,7 +534,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}/logs"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Experiments", "Trials" ]
     };
     option deprecated = true;
@@ -545,7 +545,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}/logs/fields"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Experiments", "Trials" ]
     };
     option deprecated = true;
@@ -555,7 +555,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}/summarize"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Trials", "Experiments" ]
     };
   }
@@ -566,7 +566,7 @@ service Determined {
       post: "/api/v1/allocations/{allocation_id}/ready"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -575,7 +575,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/tasks/{task_id}/logs"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Jobs", "Tasks" ]
     };
   }
@@ -585,7 +585,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/tasks/{task_id}/logs/fields"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Jobs", "Tasks" ]
     };
   }
@@ -595,7 +595,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{labels.trial_id}/profiler/metrics"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Profiler" ]
     };
   }
@@ -605,7 +605,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}/profiler/available_series"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Profiler" ]
     };
   }
@@ -616,7 +616,7 @@ service Determined {
       post: "/api/v1/trials/profiler/metrics"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Internal" ]
     };
   }
@@ -625,7 +625,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/trials/{id}/kill"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Experiments", "Trials" ]
     };
   }
@@ -636,7 +636,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{id}/checkpoints"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -649,7 +649,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/allocations/{allocation_id}/signals/preemption"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -664,7 +664,7 @@ service Determined {
       post: "/api/v1/allocations/{allocation_id}/signals/pending_preemption"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -678,7 +678,7 @@ service Determined {
       post: "/api/v1/allocations/{allocation_id}/signals/ack_preemption"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -693,7 +693,7 @@ service Determined {
       post: "/api/v1/allocations/{allocation_id}/resources/{resources_id}/daemon"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -705,7 +705,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/allocations/{allocation_id}/resources/{resources_id}/rendezvous"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -718,7 +718,7 @@ service Determined {
       post: "/api/v1/allocations/{allocation_id}/proxy_address"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -731,7 +731,7 @@ service Determined {
       post: "/api/v1/allocations/{allocation_id}/all_gather"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -742,7 +742,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/{trial_id}/searcher/operation"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -754,7 +754,7 @@ service Determined {
       post: "/api/v1/trials/{trial_id}/searcher/completed_operation"
       body: "completed_operation"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -767,7 +767,7 @@ service Determined {
       post: "/api/v1/trials/{trial_id}/early_exit"
       body: "early_exit"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -779,7 +779,7 @@ service Determined {
       post: "/api/v1/trials/{trial_id}/progress"
       body: "progress"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -790,7 +790,7 @@ service Determined {
       post: "/api/v1/trials/{trial_id}/runner/metadata"
       body: "metadata"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -801,7 +801,7 @@ service Determined {
       post: "/api/v1/trials/{training_metrics.trial_id}/training_metrics"
       body: "training_metrics"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -812,7 +812,7 @@ service Determined {
       post: "/api/v1/trials/{validation_metrics.trial_id}/validation_metrics"
       body: "validation_metrics"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -823,7 +823,7 @@ service Determined {
       post: "/api/v1/checkpoints"
       body: "checkpoint"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -835,7 +835,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/job-queues"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -846,7 +846,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/job-queues/stats"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -857,7 +857,7 @@ service Determined {
       post: "/api/v1/job-queues"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -867,7 +867,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/templates"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Templates"
     };
   }
@@ -876,7 +876,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/templates/{template_name}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Templates"
     };
   }
@@ -886,7 +886,7 @@ service Determined {
       put: "/api/v1/templates/{template.name}"
       body: "template"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Templates"
     };
   }
@@ -895,7 +895,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/templates/{template_name}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Templates"
     };
   }
@@ -905,7 +905,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/notebooks"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notebooks"
     };
   }
@@ -914,7 +914,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/notebooks/{notebook_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notebooks"
     };
   }
@@ -924,7 +924,7 @@ service Determined {
       put: "/api/v1/notebooks/{notebook_id}/report_idle"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -933,7 +933,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/notebooks/{notebook_id}/kill"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notebooks"
     };
   }
@@ -944,7 +944,7 @@ service Determined {
       post: "/api/v1/notebooks/{notebook_id}/set_priority"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notebooks"
     };
   }
@@ -954,7 +954,7 @@ service Determined {
       post: "/api/v1/notebooks"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Notebooks"
     };
   }
@@ -964,7 +964,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/shells"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Shells"
     };
   }
@@ -973,7 +973,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/shells/{shell_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Shells"
     };
   }
@@ -982,7 +982,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/shells/{shell_id}/kill"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Shells"
     };
   }
@@ -993,7 +993,7 @@ service Determined {
       post: "/api/v1/shells/{shell_id}/set_priority"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Shells"
     };
   }
@@ -1003,7 +1003,7 @@ service Determined {
       post: "/api/v1/shells"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Shells"
     };
   }
@@ -1013,7 +1013,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/commands"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Commands"
     };
   }
@@ -1022,7 +1022,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/commands/{command_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Commands"
     };
   }
@@ -1031,7 +1031,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/commands/{command_id}/kill"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Commands"
     };
   }
@@ -1042,7 +1042,7 @@ service Determined {
       post: "/api/v1/commands/{command_id}/set_priority"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Commands"
     };
   }
@@ -1052,7 +1052,7 @@ service Determined {
       post: "/api/v1/commands"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Commands"
     };
   }
@@ -1063,7 +1063,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/tensorboards"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tensorboards"
     };
   }
@@ -1072,7 +1072,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/tensorboards/{tensorboard_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tensorboards"
     };
   }
@@ -1082,7 +1082,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/tensorboards/{tensorboard_id}/kill"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tensorboards"
     };
   }
@@ -1093,7 +1093,7 @@ service Determined {
       post: "/api/v1/tensorboards/{tensorboard_id}/set_priority"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tensorboards"
     };
   }
@@ -1104,7 +1104,7 @@ service Determined {
       post: "/api/v1/tensorboards"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tensorboards"
     };
   }
@@ -1115,7 +1115,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/tasks/count"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tasks"
     };
   }
@@ -1125,7 +1125,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/tasks/{task_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tasks"
     };
   }
@@ -1135,7 +1135,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/models/{model_name}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1145,7 +1145,7 @@ service Determined {
       post: "/api/v1/models"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1155,7 +1155,7 @@ service Determined {
       patch: "/api/v1/models/{model_name}"
       body: "model"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1164,7 +1164,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/models/{model_name}/archive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1173,7 +1173,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/models/{model_name}/unarchive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1182,7 +1182,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/models/{model_name}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1191,7 +1191,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/models"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1200,7 +1200,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/model/labels"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1210,7 +1210,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/models/{model_name}/versions/{model_version}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1220,7 +1220,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/models/{model_name}/versions"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1231,7 +1231,7 @@ service Determined {
       post: "/api/v1/models/{model_name}/versions"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1243,7 +1243,7 @@ service Determined {
       patch: "/api/v1/models/{model_name}/versions/{model_version_id}"
       body: "model_version"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1254,7 +1254,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/models/{model_name}/versions/{model_version_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Models"
     };
   }
@@ -1264,7 +1264,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/checkpoints/{checkpoint_uuid}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Checkpoints"
     };
   }
@@ -1276,7 +1276,7 @@ service Determined {
       post: "/api/v1/checkpoints/{checkpoint.uuid}/metadata"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Checkpoints"
     };
   }
@@ -1288,7 +1288,7 @@ service Determined {
       delete: "/api/v1/checkpoints"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Checkpoints"
     };
   }
@@ -1298,7 +1298,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/metrics-stream/metric-names"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1309,7 +1309,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/trials/metrics-stream/metric-names"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1321,7 +1321,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/metrics-stream/batches"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1333,7 +1333,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/metrics-stream/trials-snapshot"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1343,7 +1343,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/metrics-stream/trials-sample"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1354,7 +1354,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments-compare"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1365,7 +1365,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/resource-pools"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1378,7 +1378,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/experiments/{experiment_id}/hyperparameter-importance"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1392,7 +1392,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/experiments/{experiment_id}/hyperparameter-importance"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1403,7 +1403,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/resources/allocation/raw"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
     option deprecated = true;
@@ -1415,7 +1415,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/resources/allocation/aggregated"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Cluster"
     };
   }
@@ -1425,7 +1425,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/workspaces/{id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1435,7 +1435,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/workspaces/{id}/projects"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1444,7 +1444,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/workspaces"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1454,7 +1454,7 @@ service Determined {
       post: "/api/v1/workspaces"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1464,7 +1464,7 @@ service Determined {
       patch: "/api/v1/workspaces/{id}"
       body: "workspace"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1474,7 +1474,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/workspaces/{id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1484,7 +1484,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/workspaces/{id}/archive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1494,7 +1494,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/workspaces/{id}/unarchive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1503,7 +1503,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/workspaces/{id}/pin"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1512,7 +1512,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/workspaces/{id}/unpin"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Workspaces"
     };
   }
@@ -1522,7 +1522,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/projects/{id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1532,7 +1532,7 @@ service Determined {
       post: "/api/v1/workspaces/{workspace_id}/projects"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1542,7 +1542,7 @@ service Determined {
       post: "/api/v1/projects/{project_id}/notes"
       body: "note"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1553,7 +1553,7 @@ service Determined {
       put: "/api/v1/projects/{project_id}/notes"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1563,7 +1563,7 @@ service Determined {
       patch: "/api/v1/projects/{id}"
       body: "project"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1572,7 +1572,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/projects/{id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1581,7 +1581,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/projects/{id}/archive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1591,7 +1591,7 @@ service Determined {
     option (google.api.http) = {
       post: "/api/v1/projects/{id}/unarchive"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1601,7 +1601,7 @@ service Determined {
       post: "/api/v1/projects/{project_id}/move"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Projects"
     };
   }
@@ -1611,7 +1611,7 @@ service Determined {
       post: "/api/v1/experiments/{experiment_id}/move"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Experiments"
     };
   }
@@ -1621,7 +1621,7 @@ service Determined {
     option (google.api.http) = {
       get: "/api/v1/groups/{group_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1632,7 +1632,7 @@ service Determined {
       post: "/api/v1/groups/search"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1643,7 +1643,7 @@ service Determined {
       post: "/api/v1/groups"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1654,7 +1654,7 @@ service Determined {
       put: "/api/v1/groups/{group_id}"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }
@@ -1664,7 +1664,7 @@ service Determined {
     option (google.api.http) = {
       delete: "/api/v1/groups/{group_id}"
     };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Internal"
     };
   }

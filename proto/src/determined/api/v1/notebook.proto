@@ -8,7 +8,7 @@ import "google/protobuf/struct.proto";
 import "determined/api/v1/pagination.proto";
 import "determined/notebook/v1/notebook.proto";
 import "determined/util/v1/util.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Get a list of notebooks.
 message GetNotebooksRequest {
@@ -107,7 +107,7 @@ message LaunchNotebookRequest {
 }
 // Response to LaunchNotebookRequest.
 message LaunchNotebookResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "notebook", "config" ] }
   };
   // The requested notebook.

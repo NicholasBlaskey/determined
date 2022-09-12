@@ -3,7 +3,7 @@ syntax = "proto3";
 package determined.log.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/logv1";
 
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 // LogLevel specifies the level for a log.
@@ -26,7 +26,7 @@ enum LogLevel {
 
 // LogEntry is a log event.
 message LogEntry {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "id" ] }
   };
   // The id.

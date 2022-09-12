@@ -8,7 +8,7 @@ import "determined/checkpoint/v1/checkpoint.proto";
 import "determined/api/v1/pagination.proto";
 import "determined/task/v1/task.proto";
 import "determined/log/v1/log.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Get the requested task.
 message GetTaskRequest {
@@ -27,7 +27,7 @@ message GetActiveTasksCountRequest {}
 
 // Response to GetActiveTasksCountRequest.
 message GetActiveTasksCountResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: {
       required: [ "commands", "notebooks", "shells", "tensorboards" ]
     }
@@ -53,7 +53,7 @@ message AllocationReadyResponse {}
 
 // Stream task logs.
 message TaskLogsRequest {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "task_id" ] }
   };
   // The id of the task.
@@ -88,7 +88,7 @@ message TaskLogsRequest {
 
 // Response to TaskLogsRequest.
 message TaskLogsResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "id", "level", "message", "timestamp" ] }
   };
   // The ID of the log.
@@ -103,7 +103,7 @@ message TaskLogsResponse {
 
 // Stream distinct task log fields.
 message TaskLogsFieldsRequest {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "task_id" ] }
   };
   // The ID of the task.
@@ -114,7 +114,7 @@ message TaskLogsFieldsRequest {
 
 // Response to TaskLogsFieldsRequest.
 message TaskLogsFieldsResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [] }
   };
   // The distint allocation IDs present in the logs.
@@ -133,7 +133,7 @@ message TaskLogsFieldsResponse {
 
 // Report the given checkpoint for the task.
 message ReportCheckpointRequest {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "checkpoint" ] }
   };
   // The training metrics to persist.

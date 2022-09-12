@@ -1,14 +1,14 @@
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 package determined.user.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/userv1";
 
 // User is an account in the determined cluster.
 message User {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "username", "admin", "active" ] }
   };
   // The user ID.
@@ -50,7 +50,7 @@ message AgentUserGroup {
 
 // UserWebSetting represents user web setting.
 message UserWebSetting {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "key" ] }
   };
   // The key of setting.

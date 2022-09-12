@@ -8,11 +8,11 @@ import "determined/experiment/v1/experiment.proto";
 import "determined/common/v1/common.proto";
 import "determined/checkpoint/v1/checkpoint.proto";
 import "google/protobuf/timestamp.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // CheckpointWorkload is an artifact created by a trial during training.
 message CheckpointWorkload {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "state", "total_batches" ] }
   };
   // UUID of the checkpoint.
@@ -32,7 +32,7 @@ message CheckpointWorkload {
 
 // MetricsWorkload is a workload generating metrics.
 message MetricsWorkload {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: {
       required: [ "metrics", "state", "num_inputs", "total_batches" ]
     }
@@ -52,7 +52,7 @@ message MetricsWorkload {
 // Trial is a set of workloads and are exploring a determined set of
 // hyperparameters.
 message Trial {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: {
       required: [
         "id",
@@ -105,7 +105,7 @@ message Trial {
 // TrialProfilerMetricLabels are the labels for a single series, where a series
 // is a defined as all metrics sharing a distinct set of labels
 message TrialProfilerMetricLabels {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "trial_id", "name" ] }
   };
   // To distinguish the 2 different categories of metrics.
@@ -137,7 +137,7 @@ message TrialProfilerMetricLabels {
 // timestamps will be equal length arrays with each index corresponding to a
 // reading.
 message TrialProfilerMetricsBatch {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "values", "batches", "timestamps", "labels" ] }
   };
   // The measurement for a reading, repeated for the batch of metrics.
@@ -153,7 +153,7 @@ message TrialProfilerMetricsBatch {
 
 // Signals to the experiment the trial early exited.
 message TrialEarlyExit {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "reason" ] }
   };
   // The reason for an early exit.
@@ -172,7 +172,7 @@ message TrialEarlyExit {
 
 // Metrics from the trial some duration of training.
 message TrialMetrics {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: {
       required: [ "trial_id", "trial_run_id", "steps_completed", "metrics" ]
     }
@@ -191,7 +191,7 @@ message TrialMetrics {
 
 // The rendezvous info for the trial to rendezvous with sibling containers.
 message RendezvousInfo {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "addresses", "rank" ] }
   };
   // The rendezvous addresses of the other containers.
@@ -202,7 +202,7 @@ message RendezvousInfo {
 
 // The metadata pertaining to the current running task for a trial.
 message TrialRunnerMetadata {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "state" ] }
   };
   // The state of the trial runner.

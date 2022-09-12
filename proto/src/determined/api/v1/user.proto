@@ -5,7 +5,7 @@ option go_package = "github.com/determined-ai/determined/proto/pkg/apiv1";
 
 import "determined/user/v1/user.proto";
 import "determined/api/v1/pagination.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Get a list of users.
 message GetUsersRequest {
@@ -50,7 +50,7 @@ message GetUserRequest {
 }
 // Response to GetUserRequest.
 message GetUserResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "user" ] }
   };
   // The requested user.
@@ -92,7 +92,7 @@ message PatchUserRequest {
 }
 // Response to PatchUserRequest.
 message PatchUserResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "user" ] }
   };
   // The updated user.
@@ -102,7 +102,7 @@ message PatchUserResponse {
 message GetUserSettingRequest {}
 // Response to GetUserSettingRequest.
 message GetUserSettingResponse {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "settings" ] }
   };
   // List of user settings.
@@ -110,7 +110,7 @@ message GetUserSettingResponse {
 }
 // Update user settings.
 message PostUserSettingRequest {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "storage_path", "setting" ] }
   };
   // Storage path for setting.

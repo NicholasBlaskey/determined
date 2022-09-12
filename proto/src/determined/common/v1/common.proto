@@ -4,11 +4,11 @@ package determined.common.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/commonv1";
 
 import "google/protobuf/struct.proto";
-import "protoc-gen-swagger/options/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // Aggregate and batch metrics
 message Metrics {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
     json_schema: { required: [ "avg_metrics" ] }
   };
   // Aggregate user-generated metrics

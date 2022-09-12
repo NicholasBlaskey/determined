@@ -10,7 +10,7 @@ import (
 	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcrecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -80,11 +81,22 @@ func NewGRPCServer(db *db.PgDB, srv proto.DeterminedServer, enablePrometheus boo
 // newGRPCGatewayMux creates a new gRPC server mux.
 func newGRPCGatewayMux() *runtime.ServeMux {
 	serverOpts := []runtime.ServeMuxOption{
-		runtime.WithMarshalerOption(jsonPretty,
-			&runtime.JSONPb{EmitDefaults: true, Indent: "    "}),
-		runtime.WithMarshalerOption(runtime.MIMEWildcard,
-			&runtime.JSONPb{EmitDefaults: true}),
-		runtime.WithProtoErrorHandler(errorHandler),
+		runtime.WithMarshalerOption(jsonPretty, &runtime.HTTPBodyMarshaler{
+			Marshaler: &runtime.JSONPb{
+				MarshalOptions: protojson.MarshalOptions{
+					EmitUnpopulated: true,
+					Indent:          "    ",
+				},
+			},
+		}),
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.HTTPBodyMarshaler{
+			Marshaler: &runtime.JSONPb{
+				MarshalOptions: protojson.MarshalOptions{
+					EmitUnpopulated: true,
+				},
+			},
+		}),
+		runtime.WithErrorHandler(errorHandler),
 		runtime.WithForwardResponseOption(userTokenResponse),
 	}
 	return runtime.NewServeMux(serverOpts...)

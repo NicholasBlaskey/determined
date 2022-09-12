@@ -33,8 +33,10 @@ get-deps:
 	go install github.com/bufbuild/buf/cmd/buf@v0.42.1
 	go install github.com/golang/protobuf/protoc-gen-go@v1.5.2
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
-	go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.6
-	go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.6
+	#go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.14.6
+	#go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.14.6
+	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.11.3
+	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.11.3
 	go install github.com/swaggo/swag/cmd/swag@v1.7.0
 
 build/proto.stamp: $(source_files)
@@ -59,7 +61,7 @@ build/swagger:
 	mkdir -p build/swagger
 
 $(swagger_out): $(source_files) build/swagger $(swagger_patch) $(echo_swagger_patch)
-	protoc -I src $(swagger_in) --swagger_out=logtostderr=true,allow_delete_body=true,json_names_for_fields=true:build/swagger
+	protoc -I src $(swagger_in) --openapiv2_out=logtostderr=true,allow_delete_body=true,json_names_for_fields=true,proto3_optional_nullable=true:build/swagger
 	python3 scripts/swagger.py $@ $(swagger_patch)
 	python3 scripts/swagger.py $@ $(echo_swagger_patch)
 
