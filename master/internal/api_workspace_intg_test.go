@@ -176,7 +176,6 @@ func TestPatchWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	proto.Equal(expected, getWorkResp.Workspace.CheckpointStorageConfig)
 	require.Equal(t, expected, getWorkResp.Workspace.CheckpointStorageConfig)
-
 }
 
 var wAuthZ *mocks.WorkspaceAuthZ
