@@ -759,9 +759,16 @@ func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWo
 			strings.ReplaceAll(req.SortKey, "'", ""))
 	}
 
+	s := time.Now()
 	switch err := a.m.db.QueryProtof(
 		"proto_get_trial_workloads",
 		[]interface{}{
+			sortCode,
+			db.OrderByToSQL(req.OrderBy),
+			db.OrderByToSQL(req.OrderBy),
+			db.OrderByToSQL(req.OrderBy),
+
+			// Added.
 			sortCode,
 			db.OrderByToSQL(req.OrderBy),
 			db.OrderByToSQL(req.OrderBy),
@@ -781,6 +788,16 @@ func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWo
 		return nil, errors.Wrapf(err, "failed to get trial %d workloads", req.TrialId)
 	}
 
+	fmt.Println("SORTING",
+		sortCode,
+		"req.OrderBy", req.OrderBy, "!",
+		db.OrderByToSQL(req.OrderBy),
+		db.OrderByToSQL(req.OrderBy),
+		db.OrderByToSQL(req.OrderBy),
+	)
+
+	fmt.Println("Time took ", time.Now().Sub(s))
+	fmt.Println(resp.Pagination)
 	return resp, nil
 }
 
