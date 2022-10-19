@@ -113,7 +113,7 @@ func (a *WorkspaceAuthZBasic) CanUnpinWorkspace(
 	return nil
 }
 
-// CanSetCheckpointStorageConfig returns an error if the user is not an admin
+// CanSetWorkspacesCheckpointStorageConfig returns an error if the user is not an admin
 // or owner of the workspace.
 func (a *WorkspaceAuthZBasic) CanSetWorkspacesCheckpointStorageConfig(
 	curUser model.User, workspace *workspacev1.Workspace,
