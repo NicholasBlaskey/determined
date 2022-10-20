@@ -5534,7 +5534,7 @@ export interface V1PatchWorkspace {
      */
     agentUserGroup?: V1AgentUserGroup;
     /**
-     * Optional checkpoint storage config.
+     * Optional checkpoint storage config. Expects same format as experiment config's checkpoint storage.
      * @type {any}
      * @memberof V1PatchWorkspace
      */
@@ -9156,7 +9156,7 @@ export interface V1Workspace {
      */
     agentUserGroup?: V1AgentUserGroup;
     /**
-     * Optional checkpoint storage config.
+     * Optional checkpoint storage config. Expects same format as experiment config's checkpoint storage.
      * @type {any}
      * @memberof V1Workspace
      */
