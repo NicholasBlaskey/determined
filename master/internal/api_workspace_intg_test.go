@@ -269,7 +269,6 @@ func TestAuthzPostWorkspace(t *testing.T) {
 	resp, err := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
 	require.NoError(t, err)
 
-	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything).Return(nil).Once()
 	workspaceAuthZ.On("CanGetWorkspace", mock.Anything, mock.Anything).Return(true, nil).Once()
 	getResp, err := api.GetWorkspace(ctx, &apiv1.GetWorkspaceRequest{Id: resp.Workspace.Id})
 	require.NoError(t, err)
@@ -281,8 +280,13 @@ func TestAuthzPostWorkspace(t *testing.T) {
 	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything).Return(nil).Once()
 	workspaceAuthZ.On("CanCreateWorkspaceWithCheckpointStorageConfig", mock.Anything).Return(
 		fmt.Errorf("storageConfDeny"))
-	_, err = api.GetWorkspace(ctx, &apiv1.GetWorkspaceRequest{Id: resp.Workspace.Id})
-	require.Equal(t, expectedErr, err)
+	resp, err = api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{
+		Name: uuid.New().String(),
+		CheckpointStorageConfig: newProtoStruct(t, map[string]any{
+			"type": "s3",
+		}),
+	})
+	require.Equal(t, expectedErr.Error(), err.Error())
 }
 
 func TestAuthzWorkspaceGetThenActionRoutes(t *testing.T) {
