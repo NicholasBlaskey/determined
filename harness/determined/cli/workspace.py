@@ -122,27 +122,33 @@ def _parse_agent_user_group_args(args: Namespace) -> Optional[bindings.v1AgentUs
             agentUser=args.agent_user,
             agentGroup=args.agent_group,
         )
-    return None
+    return bindings.Unset
 
 
 def _parse_checkpoint_storage_args(args: Namespace) -> Any:
-    if (args.checkpoint_storage_config is not None) and (
-        args.checkpoint_storage_config_file is not None
-    ):
+    if sum([
+            args.checkpoint_storage_config is not None,
+            args.checkpoint_storage_config_file is not None,
+            args.remove_checkpoint_storage_config,
+    ]) > 1:
         raise api.errors.BadRequestException(
-            "can only provide --checkpoint_storage_config or --checkpoint_storage_config_file"
+            "can only provide one of --checkpoint_storage_config, " +
+            "--checkpoint_storage_config_file, --remove-checkpoint-storage-config"
         )
-    checkpoint_storage = args.checkpoint_storage_config_file
-    if args.checkpoint_storage_config is not None:
-        checkpoint_storage = json.loads(args.checkpoint_storage_config)
-    return checkpoint_storage
+    if args.remove_checkpoint_storage_config:
+        return None
+    if args.checkpoint_storage_config_file:
+        return args.checkpoint_storage_config_file
+    if args.checkpoint_storage_config:
+        return json.loads(args.checkpoint_storage_config)
+    return bindings.Unset
 
 
 @authentication.required
 def create_workspace(args: Namespace) -> None:
     agent_user_group = _parse_agent_user_group_args(args)
     checkpoint_storage = _parse_checkpoint_storage_args(args)
-
+    print(args.name)
     content = bindings.v1PostWorkspaceRequest(
         name=args.name,
         agentUserGroup=agent_user_group,
@@ -224,7 +230,9 @@ def edit_workspace(args: Namespace) -> None:
     current = workspace_by_name(sess, args.workspace_name)
     agent_user_group = _parse_agent_user_group_args(args)
     updated = bindings.v1PatchWorkspace(
-        name=args.name, agentUserGroup=agent_user_group, checkpointStorageConfig=checkpoint_storage
+        name=args.name if args.name is not None else bindings.Unset,
+        agentUserGroup=agent_user_group,
+        checkpointStorageConfig=checkpoint_storage,
     )
     w = bindings.patch_PatchWorkspace(sess, body=updated, id=current.id).workspace
 
@@ -237,6 +245,24 @@ def edit_workspace(args: Namespace) -> None:
 def json_file_arg(val: str) -> Any:
     with open(val) as f:
         return json.load(f)
+
+
+WORKSPACE_CHECKPOINT_STORAGE_ARGS = [
+    Arg("--remove-checkpoint-storage-config",
+        action="store_true",
+        default=False,
+        help="removes workspace's checkpoint storage config"),
+    Arg(
+        "--checkpoint-storage-config",
+        type=str,
+        help="Storage config (JSON-formatted string)",
+    ),
+    Arg(
+        "--checkpoint-storage-config-file",
+        type=json_file_arg,
+        help="Storage config (JSON-formatted file)",
+    ),
+]
 
 
 # do not use util.py's pagination_args because behavior here is
@@ -316,16 +342,7 @@ args_description = [
                 [
                     Arg("name", type=str, help="unique name of the workspace"),
                     *AGENT_USER_GROUP_ARGS,
-                    Arg(
-                        "--checkpoint-storage-config",
-                        type=str,
-                        help="Storage config (JSON-formatted string)",
-                    ),
-                    Arg(
-                        "--checkpoint-storage-config-file",
-                        type=json_file_arg,
-                        help="Storage config (JSON-formatted file)",
-                    ),
+                    *WORKSPACE_CHECKPOINT_STORAGE_ARGS,
                     Arg("--json", action="store_true", help="print as JSON"),
                 ],
             ),
@@ -360,16 +377,7 @@ args_description = [
                     Arg("workspace_name", type=str, help="current name of the workspace"),
                     Arg("--name", type=str, help="new name of the workspace"),
                     *AGENT_USER_GROUP_ARGS,
-                    Arg(
-                        "--checkpoint-storage-config",
-                        type=str,
-                        help="Storage config (JSON-formatted string)",
-                    ),
-                    Arg(
-                        "--checkpoint-storage-config-file",
-                        type=json_file_arg,
-                        help="Storage config (JSON-formatted file)",
-                    ),
+                    *WORKSPACE_CHECKPOINT_STORAGE_ARGS,
                     Arg("--json", action="store_true", help="print as JSON"),
                 ],
             ),

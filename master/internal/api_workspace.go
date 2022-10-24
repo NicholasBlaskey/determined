@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	//"github.com/determined-ai/determined/master/internal/api/apiutils"
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/workspace"
@@ -348,8 +349,8 @@ func (a *apiServer) PostWorkspace(
 func (a *apiServer) PatchWorkspace(
 	ctx context.Context, req *apiv1.PatchWorkspaceRequest,
 ) (*apiv1.PatchWorkspaceResponse, error) {
-	fmt.Println(req.UpdateMask)
-	fmt.Println(req.UpdateMask.Paths)
+	fmt.Println("VALUE", req.UpdateMask)
+	fmt.Println("PATHS", req.UpdateMask.Paths)
 
 	currWorkspace, currUser, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, true)
 	if err != nil {
@@ -359,6 +360,7 @@ func (a *apiServer) PatchWorkspace(
 	insertColumns := []string{}
 	updatedWorkspace := model.Workspace{}
 
+	// fieldMask := apiutils.NewFieldMask(req.UpdateMask)
 	if req.Workspace.Name != nil && req.Workspace.Name.Value != currWorkspace.Name {
 		if err = workspace.AuthZProvider.Get().
 			CanSetWorkspacesName(currUser, currWorkspace); err != nil {

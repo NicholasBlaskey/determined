@@ -6,6 +6,11 @@ import typing
 
 import requests
 
+class _unset: 
+    pass
+Unset = _unset()
+
+
 if typing.TYPE_CHECKING:
     from determined.common import api
 
@@ -93,11 +98,11 @@ class GetHPImportanceResponseMetricHPImportance:
     def __init__(
         self,
         *,
-        error: "typing.Optional[str]" = None,
-        experimentProgress: "typing.Optional[float]" = None,
-        hpImportance: "typing.Optional[typing.Dict[str, float]]" = None,
-        inProgress: "typing.Optional[bool]" = None,
-        pending: "typing.Optional[bool]" = None,
+        error: "typing.Optional[str]" = Unset,
+        experimentProgress: "typing.Optional[float]" = Unset,
+        hpImportance: "typing.Optional[typing.Dict[str, float]]" = Unset,
+        inProgress: "typing.Optional[bool]" = Unset,
+        pending: "typing.Optional[bool]" = Unset,
     ):
         self.hpImportance = hpImportance
         self.experimentProgress = experimentProgress
@@ -117,16 +122,16 @@ class GetHPImportanceResponseMetricHPImportance:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.hpImportance is not None:
-            o["hpImportance"] = {k: dump_float(v) for k, v in self.hpImportance.items()}
-        if self.experimentProgress is not None:
-            o["experimentProgress"] = dump_float(self.experimentProgress)
-        if self.error is not None:
-            o["error"] = self.error
-        if self.pending is not None:
-            o["pending"] = self.pending
-        if self.inProgress is not None:
-            o["inProgress"] = self.inProgress
+        if self.hpImportance != Unset:
+            o["hpImportance"] = {k: dump_float(v) for k, v in self.hpImportance.items()} if self.hpImportance is not None else None
+        if self.experimentProgress != Unset:
+            o["experimentProgress"] = dump_float(self.experimentProgress) if self.experimentProgress is not None else None
+        if self.error != Unset:
+            o["error"] = self.error if self.error is not None else None
+        if self.pending != Unset:
+            o["pending"] = self.pending if self.pending is not None else None
+        if self.inProgress != Unset:
+            o["inProgress"] = self.inProgress if self.inProgress is not None else None
         return o
 
 class GetTrialWorkloadsRequestFilterOption(enum.Enum):
@@ -139,8 +144,8 @@ class TrialFiltersRankWithinExp:
     def __init__(
         self,
         *,
-        rank: "typing.Optional[int]" = None,
-        sorter: "typing.Optional[v1TrialSorter]" = None,
+        rank: "typing.Optional[int]" = Unset,
+        sorter: "typing.Optional[v1TrialSorter]" = Unset,
     ):
         self.sorter = sorter
         self.rank = rank
@@ -154,10 +159,10 @@ class TrialFiltersRankWithinExp:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.sorter is not None:
-            o["sorter"] = self.sorter.to_json()
-        if self.rank is not None:
-            o["rank"] = self.rank
+        if self.sorter != Unset:
+            o["sorter"] = self.sorter.to_json() if self.sorter is not None else None
+        if self.rank != Unset:
+            o["rank"] = self.rank if self.rank is not None else None
         return o
 
 class TrialProfilerMetricLabelsProfilerMetricType(enum.Enum):
@@ -176,7 +181,7 @@ class UpdateTrialTagsRequestIds:
     def __init__(
         self,
         *,
-        ids: "typing.Optional[typing.Sequence[int]]" = None,
+        ids: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.ids = ids
 
@@ -188,8 +193,8 @@ class UpdateTrialTagsRequestIds:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.ids is not None:
-            o["ids"] = self.ids
+        if self.ids != Unset:
+            o["ids"] = self.ids if self.ids is not None else None
         return o
 
 class determinedcheckpointv1State(enum.Enum):
@@ -273,8 +278,8 @@ class protobufAny:
     def __init__(
         self,
         *,
-        typeUrl: "typing.Optional[str]" = None,
-        value: "typing.Optional[str]" = None,
+        typeUrl: "typing.Optional[str]" = Unset,
+        value: "typing.Optional[str]" = Unset,
     ):
         self.typeUrl = typeUrl
         self.value = value
@@ -288,17 +293,17 @@ class protobufAny:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.typeUrl is not None:
-            o["typeUrl"] = self.typeUrl
-        if self.value is not None:
-            o["value"] = self.value
+        if self.typeUrl != Unset:
+            o["typeUrl"] = self.typeUrl if self.typeUrl is not None else None
+        if self.value != Unset:
+            o["value"] = self.value if self.value is not None else None
         return o
 
 class protobufFieldMask:
     def __init__(
         self,
         *,
-        paths: "typing.Optional[typing.Sequence[str]]" = None,
+        paths: "typing.Optional[typing.Sequence[str]]" = Unset,
     ):
         self.paths = paths
 
@@ -310,8 +315,8 @@ class protobufFieldMask:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.paths is not None:
-            o["paths"] = self.paths
+        if self.paths != Unset:
+            o["paths"] = self.paths if self.paths is not None else None
         return o
 
 class protobufNullValue(enum.Enum):
@@ -321,10 +326,10 @@ class runtimeError:
     def __init__(
         self,
         *,
-        code: "typing.Optional[int]" = None,
-        details: "typing.Optional[typing.Sequence[protobufAny]]" = None,
-        error: "typing.Optional[str]" = None,
-        message: "typing.Optional[str]" = None,
+        code: "typing.Optional[int]" = Unset,
+        details: "typing.Optional[typing.Sequence[protobufAny]]" = Unset,
+        error: "typing.Optional[str]" = Unset,
+        message: "typing.Optional[str]" = Unset,
     ):
         self.error = error
         self.code = code
@@ -342,25 +347,25 @@ class runtimeError:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.error is not None:
-            o["error"] = self.error
-        if self.code is not None:
-            o["code"] = self.code
-        if self.message is not None:
-            o["message"] = self.message
-        if self.details is not None:
-            o["details"] = [x.to_json() for x in self.details]
+        if self.error != Unset:
+            o["error"] = self.error if self.error is not None else None
+        if self.code != Unset:
+            o["code"] = self.code if self.code is not None else None
+        if self.message != Unset:
+            o["message"] = self.message if self.message is not None else None
+        if self.details != Unset:
+            o["details"] = [x.to_json() for x in self.details] if self.details is not None else None
         return o
 
 class runtimeStreamError:
     def __init__(
         self,
         *,
-        details: "typing.Optional[typing.Sequence[protobufAny]]" = None,
-        grpcCode: "typing.Optional[int]" = None,
-        httpCode: "typing.Optional[int]" = None,
-        httpStatus: "typing.Optional[str]" = None,
-        message: "typing.Optional[str]" = None,
+        details: "typing.Optional[typing.Sequence[protobufAny]]" = Unset,
+        grpcCode: "typing.Optional[int]" = Unset,
+        httpCode: "typing.Optional[int]" = Unset,
+        httpStatus: "typing.Optional[str]" = Unset,
+        message: "typing.Optional[str]" = Unset,
     ):
         self.grpcCode = grpcCode
         self.httpCode = httpCode
@@ -380,16 +385,16 @@ class runtimeStreamError:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.grpcCode is not None:
-            o["grpcCode"] = self.grpcCode
-        if self.httpCode is not None:
-            o["httpCode"] = self.httpCode
-        if self.message is not None:
-            o["message"] = self.message
-        if self.httpStatus is not None:
-            o["httpStatus"] = self.httpStatus
-        if self.details is not None:
-            o["details"] = [x.to_json() for x in self.details]
+        if self.grpcCode != Unset:
+            o["grpcCode"] = self.grpcCode if self.grpcCode is not None else None
+        if self.httpCode != Unset:
+            o["httpCode"] = self.httpCode if self.httpCode is not None else None
+        if self.message != Unset:
+            o["message"] = self.message if self.message is not None else None
+        if self.httpStatus != Unset:
+            o["httpStatus"] = self.httpStatus if self.httpStatus is not None else None
+        if self.details != Unset:
+            o["details"] = [x.to_json() for x in self.details] if self.details is not None else None
         return o
 
 class trialv1Trial:
@@ -403,16 +408,16 @@ class trialv1Trial:
         startTime: str,
         state: "determinedexperimentv1State",
         totalBatchesProcessed: int,
-        bestCheckpoint: "typing.Optional[v1CheckpointWorkload]" = None,
-        bestValidation: "typing.Optional[v1MetricsWorkload]" = None,
-        endTime: "typing.Optional[str]" = None,
-        latestTraining: "typing.Optional[v1MetricsWorkload]" = None,
-        latestValidation: "typing.Optional[v1MetricsWorkload]" = None,
-        runnerState: "typing.Optional[str]" = None,
-        taskId: "typing.Optional[str]" = None,
-        totalCheckpointSize: "typing.Optional[str]" = None,
-        wallClockTime: "typing.Optional[float]" = None,
-        warmStartCheckpointUuid: "typing.Optional[str]" = None,
+        bestCheckpoint: "typing.Optional[v1CheckpointWorkload]" = Unset,
+        bestValidation: "typing.Optional[v1MetricsWorkload]" = Unset,
+        endTime: "typing.Optional[str]" = Unset,
+        latestTraining: "typing.Optional[v1MetricsWorkload]" = Unset,
+        latestValidation: "typing.Optional[v1MetricsWorkload]" = Unset,
+        runnerState: "typing.Optional[str]" = Unset,
+        taskId: "typing.Optional[str]" = Unset,
+        totalCheckpointSize: "typing.Optional[str]" = Unset,
+        wallClockTime: "typing.Optional[float]" = Unset,
+        warmStartCheckpointUuid: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.experimentId = experimentId
@@ -459,30 +464,30 @@ class trialv1Trial:
         o["id"] = self.id
         o["experimentId"] = self.experimentId
         o["startTime"] = self.startTime
-        if self.endTime is not None:
-            o["endTime"] = self.endTime
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime if self.endTime is not None else None
         o["state"] = self.state.value
         o["restarts"] = self.restarts
         o["hparams"] = self.hparams
         o["totalBatchesProcessed"] = self.totalBatchesProcessed
-        if self.bestValidation is not None:
-            o["bestValidation"] = self.bestValidation.to_json()
-        if self.latestValidation is not None:
-            o["latestValidation"] = self.latestValidation.to_json()
-        if self.bestCheckpoint is not None:
-            o["bestCheckpoint"] = self.bestCheckpoint.to_json()
-        if self.latestTraining is not None:
-            o["latestTraining"] = self.latestTraining.to_json()
-        if self.runnerState is not None:
-            o["runnerState"] = self.runnerState
-        if self.wallClockTime is not None:
-            o["wallClockTime"] = dump_float(self.wallClockTime)
-        if self.warmStartCheckpointUuid is not None:
-            o["warmStartCheckpointUuid"] = self.warmStartCheckpointUuid
-        if self.taskId is not None:
-            o["taskId"] = self.taskId
-        if self.totalCheckpointSize is not None:
-            o["totalCheckpointSize"] = self.totalCheckpointSize
+        if self.bestValidation != Unset:
+            o["bestValidation"] = self.bestValidation.to_json() if self.bestValidation is not None else None
+        if self.latestValidation != Unset:
+            o["latestValidation"] = self.latestValidation.to_json() if self.latestValidation is not None else None
+        if self.bestCheckpoint != Unset:
+            o["bestCheckpoint"] = self.bestCheckpoint.to_json() if self.bestCheckpoint is not None else None
+        if self.latestTraining != Unset:
+            o["latestTraining"] = self.latestTraining.to_json() if self.latestTraining is not None else None
+        if self.runnerState != Unset:
+            o["runnerState"] = self.runnerState if self.runnerState is not None else None
+        if self.wallClockTime != Unset:
+            o["wallClockTime"] = dump_float(self.wallClockTime) if self.wallClockTime is not None else None
+        if self.warmStartCheckpointUuid != Unset:
+            o["warmStartCheckpointUuid"] = self.warmStartCheckpointUuid if self.warmStartCheckpointUuid is not None else None
+        if self.taskId != Unset:
+            o["taskId"] = self.taskId if self.taskId is not None else None
+        if self.totalCheckpointSize != Unset:
+            o["totalCheckpointSize"] = self.totalCheckpointSize if self.totalCheckpointSize is not None else None
         return o
 
 class v1AckAllocationPreemptionSignalRequest:
@@ -528,15 +533,15 @@ class v1Agent:
         self,
         *,
         id: str,
-        addresses: "typing.Optional[typing.Sequence[str]]" = None,
-        containers: "typing.Optional[typing.Dict[str, v1Container]]" = None,
-        draining: "typing.Optional[bool]" = None,
-        enabled: "typing.Optional[bool]" = None,
-        label: "typing.Optional[str]" = None,
-        registeredTime: "typing.Optional[str]" = None,
-        resourcePools: "typing.Optional[typing.Sequence[str]]" = None,
-        slots: "typing.Optional[typing.Dict[str, v1Slot]]" = None,
-        version: "typing.Optional[str]" = None,
+        addresses: "typing.Optional[typing.Sequence[str]]" = Unset,
+        containers: "typing.Optional[typing.Dict[str, v1Container]]" = Unset,
+        draining: "typing.Optional[bool]" = Unset,
+        enabled: "typing.Optional[bool]" = Unset,
+        label: "typing.Optional[str]" = Unset,
+        registeredTime: "typing.Optional[str]" = Unset,
+        resourcePools: "typing.Optional[typing.Sequence[str]]" = Unset,
+        slots: "typing.Optional[typing.Dict[str, v1Slot]]" = Unset,
+        version: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.registeredTime = registeredTime
@@ -567,34 +572,34 @@ class v1Agent:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id
-        if self.registeredTime is not None:
-            o["registeredTime"] = self.registeredTime
-        if self.slots is not None:
-            o["slots"] = {k: v.to_json() for k, v in self.slots.items()}
-        if self.containers is not None:
-            o["containers"] = {k: v.to_json() for k, v in self.containers.items()}
-        if self.label is not None:
-            o["label"] = self.label
-        if self.addresses is not None:
-            o["addresses"] = self.addresses
-        if self.enabled is not None:
-            o["enabled"] = self.enabled
-        if self.draining is not None:
-            o["draining"] = self.draining
-        if self.version is not None:
-            o["version"] = self.version
-        if self.resourcePools is not None:
-            o["resourcePools"] = self.resourcePools
+        if self.registeredTime != Unset:
+            o["registeredTime"] = self.registeredTime if self.registeredTime is not None else None
+        if self.slots != Unset:
+            o["slots"] = {k: v.to_json() for k, v in self.slots.items()} if self.slots is not None else None
+        if self.containers != Unset:
+            o["containers"] = {k: v.to_json() for k, v in self.containers.items()} if self.containers is not None else None
+        if self.label != Unset:
+            o["label"] = self.label if self.label is not None else None
+        if self.addresses != Unset:
+            o["addresses"] = self.addresses if self.addresses is not None else None
+        if self.enabled != Unset:
+            o["enabled"] = self.enabled if self.enabled is not None else None
+        if self.draining != Unset:
+            o["draining"] = self.draining if self.draining is not None else None
+        if self.version != Unset:
+            o["version"] = self.version if self.version is not None else None
+        if self.resourcePools != Unset:
+            o["resourcePools"] = self.resourcePools if self.resourcePools is not None else None
         return o
 
 class v1AgentUserGroup:
     def __init__(
         self,
         *,
-        agentGid: "typing.Optional[int]" = None,
-        agentGroup: "typing.Optional[str]" = None,
-        agentUid: "typing.Optional[int]" = None,
-        agentUser: "typing.Optional[str]" = None,
+        agentGid: "typing.Optional[int]" = Unset,
+        agentGroup: "typing.Optional[str]" = Unset,
+        agentUid: "typing.Optional[int]" = Unset,
+        agentUser: "typing.Optional[str]" = Unset,
     ):
         self.agentUid = agentUid
         self.agentGid = agentGid
@@ -612,14 +617,14 @@ class v1AgentUserGroup:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agentUid is not None:
-            o["agentUid"] = self.agentUid
-        if self.agentGid is not None:
-            o["agentGid"] = self.agentGid
-        if self.agentUser is not None:
-            o["agentUser"] = self.agentUser
-        if self.agentGroup is not None:
-            o["agentGroup"] = self.agentGroup
+        if self.agentUid != Unset:
+            o["agentUid"] = self.agentUid if self.agentUid is not None else None
+        if self.agentGid != Unset:
+            o["agentGid"] = self.agentGid if self.agentGid is not None else None
+        if self.agentUser != Unset:
+            o["agentUser"] = self.agentUser if self.agentUser is not None else None
+        if self.agentGroup != Unset:
+            o["agentGroup"] = self.agentGroup if self.agentGroup is not None else None
         return o
 
 class v1AggregateQueueStats:
@@ -649,12 +654,12 @@ class v1Allocation:
     def __init__(
         self,
         *,
-        allocationId: "typing.Optional[str]" = None,
-        endTime: "typing.Optional[str]" = None,
-        isReady: "typing.Optional[bool]" = None,
-        startTime: "typing.Optional[str]" = None,
-        state: "typing.Optional[determinedtaskv1State]" = None,
-        taskId: "typing.Optional[str]" = None,
+        allocationId: "typing.Optional[str]" = Unset,
+        endTime: "typing.Optional[str]" = Unset,
+        isReady: "typing.Optional[bool]" = Unset,
+        startTime: "typing.Optional[str]" = Unset,
+        state: "typing.Optional[determinedtaskv1State]" = Unset,
+        taskId: "typing.Optional[str]" = Unset,
     ):
         self.taskId = taskId
         self.state = state
@@ -676,18 +681,18 @@ class v1Allocation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.taskId is not None:
-            o["taskId"] = self.taskId
-        if self.state is not None:
-            o["state"] = self.state.value
-        if self.isReady is not None:
-            o["isReady"] = self.isReady
-        if self.startTime is not None:
-            o["startTime"] = self.startTime
-        if self.endTime is not None:
-            o["endTime"] = self.endTime
-        if self.allocationId is not None:
-            o["allocationId"] = self.allocationId
+        if self.taskId != Unset:
+            o["taskId"] = self.taskId if self.taskId is not None else None
+        if self.state != Unset:
+            o["state"] = self.state.value if self.state is not None else None
+        if self.isReady != Unset:
+            o["isReady"] = self.isReady if self.isReady is not None else None
+        if self.startTime != Unset:
+            o["startTime"] = self.startTime if self.startTime is not None else None
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime if self.endTime is not None else None
+        if self.allocationId != Unset:
+            o["allocationId"] = self.allocationId if self.allocationId is not None else None
         return o
 
 class v1AllocationAllGatherRequest:
@@ -696,8 +701,8 @@ class v1AllocationAllGatherRequest:
         *,
         allocationId: str,
         data: "typing.Dict[str, typing.Any]",
-        numPeers: "typing.Optional[int]" = None,
-        requestUuid: "typing.Optional[str]" = None,
+        numPeers: "typing.Optional[int]" = Unset,
+        requestUuid: "typing.Optional[str]" = Unset,
     ):
         self.allocationId = allocationId
         self.requestUuid = requestUuid
@@ -716,10 +721,10 @@ class v1AllocationAllGatherRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["allocationId"] = self.allocationId
-        if self.requestUuid is not None:
-            o["requestUuid"] = self.requestUuid
-        if self.numPeers is not None:
-            o["numPeers"] = self.numPeers
+        if self.requestUuid != Unset:
+            o["requestUuid"] = self.requestUuid if self.requestUuid is not None else None
+        if self.numPeers != Unset:
+            o["numPeers"] = self.numPeers if self.numPeers is not None else None
         o["data"] = self.data
         return o
 
@@ -765,7 +770,7 @@ class v1AllocationPreemptionSignalResponse:
     def __init__(
         self,
         *,
-        preempt: "typing.Optional[bool]" = None,
+        preempt: "typing.Optional[bool]" = Unset,
     ):
         self.preempt = preempt
 
@@ -777,15 +782,15 @@ class v1AllocationPreemptionSignalResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.preempt is not None:
-            o["preempt"] = self.preempt
+        if self.preempt != Unset:
+            o["preempt"] = self.preempt if self.preempt is not None else None
         return o
 
 class v1AllocationReadyRequest:
     def __init__(
         self,
         *,
-        allocationId: "typing.Optional[str]" = None,
+        allocationId: "typing.Optional[str]" = Unset,
     ):
         self.allocationId = allocationId
 
@@ -797,8 +802,8 @@ class v1AllocationReadyRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.allocationId is not None:
-            o["allocationId"] = self.allocationId
+        if self.allocationId != Unset:
+            o["allocationId"] = self.allocationId if self.allocationId is not None else None
         return o
 
 class v1AllocationRendezvousInfoResponse:
@@ -824,7 +829,7 @@ class v1AllocationWaitingRequest:
     def __init__(
         self,
         *,
-        allocationId: "typing.Optional[str]" = None,
+        allocationId: "typing.Optional[str]" = Unset,
     ):
         self.allocationId = allocationId
 
@@ -836,16 +841,16 @@ class v1AllocationWaitingRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.allocationId is not None:
-            o["allocationId"] = self.allocationId
+        if self.allocationId != Unset:
+            o["allocationId"] = self.allocationId if self.allocationId is not None else None
         return o
 
 class v1AssignRolesRequest:
     def __init__(
         self,
         *,
-        groupRoleAssignments: "typing.Optional[typing.Sequence[v1GroupRoleAssignment]]" = None,
-        userRoleAssignments: "typing.Optional[typing.Sequence[v1UserRoleAssignment]]" = None,
+        groupRoleAssignments: "typing.Optional[typing.Sequence[v1GroupRoleAssignment]]" = Unset,
+        userRoleAssignments: "typing.Optional[typing.Sequence[v1UserRoleAssignment]]" = Unset,
     ):
         self.groupRoleAssignments = groupRoleAssignments
         self.userRoleAssignments = userRoleAssignments
@@ -859,10 +864,10 @@ class v1AssignRolesRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.groupRoleAssignments is not None:
-            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments]
-        if self.userRoleAssignments is not None:
-            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments]
+        if self.groupRoleAssignments != Unset:
+            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments] if self.groupRoleAssignments is not None else None
+        if self.userRoleAssignments != Unset:
+            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments] if self.userRoleAssignments is not None else None
         return o
 
 class v1AugmentedTrial:
@@ -886,10 +891,10 @@ class v1AugmentedTrial:
         userId: int,
         validationMetrics: "typing.Dict[str, typing.Any]",
         workspaceId: int,
-        rankWithinExp: "typing.Optional[int]" = None,
-        searcherMetric: "typing.Optional[str]" = None,
-        searcherMetricLoss: "typing.Optional[float]" = None,
-        searcherMetricValue: "typing.Optional[float]" = None,
+        rankWithinExp: "typing.Optional[int]" = Unset,
+        searcherMetric: "typing.Optional[str]" = Unset,
+        searcherMetricLoss: "typing.Optional[float]" = Unset,
+        searcherMetricValue: "typing.Optional[float]" = Unset,
     ):
         self.trialId = trialId
         self.state = state
@@ -950,8 +955,8 @@ class v1AugmentedTrial:
         o["startTime"] = self.startTime
         o["endTime"] = self.endTime
         o["searcherType"] = self.searcherType
-        if self.rankWithinExp is not None:
-            o["rankWithinExp"] = self.rankWithinExp
+        if self.rankWithinExp != Unset:
+            o["rankWithinExp"] = self.rankWithinExp if self.rankWithinExp is not None else None
         o["experimentId"] = self.experimentId
         o["experimentName"] = self.experimentName
         o["experimentDescription"] = self.experimentDescription
@@ -960,12 +965,12 @@ class v1AugmentedTrial:
         o["projectId"] = self.projectId
         o["workspaceId"] = self.workspaceId
         o["totalBatches"] = self.totalBatches
-        if self.searcherMetric is not None:
-            o["searcherMetric"] = self.searcherMetric
-        if self.searcherMetricValue is not None:
-            o["searcherMetricValue"] = dump_float(self.searcherMetricValue)
-        if self.searcherMetricLoss is not None:
-            o["searcherMetricLoss"] = dump_float(self.searcherMetricLoss)
+        if self.searcherMetric != Unset:
+            o["searcherMetric"] = self.searcherMetric if self.searcherMetric is not None else None
+        if self.searcherMetricValue != Unset:
+            o["searcherMetricValue"] = dump_float(self.searcherMetricValue) if self.searcherMetricValue is not None else None
+        if self.searcherMetricLoss != Unset:
+            o["searcherMetricLoss"] = dump_float(self.searcherMetricLoss) if self.searcherMetricLoss is not None else None
         return o
 
 class v1AwsCustomTag:
@@ -1000,9 +1005,9 @@ class v1Checkpoint:
         state: "determinedcheckpointv1State",
         training: "v1CheckpointTrainingMetadata",
         uuid: str,
-        allocationId: "typing.Optional[str]" = None,
-        reportTime: "typing.Optional[str]" = None,
-        taskId: "typing.Optional[str]" = None,
+        allocationId: "typing.Optional[str]" = Unset,
+        reportTime: "typing.Optional[str]" = Unset,
+        taskId: "typing.Optional[str]" = Unset,
     ):
         self.taskId = taskId
         self.allocationId = allocationId
@@ -1028,13 +1033,13 @@ class v1Checkpoint:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.taskId is not None:
-            o["taskId"] = self.taskId
-        if self.allocationId is not None:
-            o["allocationId"] = self.allocationId
+        if self.taskId != Unset:
+            o["taskId"] = self.taskId if self.taskId is not None else None
+        if self.allocationId != Unset:
+            o["allocationId"] = self.allocationId if self.allocationId is not None else None
         o["uuid"] = self.uuid
-        if self.reportTime is not None:
-            o["reportTime"] = self.reportTime
+        if self.reportTime != Unset:
+            o["reportTime"] = self.reportTime if self.reportTime is not None else None
         o["resources"] = self.resources
         o["metadata"] = self.metadata
         o["state"] = self.state.value
@@ -1045,13 +1050,13 @@ class v1CheckpointTrainingMetadata:
     def __init__(
         self,
         *,
-        experimentConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        experimentId: "typing.Optional[int]" = None,
-        hparams: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        searcherMetric: "typing.Optional[float]" = None,
-        trainingMetrics: "typing.Optional[v1Metrics]" = None,
-        trialId: "typing.Optional[int]" = None,
-        validationMetrics: "typing.Optional[v1Metrics]" = None,
+        experimentConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        experimentId: "typing.Optional[int]" = Unset,
+        hparams: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        searcherMetric: "typing.Optional[float]" = Unset,
+        trainingMetrics: "typing.Optional[v1Metrics]" = Unset,
+        trialId: "typing.Optional[int]" = Unset,
+        validationMetrics: "typing.Optional[v1Metrics]" = Unset,
     ):
         self.trialId = trialId
         self.experimentId = experimentId
@@ -1075,20 +1080,20 @@ class v1CheckpointTrainingMetadata:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.trialId is not None:
-            o["trialId"] = self.trialId
-        if self.experimentId is not None:
-            o["experimentId"] = self.experimentId
-        if self.experimentConfig is not None:
-            o["experimentConfig"] = self.experimentConfig
-        if self.hparams is not None:
-            o["hparams"] = self.hparams
-        if self.trainingMetrics is not None:
-            o["trainingMetrics"] = self.trainingMetrics.to_json()
-        if self.validationMetrics is not None:
-            o["validationMetrics"] = self.validationMetrics.to_json()
-        if self.searcherMetric is not None:
-            o["searcherMetric"] = dump_float(self.searcherMetric)
+        if self.trialId != Unset:
+            o["trialId"] = self.trialId if self.trialId is not None else None
+        if self.experimentId != Unset:
+            o["experimentId"] = self.experimentId if self.experimentId is not None else None
+        if self.experimentConfig != Unset:
+            o["experimentConfig"] = self.experimentConfig if self.experimentConfig is not None else None
+        if self.hparams != Unset:
+            o["hparams"] = self.hparams if self.hparams is not None else None
+        if self.trainingMetrics != Unset:
+            o["trainingMetrics"] = self.trainingMetrics.to_json() if self.trainingMetrics is not None else None
+        if self.validationMetrics != Unset:
+            o["validationMetrics"] = self.validationMetrics.to_json() if self.validationMetrics is not None else None
+        if self.searcherMetric != Unset:
+            o["searcherMetric"] = dump_float(self.searcherMetric) if self.searcherMetric is not None else None
         return o
 
 class v1CheckpointWorkload:
@@ -1097,10 +1102,10 @@ class v1CheckpointWorkload:
         *,
         state: "determinedcheckpointv1State",
         totalBatches: int,
-        endTime: "typing.Optional[str]" = None,
-        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        resources: "typing.Optional[typing.Dict[str, str]]" = None,
-        uuid: "typing.Optional[str]" = None,
+        endTime: "typing.Optional[str]" = Unset,
+        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        resources: "typing.Optional[typing.Dict[str, str]]" = Unset,
+        uuid: "typing.Optional[str]" = Unset,
     ):
         self.uuid = uuid
         self.endTime = endTime
@@ -1122,23 +1127,23 @@ class v1CheckpointWorkload:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.uuid is not None:
-            o["uuid"] = self.uuid
-        if self.endTime is not None:
-            o["endTime"] = self.endTime
+        if self.uuid != Unset:
+            o["uuid"] = self.uuid if self.uuid is not None else None
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime if self.endTime is not None else None
         o["state"] = self.state.value
-        if self.resources is not None:
-            o["resources"] = self.resources
+        if self.resources != Unset:
+            o["resources"] = self.resources if self.resources is not None else None
         o["totalBatches"] = self.totalBatches
-        if self.metadata is not None:
-            o["metadata"] = self.metadata
+        if self.metadata != Unset:
+            o["metadata"] = self.metadata if self.metadata is not None else None
         return o
 
 class v1CloseTrialOperation:
     def __init__(
         self,
         *,
-        requestId: "typing.Optional[str]" = None,
+        requestId: "typing.Optional[str]" = Unset,
     ):
         self.requestId = requestId
 
@@ -1150,16 +1155,16 @@ class v1CloseTrialOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.requestId is not None:
-            o["requestId"] = self.requestId
+        if self.requestId != Unset:
+            o["requestId"] = self.requestId if self.requestId is not None else None
         return o
 
 class v1ColumnFilter:
     def __init__(
         self,
         *,
-        filter: "typing.Optional[v1DoubleFieldFilter]" = None,
-        name: "typing.Optional[str]" = None,
+        filter: "typing.Optional[v1DoubleFieldFilter]" = Unset,
+        name: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.filter = filter
@@ -1173,10 +1178,10 @@ class v1ColumnFilter:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.name is not None:
-            o["name"] = self.name
-        if self.filter is not None:
-            o["filter"] = self.filter.to_json()
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.filter != Unset:
+            o["filter"] = self.filter.to_json() if self.filter is not None else None
         return o
 
 class v1Command:
@@ -1190,10 +1195,10 @@ class v1Command:
         startTime: str,
         state: "determinedtaskv1State",
         username: str,
-        container: "typing.Optional[v1Container]" = None,
-        displayName: "typing.Optional[str]" = None,
-        exitStatus: "typing.Optional[str]" = None,
-        userId: "typing.Optional[int]" = None,
+        container: "typing.Optional[v1Container]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
+        exitStatus: "typing.Optional[str]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
     ):
         self.id = id
         self.description = description
@@ -1229,16 +1234,16 @@ class v1Command:
         o["description"] = self.description
         o["state"] = self.state.value
         o["startTime"] = self.startTime
-        if self.container is not None:
-            o["container"] = self.container.to_json()
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.userId is not None:
-            o["userId"] = self.userId
+        if self.container != Unset:
+            o["container"] = self.container.to_json() if self.container is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
         o["username"] = self.username
         o["resourcePool"] = self.resourcePool
-        if self.exitStatus is not None:
-            o["exitStatus"] = self.exitStatus
+        if self.exitStatus != Unset:
+            o["exitStatus"] = self.exitStatus if self.exitStatus is not None else None
         o["jobId"] = self.jobId
         return o
 
@@ -1288,8 +1293,8 @@ class v1CompleteValidateAfterOperation:
     def __init__(
         self,
         *,
-        op: "typing.Optional[v1ValidateAfterOperation]" = None,
-        searcherMetric: "typing.Optional[float]" = None,
+        op: "typing.Optional[v1ValidateAfterOperation]" = Unset,
+        searcherMetric: "typing.Optional[float]" = Unset,
     ):
         self.op = op
         self.searcherMetric = searcherMetric
@@ -1303,10 +1308,10 @@ class v1CompleteValidateAfterOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.op is not None:
-            o["op"] = self.op.to_json()
-        if self.searcherMetric is not None:
-            o["searcherMetric"] = dump_float(self.searcherMetric)
+        if self.op != Unset:
+            o["op"] = self.op.to_json() if self.op is not None else None
+        if self.searcherMetric != Unset:
+            o["searcherMetric"] = dump_float(self.searcherMetric) if self.searcherMetric is not None else None
         return o
 
 class v1Container:
@@ -1315,8 +1320,8 @@ class v1Container:
         *,
         id: str,
         state: "determinedcontainerv1State",
-        devices: "typing.Optional[typing.Sequence[v1Device]]" = None,
-        parent: "typing.Optional[str]" = None,
+        devices: "typing.Optional[typing.Sequence[v1Device]]" = Unset,
+        parent: "typing.Optional[str]" = Unset,
     ):
         self.parent = parent
         self.id = id
@@ -1334,24 +1339,24 @@ class v1Container:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.parent is not None:
-            o["parent"] = self.parent
+        if self.parent != Unset:
+            o["parent"] = self.parent if self.parent is not None else None
         o["id"] = self.id
         o["state"] = self.state.value
-        if self.devices is not None:
-            o["devices"] = [x.to_json() for x in self.devices]
+        if self.devices != Unset:
+            o["devices"] = [x.to_json() for x in self.devices] if self.devices is not None else None
         return o
 
 class v1CreateExperimentRequest:
     def __init__(
         self,
         *,
-        activate: "typing.Optional[bool]" = None,
-        config: "typing.Optional[str]" = None,
-        modelDefinition: "typing.Optional[typing.Sequence[v1File]]" = None,
-        parentId: "typing.Optional[int]" = None,
-        projectId: "typing.Optional[int]" = None,
-        validateOnly: "typing.Optional[bool]" = None,
+        activate: "typing.Optional[bool]" = Unset,
+        config: "typing.Optional[str]" = Unset,
+        modelDefinition: "typing.Optional[typing.Sequence[v1File]]" = Unset,
+        parentId: "typing.Optional[int]" = Unset,
+        projectId: "typing.Optional[int]" = Unset,
+        validateOnly: "typing.Optional[bool]" = Unset,
     ):
         self.modelDefinition = modelDefinition
         self.config = config
@@ -1373,18 +1378,18 @@ class v1CreateExperimentRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.modelDefinition is not None:
-            o["modelDefinition"] = [x.to_json() for x in self.modelDefinition]
-        if self.config is not None:
-            o["config"] = self.config
-        if self.validateOnly is not None:
-            o["validateOnly"] = self.validateOnly
-        if self.parentId is not None:
-            o["parentId"] = self.parentId
-        if self.activate is not None:
-            o["activate"] = self.activate
-        if self.projectId is not None:
-            o["projectId"] = self.projectId
+        if self.modelDefinition != Unset:
+            o["modelDefinition"] = [x.to_json() for x in self.modelDefinition] if self.modelDefinition is not None else None
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.validateOnly != Unset:
+            o["validateOnly"] = self.validateOnly if self.validateOnly is not None else None
+        if self.parentId != Unset:
+            o["parentId"] = self.parentId if self.parentId is not None else None
+        if self.activate != Unset:
+            o["activate"] = self.activate if self.activate is not None else None
+        if self.projectId != Unset:
+            o["projectId"] = self.projectId if self.projectId is not None else None
         return o
 
 class v1CreateExperimentResponse:
@@ -1415,7 +1420,7 @@ class v1CreateGroupRequest:
         self,
         *,
         name: str,
-        addUsers: "typing.Optional[typing.Sequence[int]]" = None,
+        addUsers: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.name = name
         self.addUsers = addUsers
@@ -1430,8 +1435,8 @@ class v1CreateGroupRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["name"] = self.name
-        if self.addUsers is not None:
-            o["addUsers"] = self.addUsers
+        if self.addUsers != Unset:
+            o["addUsers"] = self.addUsers if self.addUsers is not None else None
         return o
 
 class v1CreateGroupResponse:
@@ -1457,8 +1462,8 @@ class v1CreateTrialOperation:
     def __init__(
         self,
         *,
-        hyperparams: "typing.Optional[str]" = None,
-        requestId: "typing.Optional[str]" = None,
+        hyperparams: "typing.Optional[str]" = Unset,
+        requestId: "typing.Optional[str]" = Unset,
     ):
         self.requestId = requestId
         self.hyperparams = hyperparams
@@ -1472,10 +1477,10 @@ class v1CreateTrialOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.requestId is not None:
-            o["requestId"] = self.requestId
-        if self.hyperparams is not None:
-            o["hyperparams"] = self.hyperparams
+        if self.requestId != Unset:
+            o["requestId"] = self.requestId if self.requestId is not None else None
+        if self.hyperparams != Unset:
+            o["hyperparams"] = self.hyperparams if self.hyperparams is not None else None
         return o
 
 class v1CreateTrialsCollectionRequest:
@@ -1513,7 +1518,7 @@ class v1CreateTrialsCollectionResponse:
     def __init__(
         self,
         *,
-        collection: "typing.Optional[v1TrialsCollection]" = None,
+        collection: "typing.Optional[v1TrialsCollection]" = Unset,
     ):
         self.collection = collection
 
@@ -1525,8 +1530,8 @@ class v1CreateTrialsCollectionResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.collection is not None:
-            o["collection"] = self.collection.to_json()
+        if self.collection != Unset:
+            o["collection"] = self.collection.to_json() if self.collection is not None else None
         return o
 
 class v1CurrentUserResponse:
@@ -1632,10 +1637,10 @@ class v1Device:
     def __init__(
         self,
         *,
-        brand: "typing.Optional[str]" = None,
-        id: "typing.Optional[int]" = None,
-        type: "typing.Optional[determineddevicev1Type]" = None,
-        uuid: "typing.Optional[str]" = None,
+        brand: "typing.Optional[str]" = Unset,
+        id: "typing.Optional[int]" = Unset,
+        type: "typing.Optional[determineddevicev1Type]" = Unset,
+        uuid: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.brand = brand
@@ -1653,22 +1658,22 @@ class v1Device:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.id is not None:
-            o["id"] = self.id
-        if self.brand is not None:
-            o["brand"] = self.brand
-        if self.uuid is not None:
-            o["uuid"] = self.uuid
-        if self.type is not None:
-            o["type"] = self.type.value
+        if self.id != Unset:
+            o["id"] = self.id if self.id is not None else None
+        if self.brand != Unset:
+            o["brand"] = self.brand if self.brand is not None else None
+        if self.uuid != Unset:
+            o["uuid"] = self.uuid if self.uuid is not None else None
+        if self.type != Unset:
+            o["type"] = self.type.value if self.type is not None else None
         return o
 
 class v1DisableAgentRequest:
     def __init__(
         self,
         *,
-        agentId: "typing.Optional[str]" = None,
-        drain: "typing.Optional[bool]" = None,
+        agentId: "typing.Optional[str]" = Unset,
+        drain: "typing.Optional[bool]" = Unset,
     ):
         self.agentId = agentId
         self.drain = drain
@@ -1682,17 +1687,17 @@ class v1DisableAgentRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agentId is not None:
-            o["agentId"] = self.agentId
-        if self.drain is not None:
-            o["drain"] = self.drain
+        if self.agentId != Unset:
+            o["agentId"] = self.agentId if self.agentId is not None else None
+        if self.drain != Unset:
+            o["drain"] = self.drain if self.drain is not None else None
         return o
 
 class v1DisableAgentResponse:
     def __init__(
         self,
         *,
-        agent: "typing.Optional[v1Agent]" = None,
+        agent: "typing.Optional[v1Agent]" = Unset,
     ):
         self.agent = agent
 
@@ -1704,15 +1709,15 @@ class v1DisableAgentResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agent is not None:
-            o["agent"] = self.agent.to_json()
+        if self.agent != Unset:
+            o["agent"] = self.agent.to_json() if self.agent is not None else None
         return o
 
 class v1DisableSlotResponse:
     def __init__(
         self,
         *,
-        slot: "typing.Optional[v1Slot]" = None,
+        slot: "typing.Optional[v1Slot]" = Unset,
     ):
         self.slot = slot
 
@@ -1724,18 +1729,18 @@ class v1DisableSlotResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.slot is not None:
-            o["slot"] = self.slot.to_json()
+        if self.slot != Unset:
+            o["slot"] = self.slot.to_json() if self.slot is not None else None
         return o
 
 class v1DoubleFieldFilter:
     def __init__(
         self,
         *,
-        gt: "typing.Optional[float]" = None,
-        gte: "typing.Optional[float]" = None,
-        lt: "typing.Optional[float]" = None,
-        lte: "typing.Optional[float]" = None,
+        gt: "typing.Optional[float]" = Unset,
+        gte: "typing.Optional[float]" = Unset,
+        lt: "typing.Optional[float]" = Unset,
+        lte: "typing.Optional[float]" = Unset,
     ):
         self.lt = lt
         self.lte = lte
@@ -1753,21 +1758,21 @@ class v1DoubleFieldFilter:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.lt is not None:
-            o["lt"] = dump_float(self.lt)
-        if self.lte is not None:
-            o["lte"] = dump_float(self.lte)
-        if self.gt is not None:
-            o["gt"] = dump_float(self.gt)
-        if self.gte is not None:
-            o["gte"] = dump_float(self.gte)
+        if self.lt != Unset:
+            o["lt"] = dump_float(self.lt) if self.lt is not None else None
+        if self.lte != Unset:
+            o["lte"] = dump_float(self.lte) if self.lte is not None else None
+        if self.gt != Unset:
+            o["gt"] = dump_float(self.gt) if self.gt is not None else None
+        if self.gte != Unset:
+            o["gte"] = dump_float(self.gte) if self.gte is not None else None
         return o
 
 class v1EnableAgentResponse:
     def __init__(
         self,
         *,
-        agent: "typing.Optional[v1Agent]" = None,
+        agent: "typing.Optional[v1Agent]" = Unset,
     ):
         self.agent = agent
 
@@ -1779,15 +1784,15 @@ class v1EnableAgentResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agent is not None:
-            o["agent"] = self.agent.to_json()
+        if self.agent != Unset:
+            o["agent"] = self.agent.to_json() if self.agent is not None else None
         return o
 
 class v1EnableSlotResponse:
     def __init__(
         self,
         *,
-        slot: "typing.Optional[v1Slot]" = None,
+        slot: "typing.Optional[v1Slot]" = Unset,
     ):
         self.slot = slot
 
@@ -1799,16 +1804,16 @@ class v1EnableSlotResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.slot is not None:
-            o["slot"] = self.slot.to_json()
+        if self.slot != Unset:
+            o["slot"] = self.slot.to_json() if self.slot is not None else None
         return o
 
 class v1ExpCompareMetricNamesResponse:
     def __init__(
         self,
         *,
-        trainingMetrics: "typing.Optional[typing.Sequence[str]]" = None,
-        validationMetrics: "typing.Optional[typing.Sequence[str]]" = None,
+        trainingMetrics: "typing.Optional[typing.Sequence[str]]" = Unset,
+        validationMetrics: "typing.Optional[typing.Sequence[str]]" = Unset,
     ):
         self.trainingMetrics = trainingMetrics
         self.validationMetrics = validationMetrics
@@ -1822,10 +1827,10 @@ class v1ExpCompareMetricNamesResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.trainingMetrics is not None:
-            o["trainingMetrics"] = self.trainingMetrics
-        if self.validationMetrics is not None:
-            o["validationMetrics"] = self.validationMetrics
+        if self.trainingMetrics != Unset:
+            o["trainingMetrics"] = self.trainingMetrics if self.trainingMetrics is not None else None
+        if self.validationMetrics != Unset:
+            o["validationMetrics"] = self.validationMetrics if self.validationMetrics is not None else None
         return o
 
 class v1ExpCompareTrialsSampleResponse:
@@ -1872,20 +1877,20 @@ class v1Experiment:
         startTime: str,
         state: "determinedexperimentv1State",
         username: str,
-        description: "typing.Optional[str]" = None,
-        displayName: "typing.Optional[str]" = None,
-        endTime: "typing.Optional[str]" = None,
-        forkedFrom: "typing.Optional[int]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        notes: "typing.Optional[str]" = None,
-        parentArchived: "typing.Optional[bool]" = None,
-        progress: "typing.Optional[float]" = None,
-        projectName: "typing.Optional[str]" = None,
-        resourcePool: "typing.Optional[str]" = None,
-        trialIds: "typing.Optional[typing.Sequence[int]]" = None,
-        userId: "typing.Optional[int]" = None,
-        workspaceId: "typing.Optional[int]" = None,
-        workspaceName: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
+        endTime: "typing.Optional[str]" = Unset,
+        forkedFrom: "typing.Optional[int]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
+        parentArchived: "typing.Optional[bool]" = Unset,
+        progress: "typing.Optional[float]" = Unset,
+        projectName: "typing.Optional[str]" = Unset,
+        resourcePool: "typing.Optional[str]" = Unset,
+        trialIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
+        workspaceId: "typing.Optional[int]" = Unset,
+        workspaceName: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.description = description
@@ -1950,43 +1955,43 @@ class v1Experiment:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id
-        if self.description is not None:
-            o["description"] = self.description
-        if self.labels is not None:
-            o["labels"] = self.labels
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
         o["startTime"] = self.startTime
-        if self.endTime is not None:
-            o["endTime"] = self.endTime
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime if self.endTime is not None else None
         o["state"] = self.state.value
         o["archived"] = self.archived
         o["numTrials"] = self.numTrials
-        if self.trialIds is not None:
-            o["trialIds"] = self.trialIds
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.userId is not None:
-            o["userId"] = self.userId
+        if self.trialIds != Unset:
+            o["trialIds"] = self.trialIds if self.trialIds is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
         o["username"] = self.username
-        if self.resourcePool is not None:
-            o["resourcePool"] = self.resourcePool
+        if self.resourcePool != Unset:
+            o["resourcePool"] = self.resourcePool if self.resourcePool is not None else None
         o["searcherType"] = self.searcherType
         o["name"] = self.name
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         o["jobId"] = self.jobId
-        if self.forkedFrom is not None:
-            o["forkedFrom"] = self.forkedFrom
-        if self.progress is not None:
-            o["progress"] = dump_float(self.progress)
+        if self.forkedFrom != Unset:
+            o["forkedFrom"] = self.forkedFrom if self.forkedFrom is not None else None
+        if self.progress != Unset:
+            o["progress"] = dump_float(self.progress) if self.progress is not None else None
         o["projectId"] = self.projectId
-        if self.projectName is not None:
-            o["projectName"] = self.projectName
-        if self.workspaceId is not None:
-            o["workspaceId"] = self.workspaceId
-        if self.workspaceName is not None:
-            o["workspaceName"] = self.workspaceName
-        if self.parentArchived is not None:
-            o["parentArchived"] = self.parentArchived
+        if self.projectName != Unset:
+            o["projectName"] = self.projectName if self.projectName is not None else None
+        if self.workspaceId != Unset:
+            o["workspaceId"] = self.workspaceId if self.workspaceId is not None else None
+        if self.workspaceName != Unset:
+            o["workspaceName"] = self.workspaceName if self.workspaceName is not None else None
+        if self.parentArchived != Unset:
+            o["parentArchived"] = self.parentArchived if self.parentArchived is not None else None
         o["config"] = self.config
         o["originalConfig"] = self.originalConfig
         o["projectOwnerId"] = self.projectOwnerId
@@ -2015,9 +2020,9 @@ class v1ExperimentSimulation:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        seed: "typing.Optional[int]" = None,
-        trials: "typing.Optional[typing.Sequence[v1TrialSimulation]]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        seed: "typing.Optional[int]" = Unset,
+        trials: "typing.Optional[typing.Sequence[v1TrialSimulation]]" = Unset,
     ):
         self.config = config
         self.seed = seed
@@ -2033,12 +2038,12 @@ class v1ExperimentSimulation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.config is not None:
-            o["config"] = self.config
-        if self.seed is not None:
-            o["seed"] = self.seed
-        if self.trials is not None:
-            o["trials"] = [x.to_json() for x in self.trials]
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.seed != Unset:
+            o["seed"] = self.seed if self.seed is not None else None
+        if self.trials != Unset:
+            o["trials"] = [x.to_json() for x in self.trials] if self.trials is not None else None
         return o
 
 class v1File:
@@ -2088,13 +2093,13 @@ class v1FileNode:
     def __init__(
         self,
         *,
-        contentLength: "typing.Optional[int]" = None,
-        contentType: "typing.Optional[str]" = None,
-        files: "typing.Optional[typing.Sequence[v1FileNode]]" = None,
-        isDir: "typing.Optional[bool]" = None,
-        modifiedTime: "typing.Optional[str]" = None,
-        name: "typing.Optional[str]" = None,
-        path: "typing.Optional[str]" = None,
+        contentLength: "typing.Optional[int]" = Unset,
+        contentType: "typing.Optional[str]" = Unset,
+        files: "typing.Optional[typing.Sequence[v1FileNode]]" = Unset,
+        isDir: "typing.Optional[bool]" = Unset,
+        modifiedTime: "typing.Optional[str]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        path: "typing.Optional[str]" = Unset,
     ):
         self.path = path
         self.name = name
@@ -2118,20 +2123,20 @@ class v1FileNode:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.path is not None:
-            o["path"] = self.path
-        if self.name is not None:
-            o["name"] = self.name
-        if self.modifiedTime is not None:
-            o["modifiedTime"] = self.modifiedTime
-        if self.contentLength is not None:
-            o["contentLength"] = self.contentLength
-        if self.isDir is not None:
-            o["isDir"] = self.isDir
-        if self.contentType is not None:
-            o["contentType"] = self.contentType
-        if self.files is not None:
-            o["files"] = [x.to_json() for x in self.files]
+        if self.path != Unset:
+            o["path"] = self.path if self.path is not None else None
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.modifiedTime != Unset:
+            o["modifiedTime"] = self.modifiedTime if self.modifiedTime is not None else None
+        if self.contentLength != Unset:
+            o["contentLength"] = self.contentLength if self.contentLength is not None else None
+        if self.isDir != Unset:
+            o["isDir"] = self.isDir if self.isDir is not None else None
+        if self.contentType != Unset:
+            o["contentType"] = self.contentType if self.contentType is not None else None
+        if self.files != Unset:
+            o["files"] = [x.to_json() for x in self.files] if self.files is not None else None
         return o
 
 class v1FittingPolicy(enum.Enum):
@@ -2177,7 +2182,7 @@ class v1GetAgentResponse:
     def __init__(
         self,
         *,
-        agent: "typing.Optional[v1Agent]" = None,
+        agent: "typing.Optional[v1Agent]" = Unset,
     ):
         self.agent = agent
 
@@ -2189,8 +2194,8 @@ class v1GetAgentResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agent is not None:
-            o["agent"] = self.agent.to_json()
+        if self.agent != Unset:
+            o["agent"] = self.agent.to_json() if self.agent is not None else None
         return o
 
 class v1GetAgentsRequestSortBy(enum.Enum):
@@ -2202,8 +2207,8 @@ class v1GetAgentsResponse:
     def __init__(
         self,
         *,
-        agents: "typing.Optional[typing.Sequence[v1Agent]]" = None,
-        pagination: "typing.Optional[v1Pagination]" = None,
+        agents: "typing.Optional[typing.Sequence[v1Agent]]" = Unset,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
     ):
         self.agents = agents
         self.pagination = pagination
@@ -2217,17 +2222,17 @@ class v1GetAgentsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agents is not None:
-            o["agents"] = [x.to_json() for x in self.agents]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.agents != Unset:
+            o["agents"] = [x.to_json() for x in self.agents] if self.agents is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetBestSearcherValidationMetricResponse:
     def __init__(
         self,
         *,
-        metric: "typing.Optional[float]" = None,
+        metric: "typing.Optional[float]" = Unset,
     ):
         self.metric = metric
 
@@ -2239,8 +2244,8 @@ class v1GetBestSearcherValidationMetricResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.metric is not None:
-            o["metric"] = dump_float(self.metric)
+        if self.metric != Unset:
+            o["metric"] = dump_float(self.metric) if self.metric is not None else None
         return o
 
 class v1GetCheckpointResponse:
@@ -2266,8 +2271,8 @@ class v1GetCommandResponse:
     def __init__(
         self,
         *,
-        command: "typing.Optional[v1Command]" = None,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
+        command: "typing.Optional[v1Command]" = Unset,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
     ):
         self.command = command
         self.config = config
@@ -2281,10 +2286,10 @@ class v1GetCommandResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.command is not None:
-            o["command"] = self.command.to_json()
-        if self.config is not None:
-            o["config"] = self.config
+        if self.command != Unset:
+            o["command"] = self.command.to_json() if self.command is not None else None
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
         return o
 
 class v1GetCommandsRequestSortBy(enum.Enum):
@@ -2297,8 +2302,8 @@ class v1GetCommandsResponse:
     def __init__(
         self,
         *,
-        commands: "typing.Optional[typing.Sequence[v1Command]]" = None,
-        pagination: "typing.Optional[v1Pagination]" = None,
+        commands: "typing.Optional[typing.Sequence[v1Command]]" = Unset,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
     ):
         self.commands = commands
         self.pagination = pagination
@@ -2312,18 +2317,18 @@ class v1GetCommandsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.commands is not None:
-            o["commands"] = [x.to_json() for x in self.commands]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.commands != Unset:
+            o["commands"] = [x.to_json() for x in self.commands] if self.commands is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetCurrentTrialSearcherOperationResponse:
     def __init__(
         self,
         *,
-        completed: "typing.Optional[bool]" = None,
-        op: "typing.Optional[v1TrialOperation]" = None,
+        completed: "typing.Optional[bool]" = Unset,
+        op: "typing.Optional[v1TrialOperation]" = Unset,
     ):
         self.op = op
         self.completed = completed
@@ -2337,10 +2342,10 @@ class v1GetCurrentTrialSearcherOperationResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.op is not None:
-            o["op"] = self.op.to_json()
-        if self.completed is not None:
-            o["completed"] = self.completed
+        if self.op != Unset:
+            o["op"] = self.op.to_json() if self.op is not None else None
+        if self.completed != Unset:
+            o["completed"] = self.completed if self.completed is not None else None
         return o
 
 class v1GetExperimentCheckpointsRequestSortBy(enum.Enum):
@@ -2379,7 +2384,7 @@ class v1GetExperimentLabelsResponse:
     def __init__(
         self,
         *,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
     ):
         self.labels = labels
 
@@ -2391,8 +2396,8 @@ class v1GetExperimentLabelsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.labels is not None:
-            o["labels"] = self.labels
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
         return o
 
 class v1GetExperimentResponse:
@@ -2400,7 +2405,7 @@ class v1GetExperimentResponse:
         self,
         *,
         experiment: "v1Experiment",
-        jobSummary: "typing.Optional[v1JobSummary]" = None,
+        jobSummary: "typing.Optional[v1JobSummary]" = Unset,
     ):
         self.experiment = experiment
         self.jobSummary = jobSummary
@@ -2415,8 +2420,8 @@ class v1GetExperimentResponse:
     def to_json(self) -> typing.Any:
         o = {}
         o["experiment"] = self.experiment.to_json()
-        if self.jobSummary is not None:
-            o["jobSummary"] = self.jobSummary.to_json()
+        if self.jobSummary != Unset:
+            o["jobSummary"] = self.jobSummary.to_json() if self.jobSummary is not None else None
         return o
 
 class v1GetExperimentTrialsRequestSortBy(enum.Enum):
@@ -2458,7 +2463,7 @@ class v1GetExperimentValidationHistoryResponse:
     def __init__(
         self,
         *,
-        validationHistory: "typing.Optional[typing.Sequence[v1ValidationHistoryEntry]]" = None,
+        validationHistory: "typing.Optional[typing.Sequence[v1ValidationHistoryEntry]]" = Unset,
     ):
         self.validationHistory = validationHistory
 
@@ -2470,8 +2475,8 @@ class v1GetExperimentValidationHistoryResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.validationHistory is not None:
-            o["validationHistory"] = [x.to_json() for x in self.validationHistory]
+        if self.validationHistory != Unset:
+            o["validationHistory"] = [x.to_json() for x in self.validationHistory] if self.validationHistory is not None else None
         return o
 
 class v1GetExperimentsRequestSortBy(enum.Enum):
@@ -2563,9 +2568,9 @@ class v1GetGroupsRequest:
         self,
         *,
         limit: int,
-        name: "typing.Optional[str]" = None,
-        offset: "typing.Optional[int]" = None,
-        userId: "typing.Optional[int]" = None,
+        name: "typing.Optional[str]" = Unset,
+        offset: "typing.Optional[int]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
     ):
         self.userId = userId
         self.name = name
@@ -2583,12 +2588,12 @@ class v1GetGroupsRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.userId is not None:
-            o["userId"] = self.userId
-        if self.name is not None:
-            o["name"] = self.name
-        if self.offset is not None:
-            o["offset"] = self.offset
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.offset != Unset:
+            o["offset"] = self.offset if self.offset is not None else None
         o["limit"] = self.limit
         return o
 
@@ -2596,8 +2601,8 @@ class v1GetGroupsResponse:
     def __init__(
         self,
         *,
-        groups: "typing.Optional[typing.Sequence[v1GroupSearchResult]]" = None,
-        pagination: "typing.Optional[v1Pagination]" = None,
+        groups: "typing.Optional[typing.Sequence[v1GroupSearchResult]]" = Unset,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
     ):
         self.groups = groups
         self.pagination = pagination
@@ -2611,10 +2616,10 @@ class v1GetGroupsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.groups is not None:
-            o["groups"] = [x.to_json() for x in self.groups]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.groups != Unset:
+            o["groups"] = [x.to_json() for x in self.groups] if self.groups is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetHPImportanceResponse:
@@ -2709,12 +2714,12 @@ class v1GetMasterResponse:
         clusterName: str,
         masterId: str,
         version: str,
-        branding: "typing.Optional[str]" = None,
-        externalLoginUri: "typing.Optional[str]" = None,
-        externalLogoutUri: "typing.Optional[str]" = None,
-        rbacEnabled: "typing.Optional[bool]" = None,
-        ssoProviders: "typing.Optional[typing.Sequence[v1SSOProvider]]" = None,
-        telemetryEnabled: "typing.Optional[bool]" = None,
+        branding: "typing.Optional[str]" = Unset,
+        externalLoginUri: "typing.Optional[str]" = Unset,
+        externalLogoutUri: "typing.Optional[str]" = Unset,
+        rbacEnabled: "typing.Optional[bool]" = Unset,
+        ssoProviders: "typing.Optional[typing.Sequence[v1SSOProvider]]" = Unset,
+        telemetryEnabled: "typing.Optional[bool]" = Unset,
     ):
         self.version = version
         self.masterId = masterId
@@ -2748,26 +2753,26 @@ class v1GetMasterResponse:
         o["masterId"] = self.masterId
         o["clusterId"] = self.clusterId
         o["clusterName"] = self.clusterName
-        if self.telemetryEnabled is not None:
-            o["telemetryEnabled"] = self.telemetryEnabled
-        if self.ssoProviders is not None:
-            o["ssoProviders"] = [x.to_json() for x in self.ssoProviders]
-        if self.externalLoginUri is not None:
-            o["externalLoginUri"] = self.externalLoginUri
-        if self.externalLogoutUri is not None:
-            o["externalLogoutUri"] = self.externalLogoutUri
-        if self.branding is not None:
-            o["branding"] = self.branding
-        if self.rbacEnabled is not None:
-            o["rbacEnabled"] = self.rbacEnabled
+        if self.telemetryEnabled != Unset:
+            o["telemetryEnabled"] = self.telemetryEnabled if self.telemetryEnabled is not None else None
+        if self.ssoProviders != Unset:
+            o["ssoProviders"] = [x.to_json() for x in self.ssoProviders] if self.ssoProviders is not None else None
+        if self.externalLoginUri != Unset:
+            o["externalLoginUri"] = self.externalLoginUri if self.externalLoginUri is not None else None
+        if self.externalLogoutUri != Unset:
+            o["externalLogoutUri"] = self.externalLogoutUri if self.externalLogoutUri is not None else None
+        if self.branding != Unset:
+            o["branding"] = self.branding if self.branding is not None else None
+        if self.rbacEnabled != Unset:
+            o["rbacEnabled"] = self.rbacEnabled if self.rbacEnabled is not None else None
         return o
 
 class v1GetModelDefFileRequest:
     def __init__(
         self,
         *,
-        experimentId: "typing.Optional[int]" = None,
-        path: "typing.Optional[str]" = None,
+        experimentId: "typing.Optional[int]" = Unset,
+        path: "typing.Optional[str]" = Unset,
     ):
         self.experimentId = experimentId
         self.path = path
@@ -2781,17 +2786,17 @@ class v1GetModelDefFileRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.experimentId is not None:
-            o["experimentId"] = self.experimentId
-        if self.path is not None:
-            o["path"] = self.path
+        if self.experimentId != Unset:
+            o["experimentId"] = self.experimentId if self.experimentId is not None else None
+        if self.path != Unset:
+            o["path"] = self.path if self.path is not None else None
         return o
 
 class v1GetModelDefFileResponse:
     def __init__(
         self,
         *,
-        file: "typing.Optional[str]" = None,
+        file: "typing.Optional[str]" = Unset,
     ):
         self.file = file
 
@@ -2803,8 +2808,8 @@ class v1GetModelDefFileResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.file is not None:
-            o["file"] = self.file
+        if self.file != Unset:
+            o["file"] = self.file if self.file is not None else None
         return o
 
 class v1GetModelDefResponse:
@@ -2830,7 +2835,7 @@ class v1GetModelDefTreeResponse:
     def __init__(
         self,
         *,
-        files: "typing.Optional[typing.Sequence[v1FileNode]]" = None,
+        files: "typing.Optional[typing.Sequence[v1FileNode]]" = Unset,
     ):
         self.files = files
 
@@ -2842,8 +2847,8 @@ class v1GetModelDefTreeResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.files is not None:
-            o["files"] = [x.to_json() for x in self.files]
+        if self.files != Unset:
+            o["files"] = [x.to_json() for x in self.files] if self.files is not None else None
         return o
 
 class v1GetModelLabelsResponse:
@@ -2970,8 +2975,8 @@ class v1GetNotebookResponse:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        notebook: "typing.Optional[v1Notebook]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        notebook: "typing.Optional[v1Notebook]" = Unset,
     ):
         self.notebook = notebook
         self.config = config
@@ -2985,10 +2990,10 @@ class v1GetNotebookResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.notebook is not None:
-            o["notebook"] = self.notebook.to_json()
-        if self.config is not None:
-            o["config"] = self.config
+        if self.notebook != Unset:
+            o["notebook"] = self.notebook.to_json() if self.notebook is not None else None
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
         return o
 
 class v1GetNotebooksRequestSortBy(enum.Enum):
@@ -3001,8 +3006,8 @@ class v1GetNotebooksResponse:
     def __init__(
         self,
         *,
-        notebooks: "typing.Optional[typing.Sequence[v1Notebook]]" = None,
-        pagination: "typing.Optional[v1Pagination]" = None,
+        notebooks: "typing.Optional[typing.Sequence[v1Notebook]]" = Unset,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
     ):
         self.notebooks = notebooks
         self.pagination = pagination
@@ -3016,10 +3021,10 @@ class v1GetNotebooksResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.notebooks is not None:
-            o["notebooks"] = [x.to_json() for x in self.notebooks]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.notebooks != Unset:
+            o["notebooks"] = [x.to_json() for x in self.notebooks] if self.notebooks is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetPermissionsSummaryResponse:
@@ -3068,8 +3073,8 @@ class v1GetResourcePoolsResponse:
     def __init__(
         self,
         *,
-        pagination: "typing.Optional[v1Pagination]" = None,
-        resourcePools: "typing.Optional[typing.Sequence[v1ResourcePool]]" = None,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
+        resourcePools: "typing.Optional[typing.Sequence[v1ResourcePool]]" = Unset,
     ):
         self.resourcePools = resourcePools
         self.pagination = pagination
@@ -3083,17 +3088,17 @@ class v1GetResourcePoolsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.resourcePools is not None:
-            o["resourcePools"] = [x.to_json() for x in self.resourcePools]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.resourcePools != Unset:
+            o["resourcePools"] = [x.to_json() for x in self.resourcePools] if self.resourcePools is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetRolesAssignedToGroupResponse:
     def __init__(
         self,
         *,
-        roles: "typing.Optional[typing.Sequence[v1Role]]" = None,
+        roles: "typing.Optional[typing.Sequence[v1Role]]" = Unset,
     ):
         self.roles = roles
 
@@ -3105,15 +3110,15 @@ class v1GetRolesAssignedToGroupResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.roles is not None:
-            o["roles"] = [x.to_json() for x in self.roles]
+        if self.roles != Unset:
+            o["roles"] = [x.to_json() for x in self.roles] if self.roles is not None else None
         return o
 
 class v1GetRolesAssignedToUserResponse:
     def __init__(
         self,
         *,
-        roles: "typing.Optional[typing.Sequence[v1Role]]" = None,
+        roles: "typing.Optional[typing.Sequence[v1Role]]" = Unset,
     ):
         self.roles = roles
 
@@ -3125,15 +3130,15 @@ class v1GetRolesAssignedToUserResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.roles is not None:
-            o["roles"] = [x.to_json() for x in self.roles]
+        if self.roles != Unset:
+            o["roles"] = [x.to_json() for x in self.roles] if self.roles is not None else None
         return o
 
 class v1GetRolesByIDRequest:
     def __init__(
         self,
         *,
-        roleIds: "typing.Optional[typing.Sequence[int]]" = None,
+        roleIds: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.roleIds = roleIds
 
@@ -3145,15 +3150,15 @@ class v1GetRolesByIDRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.roleIds is not None:
-            o["roleIds"] = self.roleIds
+        if self.roleIds != Unset:
+            o["roleIds"] = self.roleIds if self.roleIds is not None else None
         return o
 
 class v1GetRolesByIDResponse:
     def __init__(
         self,
         *,
-        roles: "typing.Optional[typing.Sequence[v1RoleWithAssignments]]" = None,
+        roles: "typing.Optional[typing.Sequence[v1RoleWithAssignments]]" = Unset,
     ):
         self.roles = roles
 
@@ -3165,15 +3170,15 @@ class v1GetRolesByIDResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.roles is not None:
-            o["roles"] = [x.to_json() for x in self.roles]
+        if self.roles != Unset:
+            o["roles"] = [x.to_json() for x in self.roles] if self.roles is not None else None
         return o
 
 class v1GetSearcherEventsResponse:
     def __init__(
         self,
         *,
-        searcherEvents: "typing.Optional[typing.Sequence[v1SearcherEvent]]" = None,
+        searcherEvents: "typing.Optional[typing.Sequence[v1SearcherEvent]]" = Unset,
     ):
         self.searcherEvents = searcherEvents
 
@@ -3185,16 +3190,16 @@ class v1GetSearcherEventsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.searcherEvents is not None:
-            o["searcherEvents"] = [x.to_json() for x in self.searcherEvents]
+        if self.searcherEvents != Unset:
+            o["searcherEvents"] = [x.to_json() for x in self.searcherEvents] if self.searcherEvents is not None else None
         return o
 
 class v1GetShellResponse:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        shell: "typing.Optional[v1Shell]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        shell: "typing.Optional[v1Shell]" = Unset,
     ):
         self.shell = shell
         self.config = config
@@ -3208,10 +3213,10 @@ class v1GetShellResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.shell is not None:
-            o["shell"] = self.shell.to_json()
-        if self.config is not None:
-            o["config"] = self.config
+        if self.shell != Unset:
+            o["shell"] = self.shell.to_json() if self.shell is not None else None
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
         return o
 
 class v1GetShellsRequestSortBy(enum.Enum):
@@ -3224,8 +3229,8 @@ class v1GetShellsResponse:
     def __init__(
         self,
         *,
-        pagination: "typing.Optional[v1Pagination]" = None,
-        shells: "typing.Optional[typing.Sequence[v1Shell]]" = None,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
+        shells: "typing.Optional[typing.Sequence[v1Shell]]" = Unset,
     ):
         self.shells = shells
         self.pagination = pagination
@@ -3239,17 +3244,17 @@ class v1GetShellsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.shells is not None:
-            o["shells"] = [x.to_json() for x in self.shells]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.shells != Unset:
+            o["shells"] = [x.to_json() for x in self.shells] if self.shells is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetSlotResponse:
     def __init__(
         self,
         *,
-        slot: "typing.Optional[v1Slot]" = None,
+        slot: "typing.Optional[v1Slot]" = Unset,
     ):
         self.slot = slot
 
@@ -3261,15 +3266,15 @@ class v1GetSlotResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.slot is not None:
-            o["slot"] = self.slot.to_json()
+        if self.slot != Unset:
+            o["slot"] = self.slot.to_json() if self.slot is not None else None
         return o
 
 class v1GetSlotsResponse:
     def __init__(
         self,
         *,
-        slots: "typing.Optional[typing.Sequence[v1Slot]]" = None,
+        slots: "typing.Optional[typing.Sequence[v1Slot]]" = Unset,
     ):
         self.slots = slots
 
@@ -3281,15 +3286,15 @@ class v1GetSlotsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.slots is not None:
-            o["slots"] = [x.to_json() for x in self.slots]
+        if self.slots != Unset:
+            o["slots"] = [x.to_json() for x in self.slots] if self.slots is not None else None
         return o
 
 class v1GetTaskResponse:
     def __init__(
         self,
         *,
-        task: "typing.Optional[v1Task]" = None,
+        task: "typing.Optional[v1Task]" = Unset,
     ):
         self.task = task
 
@@ -3301,8 +3306,8 @@ class v1GetTaskResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.task is not None:
-            o["task"] = self.task.to_json()
+        if self.task != Unset:
+            o["task"] = self.task.to_json() if self.task is not None else None
         return o
 
 class v1GetTelemetryResponse:
@@ -3310,7 +3315,7 @@ class v1GetTelemetryResponse:
         self,
         *,
         enabled: bool,
-        segmentKey: "typing.Optional[str]" = None,
+        segmentKey: "typing.Optional[str]" = Unset,
     ):
         self.enabled = enabled
         self.segmentKey = segmentKey
@@ -3325,15 +3330,15 @@ class v1GetTelemetryResponse:
     def to_json(self) -> typing.Any:
         o = {}
         o["enabled"] = self.enabled
-        if self.segmentKey is not None:
-            o["segmentKey"] = self.segmentKey
+        if self.segmentKey != Unset:
+            o["segmentKey"] = self.segmentKey if self.segmentKey is not None else None
         return o
 
 class v1GetTemplateResponse:
     def __init__(
         self,
         *,
-        template: "typing.Optional[v1Template]" = None,
+        template: "typing.Optional[v1Template]" = Unset,
     ):
         self.template = template
 
@@ -3345,8 +3350,8 @@ class v1GetTemplateResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.template is not None:
-            o["template"] = self.template.to_json()
+        if self.template != Unset:
+            o["template"] = self.template.to_json() if self.template is not None else None
         return o
 
 class v1GetTemplatesRequestSortBy(enum.Enum):
@@ -3357,8 +3362,8 @@ class v1GetTemplatesResponse:
     def __init__(
         self,
         *,
-        pagination: "typing.Optional[v1Pagination]" = None,
-        templates: "typing.Optional[typing.Sequence[v1Template]]" = None,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
+        templates: "typing.Optional[typing.Sequence[v1Template]]" = Unset,
     ):
         self.templates = templates
         self.pagination = pagination
@@ -3372,18 +3377,18 @@ class v1GetTemplatesResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.templates is not None:
-            o["templates"] = [x.to_json() for x in self.templates]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.templates != Unset:
+            o["templates"] = [x.to_json() for x in self.templates] if self.templates is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetTensorboardResponse:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        tensorboard: "typing.Optional[v1Tensorboard]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        tensorboard: "typing.Optional[v1Tensorboard]" = Unset,
     ):
         self.tensorboard = tensorboard
         self.config = config
@@ -3397,10 +3402,10 @@ class v1GetTensorboardResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.tensorboard is not None:
-            o["tensorboard"] = self.tensorboard.to_json()
-        if self.config is not None:
-            o["config"] = self.config
+        if self.tensorboard != Unset:
+            o["tensorboard"] = self.tensorboard.to_json() if self.tensorboard is not None else None
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
         return o
 
 class v1GetTensorboardsRequestSortBy(enum.Enum):
@@ -3413,8 +3418,8 @@ class v1GetTensorboardsResponse:
     def __init__(
         self,
         *,
-        pagination: "typing.Optional[v1Pagination]" = None,
-        tensorboards: "typing.Optional[typing.Sequence[v1Tensorboard]]" = None,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
+        tensorboards: "typing.Optional[typing.Sequence[v1Tensorboard]]" = Unset,
     ):
         self.tensorboards = tensorboards
         self.pagination = pagination
@@ -3428,10 +3433,10 @@ class v1GetTensorboardsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.tensorboards is not None:
-            o["tensorboards"] = [x.to_json() for x in self.tensorboards]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.tensorboards != Unset:
+            o["tensorboards"] = [x.to_json() for x in self.tensorboards] if self.tensorboards is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetTrialCheckpointsRequestSortBy(enum.Enum):
@@ -3548,7 +3553,7 @@ class v1GetTrialsCollectionsResponse:
     def __init__(
         self,
         *,
-        collections: "typing.Optional[typing.Sequence[v1TrialsCollection]]" = None,
+        collections: "typing.Optional[typing.Sequence[v1TrialsCollection]]" = Unset,
     ):
         self.collections = collections
 
@@ -3560,8 +3565,8 @@ class v1GetTrialsCollectionsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.collections is not None:
-            o["collections"] = [x.to_json() for x in self.collections]
+        if self.collections != Unset:
+            o["collections"] = [x.to_json() for x in self.collections] if self.collections is not None else None
         return o
 
 class v1GetUserResponse:
@@ -3614,8 +3619,8 @@ class v1GetUsersResponse:
     def __init__(
         self,
         *,
-        pagination: "typing.Optional[v1Pagination]" = None,
-        users: "typing.Optional[typing.Sequence[v1User]]" = None,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
+        users: "typing.Optional[typing.Sequence[v1User]]" = Unset,
     ):
         self.users = users
         self.pagination = pagination
@@ -3629,10 +3634,10 @@ class v1GetUsersResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.users is not None:
-            o["users"] = [x.to_json() for x in self.users]
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
+        if self.users != Unset:
+            o["users"] = [x.to_json() for x in self.users] if self.users is not None else None
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
         return o
 
 class v1GetWebhooksResponse:
@@ -3736,8 +3741,8 @@ class v1Group:
     def __init__(
         self,
         *,
-        groupId: "typing.Optional[int]" = None,
-        name: "typing.Optional[str]" = None,
+        groupId: "typing.Optional[int]" = Unset,
+        name: "typing.Optional[str]" = Unset,
     ):
         self.groupId = groupId
         self.name = name
@@ -3751,19 +3756,19 @@ class v1Group:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.groupId is not None:
-            o["groupId"] = self.groupId
-        if self.name is not None:
-            o["name"] = self.name
+        if self.groupId != Unset:
+            o["groupId"] = self.groupId if self.groupId is not None else None
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
         return o
 
 class v1GroupDetails:
     def __init__(
         self,
         *,
-        groupId: "typing.Optional[int]" = None,
-        name: "typing.Optional[str]" = None,
-        users: "typing.Optional[typing.Sequence[v1User]]" = None,
+        groupId: "typing.Optional[int]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        users: "typing.Optional[typing.Sequence[v1User]]" = Unset,
     ):
         self.groupId = groupId
         self.name = name
@@ -3779,12 +3784,12 @@ class v1GroupDetails:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.groupId is not None:
-            o["groupId"] = self.groupId
-        if self.name is not None:
-            o["name"] = self.name
-        if self.users is not None:
-            o["users"] = [x.to_json() for x in self.users]
+        if self.groupId != Unset:
+            o["groupId"] = self.groupId if self.groupId is not None else None
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.users != Unset:
+            o["users"] = [x.to_json() for x in self.users] if self.users is not None else None
         return o
 
 class v1GroupRoleAssignment:
@@ -3837,8 +3842,8 @@ class v1IdleNotebookRequest:
     def __init__(
         self,
         *,
-        idle: "typing.Optional[bool]" = None,
-        notebookId: "typing.Optional[str]" = None,
+        idle: "typing.Optional[bool]" = Unset,
+        notebookId: "typing.Optional[str]" = Unset,
     ):
         self.notebookId = notebookId
         self.idle = idle
@@ -3852,17 +3857,17 @@ class v1IdleNotebookRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.notebookId is not None:
-            o["notebookId"] = self.notebookId
-        if self.idle is not None:
-            o["idle"] = self.idle
+        if self.notebookId != Unset:
+            o["notebookId"] = self.notebookId if self.notebookId is not None else None
+        if self.idle != Unset:
+            o["idle"] = self.idle if self.idle is not None else None
         return o
 
 class v1InitialOperations:
     def __init__(
         self,
         *,
-        placeholder: "typing.Optional[int]" = None,
+        placeholder: "typing.Optional[int]" = Unset,
     ):
         self.placeholder = placeholder
 
@@ -3874,20 +3879,20 @@ class v1InitialOperations:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.placeholder is not None:
-            o["placeholder"] = self.placeholder
+        if self.placeholder != Unset:
+            o["placeholder"] = self.placeholder if self.placeholder is not None else None
         return o
 
 class v1Int32FieldFilter:
     def __init__(
         self,
         *,
-        gt: "typing.Optional[int]" = None,
-        gte: "typing.Optional[int]" = None,
-        incl: "typing.Optional[typing.Sequence[int]]" = None,
-        lt: "typing.Optional[int]" = None,
-        lte: "typing.Optional[int]" = None,
-        notIn: "typing.Optional[typing.Sequence[int]]" = None,
+        gt: "typing.Optional[int]" = Unset,
+        gte: "typing.Optional[int]" = Unset,
+        incl: "typing.Optional[typing.Sequence[int]]" = Unset,
+        lt: "typing.Optional[int]" = Unset,
+        lte: "typing.Optional[int]" = Unset,
+        notIn: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.lt = lt
         self.lte = lte
@@ -3909,18 +3914,18 @@ class v1Int32FieldFilter:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.lt is not None:
-            o["lt"] = self.lt
-        if self.lte is not None:
-            o["lte"] = self.lte
-        if self.gt is not None:
-            o["gt"] = self.gt
-        if self.gte is not None:
-            o["gte"] = self.gte
-        if self.incl is not None:
-            o["incl"] = self.incl
-        if self.notIn is not None:
-            o["notIn"] = self.notIn
+        if self.lt != Unset:
+            o["lt"] = self.lt if self.lt is not None else None
+        if self.lte != Unset:
+            o["lte"] = self.lte if self.lte is not None else None
+        if self.gt != Unset:
+            o["gt"] = self.gt if self.gt is not None else None
+        if self.gte != Unset:
+            o["gte"] = self.gte if self.gte is not None else None
+        if self.incl != Unset:
+            o["incl"] = self.incl if self.incl is not None else None
+        if self.notIn != Unset:
+            o["notIn"] = self.notIn if self.notIn is not None else None
         return o
 
 class v1Job:
@@ -3937,11 +3942,11 @@ class v1Job:
         submissionTime: str,
         type: "determinedjobv1Type",
         username: str,
-        priority: "typing.Optional[int]" = None,
-        progress: "typing.Optional[float]" = None,
-        summary: "typing.Optional[v1JobSummary]" = None,
-        userId: "typing.Optional[int]" = None,
-        weight: "typing.Optional[float]" = None,
+        priority: "typing.Optional[int]" = Unset,
+        progress: "typing.Optional[float]" = Unset,
+        summary: "typing.Optional[v1JobSummary]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
+        weight: "typing.Optional[float]" = Unset,
     ):
         self.summary = summary
         self.type = type
@@ -3981,26 +3986,26 @@ class v1Job:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.summary is not None:
-            o["summary"] = self.summary.to_json()
+        if self.summary != Unset:
+            o["summary"] = self.summary.to_json() if self.summary is not None else None
         o["type"] = self.type.value
         o["submissionTime"] = self.submissionTime
         o["username"] = self.username
-        if self.userId is not None:
-            o["userId"] = self.userId
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
         o["resourcePool"] = self.resourcePool
         o["isPreemptible"] = self.isPreemptible
-        if self.priority is not None:
-            o["priority"] = self.priority
-        if self.weight is not None:
-            o["weight"] = dump_float(self.weight)
+        if self.priority != Unset:
+            o["priority"] = self.priority if self.priority is not None else None
+        if self.weight != Unset:
+            o["weight"] = dump_float(self.weight) if self.weight is not None else None
         o["entityId"] = self.entityId
         o["jobId"] = self.jobId
         o["requestedSlots"] = self.requestedSlots
         o["allocatedSlots"] = self.allocatedSlots
         o["name"] = self.name
-        if self.progress is not None:
-            o["progress"] = dump_float(self.progress)
+        if self.progress != Unset:
+            o["progress"] = dump_float(self.progress) if self.progress is not None else None
         return o
 
 class v1JobSummary:
@@ -4030,8 +4035,8 @@ class v1K8PriorityClass:
     def __init__(
         self,
         *,
-        priorityClass: "typing.Optional[str]" = None,
-        priorityValue: "typing.Optional[int]" = None,
+        priorityClass: "typing.Optional[str]" = Unset,
+        priorityValue: "typing.Optional[int]" = Unset,
     ):
         self.priorityClass = priorityClass
         self.priorityValue = priorityValue
@@ -4045,17 +4050,17 @@ class v1K8PriorityClass:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.priorityClass is not None:
-            o["priorityClass"] = self.priorityClass
-        if self.priorityValue is not None:
-            o["priorityValue"] = self.priorityValue
+        if self.priorityClass != Unset:
+            o["priorityClass"] = self.priorityClass if self.priorityClass is not None else None
+        if self.priorityValue != Unset:
+            o["priorityValue"] = self.priorityValue if self.priorityValue is not None else None
         return o
 
 class v1KillCommandResponse:
     def __init__(
         self,
         *,
-        command: "typing.Optional[v1Command]" = None,
+        command: "typing.Optional[v1Command]" = Unset,
     ):
         self.command = command
 
@@ -4067,15 +4072,15 @@ class v1KillCommandResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.command is not None:
-            o["command"] = self.command.to_json()
+        if self.command != Unset:
+            o["command"] = self.command.to_json() if self.command is not None else None
         return o
 
 class v1KillNotebookResponse:
     def __init__(
         self,
         *,
-        notebook: "typing.Optional[v1Notebook]" = None,
+        notebook: "typing.Optional[v1Notebook]" = Unset,
     ):
         self.notebook = notebook
 
@@ -4087,15 +4092,15 @@ class v1KillNotebookResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.notebook is not None:
-            o["notebook"] = self.notebook.to_json()
+        if self.notebook != Unset:
+            o["notebook"] = self.notebook.to_json() if self.notebook is not None else None
         return o
 
 class v1KillShellResponse:
     def __init__(
         self,
         *,
-        shell: "typing.Optional[v1Shell]" = None,
+        shell: "typing.Optional[v1Shell]" = Unset,
     ):
         self.shell = shell
 
@@ -4107,15 +4112,15 @@ class v1KillShellResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.shell is not None:
-            o["shell"] = self.shell.to_json()
+        if self.shell != Unset:
+            o["shell"] = self.shell.to_json() if self.shell is not None else None
         return o
 
 class v1KillTensorboardResponse:
     def __init__(
         self,
         *,
-        tensorboard: "typing.Optional[v1Tensorboard]" = None,
+        tensorboard: "typing.Optional[v1Tensorboard]" = Unset,
     ):
         self.tensorboard = tensorboard
 
@@ -4127,18 +4132,18 @@ class v1KillTensorboardResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.tensorboard is not None:
-            o["tensorboard"] = self.tensorboard.to_json()
+        if self.tensorboard != Unset:
+            o["tensorboard"] = self.tensorboard.to_json() if self.tensorboard is not None else None
         return o
 
 class v1LaunchCommandRequest:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        data: "typing.Optional[str]" = None,
-        files: "typing.Optional[typing.Sequence[v1File]]" = None,
-        templateName: "typing.Optional[str]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        data: "typing.Optional[str]" = Unset,
+        files: "typing.Optional[typing.Sequence[v1File]]" = Unset,
+        templateName: "typing.Optional[str]" = Unset,
     ):
         self.config = config
         self.templateName = templateName
@@ -4156,14 +4161,14 @@ class v1LaunchCommandRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.config is not None:
-            o["config"] = self.config
-        if self.templateName is not None:
-            o["templateName"] = self.templateName
-        if self.files is not None:
-            o["files"] = [x.to_json() for x in self.files]
-        if self.data is not None:
-            o["data"] = self.data
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.templateName != Unset:
+            o["templateName"] = self.templateName if self.templateName is not None else None
+        if self.files != Unset:
+            o["files"] = [x.to_json() for x in self.files] if self.files is not None else None
+        if self.data != Unset:
+            o["data"] = self.data if self.data is not None else None
         return o
 
 class v1LaunchCommandResponse:
@@ -4193,10 +4198,10 @@ class v1LaunchNotebookRequest:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        files: "typing.Optional[typing.Sequence[v1File]]" = None,
-        preview: "typing.Optional[bool]" = None,
-        templateName: "typing.Optional[str]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        files: "typing.Optional[typing.Sequence[v1File]]" = Unset,
+        preview: "typing.Optional[bool]" = Unset,
+        templateName: "typing.Optional[str]" = Unset,
     ):
         self.config = config
         self.templateName = templateName
@@ -4214,14 +4219,14 @@ class v1LaunchNotebookRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.config is not None:
-            o["config"] = self.config
-        if self.templateName is not None:
-            o["templateName"] = self.templateName
-        if self.files is not None:
-            o["files"] = [x.to_json() for x in self.files]
-        if self.preview is not None:
-            o["preview"] = self.preview
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.templateName != Unset:
+            o["templateName"] = self.templateName if self.templateName is not None else None
+        if self.files != Unset:
+            o["files"] = [x.to_json() for x in self.files] if self.files is not None else None
+        if self.preview != Unset:
+            o["preview"] = self.preview if self.preview is not None else None
         return o
 
 class v1LaunchNotebookResponse:
@@ -4251,10 +4256,10 @@ class v1LaunchShellRequest:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        data: "typing.Optional[str]" = None,
-        files: "typing.Optional[typing.Sequence[v1File]]" = None,
-        templateName: "typing.Optional[str]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        data: "typing.Optional[str]" = Unset,
+        files: "typing.Optional[typing.Sequence[v1File]]" = Unset,
+        templateName: "typing.Optional[str]" = Unset,
     ):
         self.config = config
         self.templateName = templateName
@@ -4272,14 +4277,14 @@ class v1LaunchShellRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.config is not None:
-            o["config"] = self.config
-        if self.templateName is not None:
-            o["templateName"] = self.templateName
-        if self.files is not None:
-            o["files"] = [x.to_json() for x in self.files]
-        if self.data is not None:
-            o["data"] = self.data
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.templateName != Unset:
+            o["templateName"] = self.templateName if self.templateName is not None else None
+        if self.files != Unset:
+            o["files"] = [x.to_json() for x in self.files] if self.files is not None else None
+        if self.data != Unset:
+            o["data"] = self.data if self.data is not None else None
         return o
 
 class v1LaunchShellResponse:
@@ -4309,11 +4314,11 @@ class v1LaunchTensorboardRequest:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        experimentIds: "typing.Optional[typing.Sequence[int]]" = None,
-        files: "typing.Optional[typing.Sequence[v1File]]" = None,
-        templateName: "typing.Optional[str]" = None,
-        trialIds: "typing.Optional[typing.Sequence[int]]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        experimentIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        files: "typing.Optional[typing.Sequence[v1File]]" = Unset,
+        templateName: "typing.Optional[str]" = Unset,
+        trialIds: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.experimentIds = experimentIds
         self.trialIds = trialIds
@@ -4333,16 +4338,16 @@ class v1LaunchTensorboardRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.experimentIds is not None:
-            o["experimentIds"] = self.experimentIds
-        if self.trialIds is not None:
-            o["trialIds"] = self.trialIds
-        if self.config is not None:
-            o["config"] = self.config
-        if self.templateName is not None:
-            o["templateName"] = self.templateName
-        if self.files is not None:
-            o["files"] = [x.to_json() for x in self.files]
+        if self.experimentIds != Unset:
+            o["experimentIds"] = self.experimentIds if self.experimentIds is not None else None
+        if self.trialIds != Unset:
+            o["trialIds"] = self.trialIds if self.trialIds is not None else None
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.templateName != Unset:
+            o["templateName"] = self.templateName if self.templateName is not None else None
+        if self.files != Unset:
+            o["files"] = [x.to_json() for x in self.files] if self.files is not None else None
         return o
 
 class v1LaunchTensorboardResponse:
@@ -4373,7 +4378,7 @@ class v1ListRolesRequest:
         self,
         *,
         limit: int,
-        offset: "typing.Optional[int]" = None,
+        offset: "typing.Optional[int]" = Unset,
     ):
         self.offset = offset
         self.limit = limit
@@ -4387,8 +4392,8 @@ class v1ListRolesRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.offset is not None:
-            o["offset"] = self.offset
+        if self.offset != Unset:
+            o["offset"] = self.offset if self.offset is not None else None
         o["limit"] = self.limit
         return o
 
@@ -4420,9 +4425,9 @@ class v1LogEntry:
         self,
         *,
         id: int,
-        level: "typing.Optional[v1LogLevel]" = None,
-        message: "typing.Optional[str]" = None,
-        timestamp: "typing.Optional[str]" = None,
+        level: "typing.Optional[v1LogLevel]" = Unset,
+        message: "typing.Optional[str]" = Unset,
+        timestamp: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.message = message
@@ -4441,12 +4446,12 @@ class v1LogEntry:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id
-        if self.message is not None:
-            o["message"] = self.message
-        if self.timestamp is not None:
-            o["timestamp"] = self.timestamp
-        if self.level is not None:
-            o["level"] = self.level.value
+        if self.message != Unset:
+            o["message"] = self.message if self.message is not None else None
+        if self.timestamp != Unset:
+            o["timestamp"] = self.timestamp if self.timestamp is not None else None
+        if self.level != Unset:
+            o["level"] = self.level.value if self.level is not None else None
         return o
 
 class v1LogLevel(enum.Enum):
@@ -4464,7 +4469,7 @@ class v1LoginRequest:
         *,
         password: str,
         username: str,
-        isHashed: "typing.Optional[bool]" = None,
+        isHashed: "typing.Optional[bool]" = Unset,
     ):
         self.username = username
         self.password = password
@@ -4482,8 +4487,8 @@ class v1LoginRequest:
         o = {}
         o["username"] = self.username
         o["password"] = self.password
-        if self.isHashed is not None:
-            o["isHashed"] = self.isHashed
+        if self.isHashed != Unset:
+            o["isHashed"] = self.isHashed if self.isHashed is not None else None
         return o
 
 class v1LoginResponse:
@@ -4514,7 +4519,7 @@ class v1MarkAllocationResourcesDaemonRequest:
         self,
         *,
         allocationId: str,
-        resourcesId: "typing.Optional[str]" = None,
+        resourcesId: "typing.Optional[str]" = Unset,
     ):
         self.allocationId = allocationId
         self.resourcesId = resourcesId
@@ -4529,15 +4534,15 @@ class v1MarkAllocationResourcesDaemonRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["allocationId"] = self.allocationId
-        if self.resourcesId is not None:
-            o["resourcesId"] = self.resourcesId
+        if self.resourcesId != Unset:
+            o["resourcesId"] = self.resourcesId if self.resourcesId is not None else None
         return o
 
 class v1MasterLogsResponse:
     def __init__(
         self,
         *,
-        logEntry: "typing.Optional[v1LogEntry]" = None,
+        logEntry: "typing.Optional[v1LogEntry]" = Unset,
     ):
         self.logEntry = logEntry
 
@@ -4549,15 +4554,15 @@ class v1MasterLogsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.logEntry is not None:
-            o["logEntry"] = self.logEntry.to_json()
+        if self.logEntry != Unset:
+            o["logEntry"] = self.logEntry.to_json() if self.logEntry is not None else None
         return o
 
 class v1MetricBatchesResponse:
     def __init__(
         self,
         *,
-        batches: "typing.Optional[typing.Sequence[int]]" = None,
+        batches: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.batches = batches
 
@@ -4569,17 +4574,17 @@ class v1MetricBatchesResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.batches is not None:
-            o["batches"] = self.batches
+        if self.batches != Unset:
+            o["batches"] = self.batches if self.batches is not None else None
         return o
 
 class v1MetricNamesResponse:
     def __init__(
         self,
         *,
-        searcherMetric: "typing.Optional[str]" = None,
-        trainingMetrics: "typing.Optional[typing.Sequence[str]]" = None,
-        validationMetrics: "typing.Optional[typing.Sequence[str]]" = None,
+        searcherMetric: "typing.Optional[str]" = Unset,
+        trainingMetrics: "typing.Optional[typing.Sequence[str]]" = Unset,
+        validationMetrics: "typing.Optional[typing.Sequence[str]]" = Unset,
     ):
         self.searcherMetric = searcherMetric
         self.trainingMetrics = trainingMetrics
@@ -4595,12 +4600,12 @@ class v1MetricNamesResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.searcherMetric is not None:
-            o["searcherMetric"] = self.searcherMetric
-        if self.trainingMetrics is not None:
-            o["trainingMetrics"] = self.trainingMetrics
-        if self.validationMetrics is not None:
-            o["validationMetrics"] = self.validationMetrics
+        if self.searcherMetric != Unset:
+            o["searcherMetric"] = self.searcherMetric if self.searcherMetric is not None else None
+        if self.trainingMetrics != Unset:
+            o["trainingMetrics"] = self.trainingMetrics if self.trainingMetrics is not None else None
+        if self.validationMetrics != Unset:
+            o["validationMetrics"] = self.validationMetrics if self.validationMetrics is not None else None
         return o
 
 class v1MetricType(enum.Enum):
@@ -4613,7 +4618,7 @@ class v1Metrics:
         self,
         *,
         avgMetrics: "typing.Dict[str, typing.Any]",
-        batchMetrics: "typing.Optional[typing.Sequence[typing.Dict[str, typing.Any]]]" = None,
+        batchMetrics: "typing.Optional[typing.Sequence[typing.Dict[str, typing.Any]]]" = Unset,
     ):
         self.avgMetrics = avgMetrics
         self.batchMetrics = batchMetrics
@@ -4628,8 +4633,8 @@ class v1Metrics:
     def to_json(self) -> typing.Any:
         o = {}
         o["avgMetrics"] = self.avgMetrics
-        if self.batchMetrics is not None:
-            o["batchMetrics"] = self.batchMetrics
+        if self.batchMetrics != Unset:
+            o["batchMetrics"] = self.batchMetrics if self.batchMetrics is not None else None
         return o
 
 class v1MetricsWorkload:
@@ -4640,7 +4645,7 @@ class v1MetricsWorkload:
         numInputs: int,
         state: "determinedexperimentv1State",
         totalBatches: int,
-        endTime: "typing.Optional[str]" = None,
+        endTime: "typing.Optional[str]" = Unset,
     ):
         self.endTime = endTime
         self.state = state
@@ -4660,8 +4665,8 @@ class v1MetricsWorkload:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.endTime is not None:
-            o["endTime"] = self.endTime
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime if self.endTime is not None else None
         o["state"] = self.state.value
         o["metrics"] = self.metrics.to_json()
         o["numInputs"] = self.numInputs
@@ -4681,9 +4686,9 @@ class v1Model:
         numVersions: int,
         userId: int,
         username: str,
-        description: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        notes: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.description = description
@@ -4718,20 +4723,20 @@ class v1Model:
     def to_json(self) -> typing.Any:
         o = {}
         o["name"] = self.name
-        if self.description is not None:
-            o["description"] = self.description
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
         o["metadata"] = self.metadata
         o["creationTime"] = self.creationTime
         o["lastUpdatedTime"] = self.lastUpdatedTime
         o["id"] = self.id
         o["numVersions"] = self.numVersions
-        if self.labels is not None:
-            o["labels"] = self.labels
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
         o["username"] = self.username
         o["userId"] = self.userId
         o["archived"] = self.archived
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1ModelVersion:
@@ -4744,13 +4749,13 @@ class v1ModelVersion:
         lastUpdatedTime: str,
         model: "v1Model",
         version: int,
-        comment: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        name: "typing.Optional[str]" = None,
-        notes: "typing.Optional[str]" = None,
-        userId: "typing.Optional[int]" = None,
-        username: "typing.Optional[str]" = None,
+        comment: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
+        username: "typing.Optional[str]" = Unset,
     ):
         self.model = model
         self.checkpoint = checkpoint
@@ -4791,21 +4796,21 @@ class v1ModelVersion:
         o["version"] = self.version
         o["creationTime"] = self.creationTime
         o["id"] = self.id
-        if self.name is not None:
-            o["name"] = self.name
-        if self.metadata is not None:
-            o["metadata"] = self.metadata
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.metadata != Unset:
+            o["metadata"] = self.metadata if self.metadata is not None else None
         o["lastUpdatedTime"] = self.lastUpdatedTime
-        if self.comment is not None:
-            o["comment"] = self.comment
-        if self.username is not None:
-            o["username"] = self.username
-        if self.userId is not None:
-            o["userId"] = self.userId
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.comment != Unset:
+            o["comment"] = self.comment if self.comment is not None else None
+        if self.username != Unset:
+            o["username"] = self.username if self.username is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1MoveExperimentRequest:
@@ -4888,11 +4893,11 @@ class v1Notebook:
         startTime: str,
         state: "determinedtaskv1State",
         username: str,
-        container: "typing.Optional[v1Container]" = None,
-        displayName: "typing.Optional[str]" = None,
-        exitStatus: "typing.Optional[str]" = None,
-        serviceAddress: "typing.Optional[str]" = None,
-        userId: "typing.Optional[int]" = None,
+        container: "typing.Optional[v1Container]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
+        exitStatus: "typing.Optional[str]" = Unset,
+        serviceAddress: "typing.Optional[str]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
     ):
         self.id = id
         self.description = description
@@ -4930,18 +4935,18 @@ class v1Notebook:
         o["description"] = self.description
         o["state"] = self.state.value
         o["startTime"] = self.startTime
-        if self.container is not None:
-            o["container"] = self.container.to_json()
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.userId is not None:
-            o["userId"] = self.userId
+        if self.container != Unset:
+            o["container"] = self.container.to_json() if self.container is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
         o["username"] = self.username
-        if self.serviceAddress is not None:
-            o["serviceAddress"] = self.serviceAddress
+        if self.serviceAddress != Unset:
+            o["serviceAddress"] = self.serviceAddress if self.serviceAddress is not None else None
         o["resourcePool"] = self.resourcePool
-        if self.exitStatus is not None:
-            o["exitStatus"] = self.exitStatus
+        if self.exitStatus != Unset:
+            o["exitStatus"] = self.exitStatus if self.exitStatus is not None else None
         o["jobId"] = self.jobId
         return o
 
@@ -4954,11 +4959,11 @@ class v1Pagination:
     def __init__(
         self,
         *,
-        endIndex: "typing.Optional[int]" = None,
-        limit: "typing.Optional[int]" = None,
-        offset: "typing.Optional[int]" = None,
-        startIndex: "typing.Optional[int]" = None,
-        total: "typing.Optional[int]" = None,
+        endIndex: "typing.Optional[int]" = Unset,
+        limit: "typing.Optional[int]" = Unset,
+        offset: "typing.Optional[int]" = Unset,
+        startIndex: "typing.Optional[int]" = Unset,
+        total: "typing.Optional[int]" = Unset,
     ):
         self.offset = offset
         self.limit = limit
@@ -4978,16 +4983,16 @@ class v1Pagination:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.offset is not None:
-            o["offset"] = self.offset
-        if self.limit is not None:
-            o["limit"] = self.limit
-        if self.startIndex is not None:
-            o["startIndex"] = self.startIndex
-        if self.endIndex is not None:
-            o["endIndex"] = self.endIndex
-        if self.total is not None:
-            o["total"] = self.total
+        if self.offset != Unset:
+            o["offset"] = self.offset if self.offset is not None else None
+        if self.limit != Unset:
+            o["limit"] = self.limit if self.limit is not None else None
+        if self.startIndex != Unset:
+            o["startIndex"] = self.startIndex if self.startIndex is not None else None
+        if self.endIndex != Unset:
+            o["endIndex"] = self.endIndex if self.endIndex is not None else None
+        if self.total != Unset:
+            o["total"] = self.total if self.total is not None else None
         return o
 
 class v1PatchExperiment:
@@ -4995,10 +5000,10 @@ class v1PatchExperiment:
         self,
         *,
         id: int,
-        description: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        name: "typing.Optional[str]" = None,
-        notes: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.description = description
@@ -5019,21 +5024,21 @@ class v1PatchExperiment:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id
-        if self.description is not None:
-            o["description"] = self.description
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.name is not None:
-            o["name"] = self.name
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1PatchExperimentResponse:
     def __init__(
         self,
         *,
-        experiment: "typing.Optional[v1Experiment]" = None,
+        experiment: "typing.Optional[v1Experiment]" = Unset,
     ):
         self.experiment = experiment
 
@@ -5045,19 +5050,19 @@ class v1PatchExperimentResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.experiment is not None:
-            o["experiment"] = self.experiment.to_json()
+        if self.experiment != Unset:
+            o["experiment"] = self.experiment.to_json() if self.experiment is not None else None
         return o
 
 class v1PatchModel:
     def __init__(
         self,
         *,
-        description: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        name: "typing.Optional[str]" = None,
-        notes: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.description = description
@@ -5077,16 +5082,16 @@ class v1PatchModel:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.name is not None:
-            o["name"] = self.name
-        if self.description is not None:
-            o["description"] = self.description
-        if self.metadata is not None:
-            o["metadata"] = self.metadata
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
+        if self.metadata != Unset:
+            o["metadata"] = self.metadata if self.metadata is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1PatchModelResponse:
@@ -5112,12 +5117,12 @@ class v1PatchModelVersion:
     def __init__(
         self,
         *,
-        checkpoint: "typing.Optional[v1Checkpoint]" = None,
-        comment: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        name: "typing.Optional[str]" = None,
-        notes: "typing.Optional[str]" = None,
+        checkpoint: "typing.Optional[v1Checkpoint]" = Unset,
+        comment: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
     ):
         self.checkpoint = checkpoint
         self.name = name
@@ -5139,18 +5144,18 @@ class v1PatchModelVersion:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.checkpoint is not None:
-            o["checkpoint"] = self.checkpoint.to_json()
-        if self.name is not None:
-            o["name"] = self.name
-        if self.metadata is not None:
-            o["metadata"] = self.metadata
-        if self.comment is not None:
-            o["comment"] = self.comment
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.checkpoint != Unset:
+            o["checkpoint"] = self.checkpoint.to_json() if self.checkpoint is not None else None
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.metadata != Unset:
+            o["metadata"] = self.metadata if self.metadata is not None else None
+        if self.comment != Unset:
+            o["comment"] = self.comment if self.comment is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1PatchModelVersionResponse:
@@ -5176,8 +5181,8 @@ class v1PatchProject:
     def __init__(
         self,
         *,
-        description: "typing.Optional[str]" = None,
-        name: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        name: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.description = description
@@ -5191,10 +5196,10 @@ class v1PatchProject:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.name is not None:
-            o["name"] = self.name
-        if self.description is not None:
-            o["description"] = self.description
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
         return o
 
 class v1PatchProjectResponse:
@@ -5221,9 +5226,9 @@ class v1PatchTrialsCollectionRequest:
         self,
         *,
         id: int,
-        filters: "typing.Optional[v1TrialFilters]" = None,
-        name: "typing.Optional[str]" = None,
-        sorter: "typing.Optional[v1TrialSorter]" = None,
+        filters: "typing.Optional[v1TrialFilters]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        sorter: "typing.Optional[v1TrialSorter]" = Unset,
     ):
         self.id = id
         self.name = name
@@ -5242,19 +5247,19 @@ class v1PatchTrialsCollectionRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id
-        if self.name is not None:
-            o["name"] = self.name
-        if self.filters is not None:
-            o["filters"] = self.filters.to_json()
-        if self.sorter is not None:
-            o["sorter"] = self.sorter.to_json()
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.filters != Unset:
+            o["filters"] = self.filters.to_json() if self.filters is not None else None
+        if self.sorter != Unset:
+            o["sorter"] = self.sorter.to_json() if self.sorter is not None else None
         return o
 
 class v1PatchTrialsCollectionResponse:
     def __init__(
         self,
         *,
-        collection: "typing.Optional[v1TrialsCollection]" = None,
+        collection: "typing.Optional[v1TrialsCollection]" = Unset,
     ):
         self.collection = collection
 
@@ -5266,18 +5271,18 @@ class v1PatchTrialsCollectionResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.collection is not None:
-            o["collection"] = self.collection.to_json()
+        if self.collection != Unset:
+            o["collection"] = self.collection.to_json() if self.collection is not None else None
         return o
 
 class v1PatchUser:
     def __init__(
         self,
         *,
-        active: "typing.Optional[bool]" = None,
-        admin: "typing.Optional[bool]" = None,
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        displayName: "typing.Optional[str]" = None,
+        active: "typing.Optional[bool]" = Unset,
+        admin: "typing.Optional[bool]" = Unset,
+        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
     ):
         self.admin = admin
         self.active = active
@@ -5295,14 +5300,14 @@ class v1PatchUser:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.admin is not None:
-            o["admin"] = self.admin
-        if self.active is not None:
-            o["active"] = self.active
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.agentUserGroup is not None:
-            o["agentUserGroup"] = self.agentUserGroup.to_json()
+        if self.admin != Unset:
+            o["admin"] = self.admin if self.admin is not None else None
+        if self.active != Unset:
+            o["active"] = self.active if self.active is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.agentUserGroup != Unset:
+            o["agentUserGroup"] = self.agentUserGroup.to_json() if self.agentUserGroup is not None else None
         return o
 
 class v1PatchUserResponse:
@@ -5328,9 +5333,9 @@ class v1PatchWorkspace:
     def __init__(
         self,
         *,
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        name: "typing.Optional[str]" = None,
+        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = Unset,
+        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.agentUserGroup = agentUserGroup
@@ -5346,12 +5351,12 @@ class v1PatchWorkspace:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.name is not None:
-            o["name"] = self.name
-        if self.agentUserGroup is not None:
-            o["agentUserGroup"] = self.agentUserGroup.to_json()
-        if self.checkpointStorageConfig is not None:
-            o["checkpointStorageConfig"] = self.checkpointStorageConfig
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.agentUserGroup != Unset:
+            o["agentUserGroup"] = self.agentUserGroup.to_json() if self.agentUserGroup is not None else None
+        if self.checkpointStorageConfig != Unset:
+            o["checkpointStorageConfig"] = self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None
         return o
 
 class v1PatchWorkspaceResponse:
@@ -5378,8 +5383,8 @@ class v1Permission:
         self,
         *,
         id: "v1PermissionType",
-        isGlobal: "typing.Optional[bool]" = None,
-        name: "typing.Optional[str]" = None,
+        isGlobal: "typing.Optional[bool]" = Unset,
+        name: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.name = name
@@ -5396,10 +5401,10 @@ class v1Permission:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id.value
-        if self.name is not None:
-            o["name"] = self.name
-        if self.isGlobal is not None:
-            o["isGlobal"] = self.isGlobal
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.isGlobal != Unset:
+            o["isGlobal"] = self.isGlobal if self.isGlobal is not None else None
         return o
 
 class v1PermissionType(enum.Enum):
@@ -5429,8 +5434,8 @@ class v1PostAllocationProxyAddressRequest:
     def __init__(
         self,
         *,
-        allocationId: "typing.Optional[str]" = None,
-        proxyAddress: "typing.Optional[str]" = None,
+        allocationId: "typing.Optional[str]" = Unset,
+        proxyAddress: "typing.Optional[str]" = Unset,
     ):
         self.allocationId = allocationId
         self.proxyAddress = proxyAddress
@@ -5444,17 +5449,17 @@ class v1PostAllocationProxyAddressRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.allocationId is not None:
-            o["allocationId"] = self.allocationId
-        if self.proxyAddress is not None:
-            o["proxyAddress"] = self.proxyAddress
+        if self.allocationId != Unset:
+            o["allocationId"] = self.allocationId if self.allocationId is not None else None
+        if self.proxyAddress != Unset:
+            o["proxyAddress"] = self.proxyAddress if self.proxyAddress is not None else None
         return o
 
 class v1PostCheckpointMetadataRequest:
     def __init__(
         self,
         *,
-        checkpoint: "typing.Optional[v1Checkpoint]" = None,
+        checkpoint: "typing.Optional[v1Checkpoint]" = Unset,
     ):
         self.checkpoint = checkpoint
 
@@ -5466,15 +5471,15 @@ class v1PostCheckpointMetadataRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.checkpoint is not None:
-            o["checkpoint"] = self.checkpoint.to_json()
+        if self.checkpoint != Unset:
+            o["checkpoint"] = self.checkpoint.to_json() if self.checkpoint is not None else None
         return o
 
 class v1PostCheckpointMetadataResponse:
     def __init__(
         self,
         *,
-        checkpoint: "typing.Optional[v1Checkpoint]" = None,
+        checkpoint: "typing.Optional[v1Checkpoint]" = Unset,
     ):
         self.checkpoint = checkpoint
 
@@ -5486,8 +5491,8 @@ class v1PostCheckpointMetadataResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.checkpoint is not None:
-            o["checkpoint"] = self.checkpoint.to_json()
+        if self.checkpoint != Unset:
+            o["checkpoint"] = self.checkpoint.to_json() if self.checkpoint is not None else None
         return o
 
 class v1PostModelRequest:
@@ -5495,10 +5500,10 @@ class v1PostModelRequest:
         self,
         *,
         name: str,
-        description: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        notes: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.description = description
@@ -5519,14 +5524,14 @@ class v1PostModelRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["name"] = self.name
-        if self.description is not None:
-            o["description"] = self.description
-        if self.metadata is not None:
-            o["metadata"] = self.metadata
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
+        if self.metadata != Unset:
+            o["metadata"] = self.metadata if self.metadata is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1PostModelResponse:
@@ -5554,11 +5559,11 @@ class v1PostModelVersionRequest:
         *,
         checkpointUuid: str,
         modelName: str,
-        comment: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        name: "typing.Optional[str]" = None,
-        notes: "typing.Optional[str]" = None,
+        comment: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        metadata: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        notes: "typing.Optional[str]" = Unset,
     ):
         self.modelName = modelName
         self.checkpointUuid = checkpointUuid
@@ -5584,16 +5589,16 @@ class v1PostModelVersionRequest:
         o = {}
         o["modelName"] = self.modelName
         o["checkpointUuid"] = self.checkpointUuid
-        if self.name is not None:
-            o["name"] = self.name
-        if self.comment is not None:
-            o["comment"] = self.comment
-        if self.metadata is not None:
-            o["metadata"] = self.metadata
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.notes is not None:
-            o["notes"] = self.notes
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.comment != Unset:
+            o["comment"] = self.comment if self.comment is not None else None
+        if self.metadata != Unset:
+            o["metadata"] = self.metadata if self.metadata is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.notes != Unset:
+            o["notes"] = self.notes if self.notes is not None else None
         return o
 
 class v1PostModelVersionResponse:
@@ -5621,7 +5626,7 @@ class v1PostProjectRequest:
         *,
         name: str,
         workspaceId: int,
-        description: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
     ):
         self.name = name
         self.description = description
@@ -5638,8 +5643,8 @@ class v1PostProjectRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["name"] = self.name
-        if self.description is not None:
-            o["description"] = self.description
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
         o["workspaceId"] = self.workspaceId
         return o
 
@@ -5666,9 +5671,9 @@ class v1PostSearcherOperationsRequest:
     def __init__(
         self,
         *,
-        experimentId: "typing.Optional[int]" = None,
-        searcherOperations: "typing.Optional[typing.Sequence[v1SearcherOperation]]" = None,
-        triggeredByEvent: "typing.Optional[v1SearcherEvent]" = None,
+        experimentId: "typing.Optional[int]" = Unset,
+        searcherOperations: "typing.Optional[typing.Sequence[v1SearcherOperation]]" = Unset,
+        triggeredByEvent: "typing.Optional[v1SearcherEvent]" = Unset,
     ):
         self.experimentId = experimentId
         self.searcherOperations = searcherOperations
@@ -5684,19 +5689,19 @@ class v1PostSearcherOperationsRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.experimentId is not None:
-            o["experimentId"] = self.experimentId
-        if self.searcherOperations is not None:
-            o["searcherOperations"] = [x.to_json() for x in self.searcherOperations]
-        if self.triggeredByEvent is not None:
-            o["triggeredByEvent"] = self.triggeredByEvent.to_json()
+        if self.experimentId != Unset:
+            o["experimentId"] = self.experimentId if self.experimentId is not None else None
+        if self.searcherOperations != Unset:
+            o["searcherOperations"] = [x.to_json() for x in self.searcherOperations] if self.searcherOperations is not None else None
+        if self.triggeredByEvent != Unset:
+            o["triggeredByEvent"] = self.triggeredByEvent.to_json() if self.triggeredByEvent is not None else None
         return o
 
 class v1PostTrialProfilerMetricsBatchRequest:
     def __init__(
         self,
         *,
-        batches: "typing.Optional[typing.Sequence[v1TrialProfilerMetricsBatch]]" = None,
+        batches: "typing.Optional[typing.Sequence[v1TrialProfilerMetricsBatch]]" = Unset,
     ):
         self.batches = batches
 
@@ -5708,16 +5713,16 @@ class v1PostTrialProfilerMetricsBatchRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.batches is not None:
-            o["batches"] = [x.to_json() for x in self.batches]
+        if self.batches != Unset:
+            o["batches"] = [x.to_json() for x in self.batches] if self.batches is not None else None
         return o
 
 class v1PostUserRequest:
     def __init__(
         self,
         *,
-        password: "typing.Optional[str]" = None,
-        user: "typing.Optional[v1User]" = None,
+        password: "typing.Optional[str]" = Unset,
+        user: "typing.Optional[v1User]" = Unset,
     ):
         self.user = user
         self.password = password
@@ -5731,17 +5736,17 @@ class v1PostUserRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.user is not None:
-            o["user"] = self.user.to_json()
-        if self.password is not None:
-            o["password"] = self.password
+        if self.user != Unset:
+            o["user"] = self.user.to_json() if self.user is not None else None
+        if self.password != Unset:
+            o["password"] = self.password if self.password is not None else None
         return o
 
 class v1PostUserResponse:
     def __init__(
         self,
         *,
-        user: "typing.Optional[v1User]" = None,
+        user: "typing.Optional[v1User]" = Unset,
     ):
         self.user = user
 
@@ -5753,8 +5758,8 @@ class v1PostUserResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.user is not None:
-            o["user"] = self.user.to_json()
+        if self.user != Unset:
+            o["user"] = self.user.to_json() if self.user is not None else None
         return o
 
 class v1PostUserSettingRequest:
@@ -5804,8 +5809,8 @@ class v1PostWorkspaceRequest:
         self,
         *,
         name: str,
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
+        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = Unset,
+        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
     ):
         self.name = name
         self.agentUserGroup = agentUserGroup
@@ -5822,10 +5827,10 @@ class v1PostWorkspaceRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["name"] = self.name
-        if self.agentUserGroup is not None:
-            o["agentUserGroup"] = self.agentUserGroup.to_json()
-        if self.checkpointStorageConfig is not None:
-            o["checkpointStorageConfig"] = self.checkpointStorageConfig
+        if self.agentUserGroup != Unset:
+            o["agentUserGroup"] = self.agentUserGroup.to_json() if self.agentUserGroup is not None else None
+        if self.checkpointStorageConfig != Unset:
+            o["checkpointStorageConfig"] = self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None
         return o
 
 class v1PostWorkspaceResponse:
@@ -5851,8 +5856,8 @@ class v1PreviewHPSearchRequest:
     def __init__(
         self,
         *,
-        config: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        seed: "typing.Optional[int]" = None,
+        config: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        seed: "typing.Optional[int]" = Unset,
     ):
         self.config = config
         self.seed = seed
@@ -5866,17 +5871,17 @@ class v1PreviewHPSearchRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.config is not None:
-            o["config"] = self.config
-        if self.seed is not None:
-            o["seed"] = self.seed
+        if self.config != Unset:
+            o["config"] = self.config if self.config is not None else None
+        if self.seed != Unset:
+            o["seed"] = self.seed if self.seed is not None else None
         return o
 
 class v1PreviewHPSearchResponse:
     def __init__(
         self,
         *,
-        simulation: "typing.Optional[v1ExperimentSimulation]" = None,
+        simulation: "typing.Optional[v1ExperimentSimulation]" = Unset,
     ):
         self.simulation = simulation
 
@@ -5888,8 +5893,8 @@ class v1PreviewHPSearchResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.simulation is not None:
-            o["simulation"] = self.simulation.to_json()
+        if self.simulation != Unset:
+            o["simulation"] = self.simulation.to_json() if self.simulation is not None else None
         return o
 
 class v1Project:
@@ -5908,9 +5913,9 @@ class v1Project:
         userId: int,
         username: str,
         workspaceId: int,
-        description: "typing.Optional[str]" = None,
-        lastExperimentStartedAt: "typing.Optional[str]" = None,
-        workspaceName: "typing.Optional[str]" = None,
+        description: "typing.Optional[str]" = Unset,
+        lastExperimentStartedAt: "typing.Optional[str]" = Unset,
+        workspaceName: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.name = name
@@ -5953,10 +5958,10 @@ class v1Project:
         o["id"] = self.id
         o["name"] = self.name
         o["workspaceId"] = self.workspaceId
-        if self.description is not None:
-            o["description"] = self.description
-        if self.lastExperimentStartedAt is not None:
-            o["lastExperimentStartedAt"] = self.lastExperimentStartedAt
+        if self.description != Unset:
+            o["description"] = self.description if self.description is not None else None
+        if self.lastExperimentStartedAt != Unset:
+            o["lastExperimentStartedAt"] = self.lastExperimentStartedAt if self.lastExperimentStartedAt is not None else None
         o["notes"] = [x.to_json() for x in self.notes]
         o["numExperiments"] = self.numExperiments
         o["numActiveExperiments"] = self.numActiveExperiments
@@ -5964,8 +5969,8 @@ class v1Project:
         o["username"] = self.username
         o["immutable"] = self.immutable
         o["userId"] = self.userId
-        if self.workspaceName is not None:
-            o["workspaceName"] = self.workspaceName
+        if self.workspaceName != Unset:
+            o["workspaceName"] = self.workspaceName if self.workspaceName is not None else None
         o["state"] = self.state.value
         o["errorMessage"] = self.errorMessage
         return o
@@ -6016,7 +6021,7 @@ class v1PutTemplateResponse:
     def __init__(
         self,
         *,
-        template: "typing.Optional[v1Template]" = None,
+        template: "typing.Optional[v1Template]" = Unset,
     ):
         self.template = template
 
@@ -6028,8 +6033,8 @@ class v1PutTemplateResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.template is not None:
-            o["template"] = self.template.to_json()
+        if self.template != Unset:
+            o["template"] = self.template.to_json() if self.template is not None else None
         return o
 
 class v1QueryTrialsRequest:
@@ -6037,9 +6042,9 @@ class v1QueryTrialsRequest:
         self,
         *,
         filters: "v1TrialFilters",
-        limit: "typing.Optional[int]" = None,
-        offset: "typing.Optional[int]" = None,
-        sorter: "typing.Optional[v1TrialSorter]" = None,
+        limit: "typing.Optional[int]" = Unset,
+        offset: "typing.Optional[int]" = Unset,
+        sorter: "typing.Optional[v1TrialSorter]" = Unset,
     ):
         self.filters = filters
         self.sorter = sorter
@@ -6058,12 +6063,12 @@ class v1QueryTrialsRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["filters"] = self.filters.to_json()
-        if self.sorter is not None:
-            o["sorter"] = self.sorter.to_json()
-        if self.offset is not None:
-            o["offset"] = self.offset
-        if self.limit is not None:
-            o["limit"] = self.limit
+        if self.sorter != Unset:
+            o["sorter"] = self.sorter.to_json() if self.sorter is not None else None
+        if self.offset != Unset:
+            o["offset"] = self.offset if self.offset is not None else None
+        if self.limit != Unset:
+            o["limit"] = self.limit if self.limit is not None else None
         return o
 
 class v1QueryTrialsResponse:
@@ -6090,11 +6095,11 @@ class v1QueueControl:
         self,
         *,
         jobId: str,
-        aheadOf: "typing.Optional[str]" = None,
-        behindOf: "typing.Optional[str]" = None,
-        priority: "typing.Optional[int]" = None,
-        resourcePool: "typing.Optional[str]" = None,
-        weight: "typing.Optional[float]" = None,
+        aheadOf: "typing.Optional[str]" = Unset,
+        behindOf: "typing.Optional[str]" = Unset,
+        priority: "typing.Optional[int]" = Unset,
+        resourcePool: "typing.Optional[str]" = Unset,
+        weight: "typing.Optional[float]" = Unset,
     ):
         self.jobId = jobId
         self.aheadOf = aheadOf
@@ -6117,16 +6122,16 @@ class v1QueueControl:
     def to_json(self) -> typing.Any:
         o = {}
         o["jobId"] = self.jobId
-        if self.aheadOf is not None:
-            o["aheadOf"] = self.aheadOf
-        if self.behindOf is not None:
-            o["behindOf"] = self.behindOf
-        if self.resourcePool is not None:
-            o["resourcePool"] = self.resourcePool
-        if self.priority is not None:
-            o["priority"] = self.priority
-        if self.weight is not None:
-            o["weight"] = dump_float(self.weight)
+        if self.aheadOf != Unset:
+            o["aheadOf"] = self.aheadOf if self.aheadOf is not None else None
+        if self.behindOf != Unset:
+            o["behindOf"] = self.behindOf if self.behindOf is not None else None
+        if self.resourcePool != Unset:
+            o["resourcePool"] = self.resourcePool if self.resourcePool is not None else None
+        if self.priority != Unset:
+            o["priority"] = self.priority if self.priority is not None else None
+        if self.weight != Unset:
+            o["weight"] = dump_float(self.weight) if self.weight is not None else None
         return o
 
 class v1QueueStats:
@@ -6158,7 +6163,7 @@ class v1RPQueueStat:
         *,
         resourcePool: str,
         stats: "v1QueueStats",
-        aggregates: "typing.Optional[typing.Sequence[v1AggregateQueueStats]]" = None,
+        aggregates: "typing.Optional[typing.Sequence[v1AggregateQueueStats]]" = Unset,
     ):
         self.stats = stats
         self.resourcePool = resourcePool
@@ -6176,16 +6181,16 @@ class v1RPQueueStat:
         o = {}
         o["stats"] = self.stats.to_json()
         o["resourcePool"] = self.resourcePool
-        if self.aggregates is not None:
-            o["aggregates"] = [x.to_json() for x in self.aggregates]
+        if self.aggregates != Unset:
+            o["aggregates"] = [x.to_json() for x in self.aggregates] if self.aggregates is not None else None
         return o
 
 class v1RemoveAssignmentsRequest:
     def __init__(
         self,
         *,
-        groupRoleAssignments: "typing.Optional[typing.Sequence[v1GroupRoleAssignment]]" = None,
-        userRoleAssignments: "typing.Optional[typing.Sequence[v1UserRoleAssignment]]" = None,
+        groupRoleAssignments: "typing.Optional[typing.Sequence[v1GroupRoleAssignment]]" = Unset,
+        userRoleAssignments: "typing.Optional[typing.Sequence[v1UserRoleAssignment]]" = Unset,
     ):
         self.groupRoleAssignments = groupRoleAssignments
         self.userRoleAssignments = userRoleAssignments
@@ -6199,10 +6204,10 @@ class v1RemoveAssignmentsRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.groupRoleAssignments is not None:
-            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments]
-        if self.userRoleAssignments is not None:
-            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments]
+        if self.groupRoleAssignments != Unset:
+            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments] if self.groupRoleAssignments is not None else None
+        if self.userRoleAssignments != Unset:
+            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments] if self.userRoleAssignments is not None else None
         return o
 
 class v1RendezvousInfo:
@@ -6299,15 +6304,15 @@ class v1ResourceAllocationRawEntry:
     def __init__(
         self,
         *,
-        endTime: "typing.Optional[str]" = None,
-        experimentId: "typing.Optional[int]" = None,
-        kind: "typing.Optional[str]" = None,
-        labels: "typing.Optional[typing.Sequence[str]]" = None,
-        seconds: "typing.Optional[float]" = None,
-        slots: "typing.Optional[int]" = None,
-        startTime: "typing.Optional[str]" = None,
-        userId: "typing.Optional[int]" = None,
-        username: "typing.Optional[str]" = None,
+        endTime: "typing.Optional[str]" = Unset,
+        experimentId: "typing.Optional[int]" = Unset,
+        kind: "typing.Optional[str]" = Unset,
+        labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+        seconds: "typing.Optional[float]" = Unset,
+        slots: "typing.Optional[int]" = Unset,
+        startTime: "typing.Optional[str]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
+        username: "typing.Optional[str]" = Unset,
     ):
         self.kind = kind
         self.startTime = startTime
@@ -6335,31 +6340,31 @@ class v1ResourceAllocationRawEntry:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.kind is not None:
-            o["kind"] = self.kind
-        if self.startTime is not None:
-            o["startTime"] = self.startTime
-        if self.endTime is not None:
-            o["endTime"] = self.endTime
-        if self.experimentId is not None:
-            o["experimentId"] = self.experimentId
-        if self.username is not None:
-            o["username"] = self.username
-        if self.userId is not None:
-            o["userId"] = self.userId
-        if self.labels is not None:
-            o["labels"] = self.labels
-        if self.seconds is not None:
-            o["seconds"] = dump_float(self.seconds)
-        if self.slots is not None:
-            o["slots"] = self.slots
+        if self.kind != Unset:
+            o["kind"] = self.kind if self.kind is not None else None
+        if self.startTime != Unset:
+            o["startTime"] = self.startTime if self.startTime is not None else None
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime if self.endTime is not None else None
+        if self.experimentId != Unset:
+            o["experimentId"] = self.experimentId if self.experimentId is not None else None
+        if self.username != Unset:
+            o["username"] = self.username if self.username is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
+        if self.labels != Unset:
+            o["labels"] = self.labels if self.labels is not None else None
+        if self.seconds != Unset:
+            o["seconds"] = dump_float(self.seconds) if self.seconds is not None else None
+        if self.slots != Unset:
+            o["slots"] = self.slots if self.slots is not None else None
         return o
 
 class v1ResourceAllocationRawResponse:
     def __init__(
         self,
         *,
-        resourceEntries: "typing.Optional[typing.Sequence[v1ResourceAllocationRawEntry]]" = None,
+        resourceEntries: "typing.Optional[typing.Sequence[v1ResourceAllocationRawEntry]]" = Unset,
     ):
         self.resourceEntries = resourceEntries
 
@@ -6371,8 +6376,8 @@ class v1ResourceAllocationRawResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.resourceEntries is not None:
-            o["resourceEntries"] = [x.to_json() for x in self.resourceEntries]
+        if self.resourceEntries != Unset:
+            o["resourceEntries"] = [x.to_json() for x in self.resourceEntries] if self.resourceEntries is not None else None
         return o
 
 class v1ResourcePool:
@@ -6410,9 +6415,9 @@ class v1ResourcePool:
         slotsUsed: int,
         startupScript: str,
         type: "v1ResourcePoolType",
-        accelerator: "typing.Optional[str]" = None,
-        slotsPerAgent: "typing.Optional[int]" = None,
-        stats: "typing.Optional[v1QueueStats]" = None,
+        accelerator: "typing.Optional[str]" = Unset,
+        slotsPerAgent: "typing.Optional[int]" = Unset,
+        stats: "typing.Optional[v1QueueStats]" = Unset,
     ):
         self.name = name
         self.description = description
@@ -6504,8 +6509,8 @@ class v1ResourcePool:
         o["preemptible"] = self.preemptible
         o["minAgents"] = self.minAgents
         o["maxAgents"] = self.maxAgents
-        if self.slotsPerAgent is not None:
-            o["slotsPerAgent"] = self.slotsPerAgent
+        if self.slotsPerAgent != Unset:
+            o["slotsPerAgent"] = self.slotsPerAgent if self.slotsPerAgent is not None else None
         o["auxContainerCapacityPerAgent"] = self.auxContainerCapacityPerAgent
         o["schedulerType"] = self.schedulerType.value
         o["schedulerFittingPolicy"] = self.schedulerFittingPolicy.value
@@ -6523,10 +6528,10 @@ class v1ResourcePool:
         o["maxIdleAgentPeriod"] = dump_float(self.maxIdleAgentPeriod)
         o["maxAgentStartingPeriod"] = dump_float(self.maxAgentStartingPeriod)
         o["details"] = self.details.to_json()
-        if self.accelerator is not None:
-            o["accelerator"] = self.accelerator
-        if self.stats is not None:
-            o["stats"] = self.stats.to_json()
+        if self.accelerator != Unset:
+            o["accelerator"] = self.accelerator if self.accelerator is not None else None
+        if self.stats != Unset:
+            o["stats"] = self.stats.to_json() if self.stats is not None else None
         return o
 
 class v1ResourcePoolAwsDetail:
@@ -6544,12 +6549,12 @@ class v1ResourcePoolAwsDetail:
         sshKeyName: str,
         tagKey: str,
         tagValue: str,
-        customTags: "typing.Optional[typing.Sequence[v1AwsCustomTag]]" = None,
-        instanceType: "typing.Optional[str]" = None,
-        logGroup: "typing.Optional[str]" = None,
-        logStream: "typing.Optional[str]" = None,
-        spotMaxPrice: "typing.Optional[str]" = None,
-        subnetId: "typing.Optional[str]" = None,
+        customTags: "typing.Optional[typing.Sequence[v1AwsCustomTag]]" = Unset,
+        instanceType: "typing.Optional[str]" = Unset,
+        logGroup: "typing.Optional[str]" = Unset,
+        logStream: "typing.Optional[str]" = Unset,
+        spotMaxPrice: "typing.Optional[str]" = Unset,
+        subnetId: "typing.Optional[str]" = Unset,
     ):
         self.region = region
         self.rootVolumeSize = rootVolumeSize
@@ -6601,30 +6606,30 @@ class v1ResourcePoolAwsDetail:
         o["instanceName"] = self.instanceName
         o["sshKeyName"] = self.sshKeyName
         o["publicIp"] = self.publicIp
-        if self.subnetId is not None:
-            o["subnetId"] = self.subnetId
+        if self.subnetId != Unset:
+            o["subnetId"] = self.subnetId if self.subnetId is not None else None
         o["securityGroupId"] = self.securityGroupId
         o["iamInstanceProfileArn"] = self.iamInstanceProfileArn
-        if self.instanceType is not None:
-            o["instanceType"] = self.instanceType
-        if self.logGroup is not None:
-            o["logGroup"] = self.logGroup
-        if self.logStream is not None:
-            o["logStream"] = self.logStream
+        if self.instanceType != Unset:
+            o["instanceType"] = self.instanceType if self.instanceType is not None else None
+        if self.logGroup != Unset:
+            o["logGroup"] = self.logGroup if self.logGroup is not None else None
+        if self.logStream != Unset:
+            o["logStream"] = self.logStream if self.logStream is not None else None
         o["spotEnabled"] = self.spotEnabled
-        if self.spotMaxPrice is not None:
-            o["spotMaxPrice"] = self.spotMaxPrice
-        if self.customTags is not None:
-            o["customTags"] = [x.to_json() for x in self.customTags]
+        if self.spotMaxPrice != Unset:
+            o["spotMaxPrice"] = self.spotMaxPrice if self.spotMaxPrice is not None else None
+        if self.customTags != Unset:
+            o["customTags"] = [x.to_json() for x in self.customTags] if self.customTags is not None else None
         return o
 
 class v1ResourcePoolDetail:
     def __init__(
         self,
         *,
-        aws: "typing.Optional[v1ResourcePoolAwsDetail]" = None,
-        gcp: "typing.Optional[v1ResourcePoolGcpDetail]" = None,
-        priorityScheduler: "typing.Optional[v1ResourcePoolPrioritySchedulerDetail]" = None,
+        aws: "typing.Optional[v1ResourcePoolAwsDetail]" = Unset,
+        gcp: "typing.Optional[v1ResourcePoolGcpDetail]" = Unset,
+        priorityScheduler: "typing.Optional[v1ResourcePoolPrioritySchedulerDetail]" = Unset,
     ):
         self.aws = aws
         self.gcp = gcp
@@ -6640,12 +6645,12 @@ class v1ResourcePoolDetail:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.aws is not None:
-            o["aws"] = self.aws.to_json()
-        if self.gcp is not None:
-            o["gcp"] = self.gcp.to_json()
-        if self.priorityScheduler is not None:
-            o["priorityScheduler"] = self.priorityScheduler.to_json()
+        if self.aws != Unset:
+            o["aws"] = self.aws.to_json() if self.aws is not None else None
+        if self.gcp != Unset:
+            o["gcp"] = self.gcp.to_json() if self.gcp is not None else None
+        if self.priorityScheduler != Unset:
+            o["priorityScheduler"] = self.priorityScheduler.to_json() if self.priorityScheduler is not None else None
         return o
 
 class v1ResourcePoolGcpDetail:
@@ -6668,8 +6673,8 @@ class v1ResourcePoolGcpDetail:
         serviceAccountEmail: str,
         serviceAccountScopes: "typing.Sequence[str]",
         zone: str,
-        networkTags: "typing.Optional[typing.Sequence[str]]" = None,
-        subnetwork: "typing.Optional[str]" = None,
+        networkTags: "typing.Optional[typing.Sequence[str]]" = Unset,
+        subnetwork: "typing.Optional[str]" = Unset,
     ):
         self.project = project
         self.zone = zone
@@ -6723,11 +6728,11 @@ class v1ResourcePoolGcpDetail:
         o["labelValue"] = self.labelValue
         o["namePrefix"] = self.namePrefix
         o["network"] = self.network
-        if self.subnetwork is not None:
-            o["subnetwork"] = self.subnetwork
+        if self.subnetwork != Unset:
+            o["subnetwork"] = self.subnetwork if self.subnetwork is not None else None
         o["externalIp"] = self.externalIp
-        if self.networkTags is not None:
-            o["networkTags"] = self.networkTags
+        if self.networkTags != Unset:
+            o["networkTags"] = self.networkTags if self.networkTags is not None else None
         o["serviceAccountEmail"] = self.serviceAccountEmail
         o["serviceAccountScopes"] = self.serviceAccountScopes
         o["machineType"] = self.machineType
@@ -6743,7 +6748,7 @@ class v1ResourcePoolPrioritySchedulerDetail:
         *,
         defaultPriority: int,
         preemption: bool,
-        k8Priorities: "typing.Optional[typing.Sequence[v1K8PriorityClass]]" = None,
+        k8Priorities: "typing.Optional[typing.Sequence[v1K8PriorityClass]]" = Unset,
     ):
         self.preemption = preemption
         self.defaultPriority = defaultPriority
@@ -6761,8 +6766,8 @@ class v1ResourcePoolPrioritySchedulerDetail:
         o = {}
         o["preemption"] = self.preemption
         o["defaultPriority"] = self.defaultPriority
-        if self.k8Priorities is not None:
-            o["k8Priorities"] = [x.to_json() for x in self.k8Priorities]
+        if self.k8Priorities != Unset:
+            o["k8Priorities"] = [x.to_json() for x in self.k8Priorities] if self.k8Priorities is not None else None
         return o
 
 class v1ResourcePoolType(enum.Enum):
@@ -6777,8 +6782,8 @@ class v1Role:
         self,
         *,
         roleId: int,
-        name: "typing.Optional[str]" = None,
-        permissions: "typing.Optional[typing.Sequence[v1Permission]]" = None,
+        name: "typing.Optional[str]" = Unset,
+        permissions: "typing.Optional[typing.Sequence[v1Permission]]" = Unset,
     ):
         self.roleId = roleId
         self.name = name
@@ -6795,10 +6800,10 @@ class v1Role:
     def to_json(self) -> typing.Any:
         o = {}
         o["roleId"] = self.roleId
-        if self.name is not None:
-            o["name"] = self.name
-        if self.permissions is not None:
-            o["permissions"] = [x.to_json() for x in self.permissions]
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.permissions != Unset:
+            o["permissions"] = [x.to_json() for x in self.permissions] if self.permissions is not None else None
         return o
 
 class v1RoleAssignment:
@@ -6806,7 +6811,7 @@ class v1RoleAssignment:
         self,
         *,
         role: "v1Role",
-        scopeWorkspaceId: "typing.Optional[int]" = None,
+        scopeWorkspaceId: "typing.Optional[int]" = Unset,
     ):
         self.role = role
         self.scopeWorkspaceId = scopeWorkspaceId
@@ -6821,8 +6826,8 @@ class v1RoleAssignment:
     def to_json(self) -> typing.Any:
         o = {}
         o["role"] = self.role.to_json()
-        if self.scopeWorkspaceId is not None:
-            o["scopeWorkspaceId"] = self.scopeWorkspaceId
+        if self.scopeWorkspaceId != Unset:
+            o["scopeWorkspaceId"] = self.scopeWorkspaceId if self.scopeWorkspaceId is not None else None
         return o
 
 class v1RoleAssignmentSummary:
@@ -6830,8 +6835,8 @@ class v1RoleAssignmentSummary:
         self,
         *,
         roleId: int,
-        isGlobal: "typing.Optional[bool]" = None,
-        scopeWorkspaceIds: "typing.Optional[typing.Sequence[int]]" = None,
+        isGlobal: "typing.Optional[bool]" = Unset,
+        scopeWorkspaceIds: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.roleId = roleId
         self.scopeWorkspaceIds = scopeWorkspaceIds
@@ -6848,19 +6853,19 @@ class v1RoleAssignmentSummary:
     def to_json(self) -> typing.Any:
         o = {}
         o["roleId"] = self.roleId
-        if self.scopeWorkspaceIds is not None:
-            o["scopeWorkspaceIds"] = self.scopeWorkspaceIds
-        if self.isGlobal is not None:
-            o["isGlobal"] = self.isGlobal
+        if self.scopeWorkspaceIds != Unset:
+            o["scopeWorkspaceIds"] = self.scopeWorkspaceIds if self.scopeWorkspaceIds is not None else None
+        if self.isGlobal != Unset:
+            o["isGlobal"] = self.isGlobal if self.isGlobal is not None else None
         return o
 
 class v1RoleWithAssignments:
     def __init__(
         self,
         *,
-        groupRoleAssignments: "typing.Optional[typing.Sequence[v1GroupRoleAssignment]]" = None,
-        role: "typing.Optional[v1Role]" = None,
-        userRoleAssignments: "typing.Optional[typing.Sequence[v1UserRoleAssignment]]" = None,
+        groupRoleAssignments: "typing.Optional[typing.Sequence[v1GroupRoleAssignment]]" = Unset,
+        role: "typing.Optional[v1Role]" = Unset,
+        userRoleAssignments: "typing.Optional[typing.Sequence[v1UserRoleAssignment]]" = Unset,
     ):
         self.role = role
         self.groupRoleAssignments = groupRoleAssignments
@@ -6876,20 +6881,20 @@ class v1RoleWithAssignments:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.role is not None:
-            o["role"] = self.role.to_json()
-        if self.groupRoleAssignments is not None:
-            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments]
-        if self.userRoleAssignments is not None:
-            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments]
+        if self.role != Unset:
+            o["role"] = self.role.to_json() if self.role is not None else None
+        if self.groupRoleAssignments != Unset:
+            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments] if self.groupRoleAssignments is not None else None
+        if self.userRoleAssignments != Unset:
+            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments] if self.userRoleAssignments is not None else None
         return o
 
 class v1RunnableOperation:
     def __init__(
         self,
         *,
-        length: "typing.Optional[str]" = None,
-        type: "typing.Optional[v1RunnableType]" = None,
+        length: "typing.Optional[str]" = Unset,
+        type: "typing.Optional[v1RunnableType]" = Unset,
     ):
         self.type = type
         self.length = length
@@ -6903,10 +6908,10 @@ class v1RunnableOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.type is not None:
-            o["type"] = self.type.value
-        if self.length is not None:
-            o["length"] = self.length
+        if self.type != Unset:
+            o["type"] = self.type.value if self.type is not None else None
+        if self.length != Unset:
+            o["length"] = self.length if self.length is not None else None
         return o
 
 class v1RunnableType(enum.Enum):
@@ -6956,8 +6961,8 @@ class v1SearchRolesAssignableToScopeRequest:
         self,
         *,
         limit: int,
-        offset: "typing.Optional[int]" = None,
-        workspaceId: "typing.Optional[int]" = None,
+        offset: "typing.Optional[int]" = Unset,
+        workspaceId: "typing.Optional[int]" = Unset,
     ):
         self.limit = limit
         self.offset = offset
@@ -6974,18 +6979,18 @@ class v1SearchRolesAssignableToScopeRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["limit"] = self.limit
-        if self.offset is not None:
-            o["offset"] = self.offset
-        if self.workspaceId is not None:
-            o["workspaceId"] = self.workspaceId
+        if self.offset != Unset:
+            o["offset"] = self.offset if self.offset is not None else None
+        if self.workspaceId != Unset:
+            o["workspaceId"] = self.workspaceId if self.workspaceId is not None else None
         return o
 
 class v1SearchRolesAssignableToScopeResponse:
     def __init__(
         self,
         *,
-        pagination: "typing.Optional[v1Pagination]" = None,
-        roles: "typing.Optional[typing.Sequence[v1Role]]" = None,
+        pagination: "typing.Optional[v1Pagination]" = Unset,
+        roles: "typing.Optional[typing.Sequence[v1Role]]" = Unset,
     ):
         self.pagination = pagination
         self.roles = roles
@@ -6999,10 +7004,10 @@ class v1SearchRolesAssignableToScopeResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.pagination is not None:
-            o["pagination"] = self.pagination.to_json()
-        if self.roles is not None:
-            o["roles"] = [x.to_json() for x in self.roles]
+        if self.pagination != Unset:
+            o["pagination"] = self.pagination.to_json() if self.pagination is not None else None
+        if self.roles != Unset:
+            o["roles"] = [x.to_json() for x in self.roles] if self.roles is not None else None
         return o
 
 class v1SearcherEvent:
@@ -7010,13 +7015,13 @@ class v1SearcherEvent:
         self,
         *,
         id: int,
-        experimentInactive: "typing.Optional[v1ExperimentInactive]" = None,
-        initialOperations: "typing.Optional[v1InitialOperations]" = None,
-        trialClosed: "typing.Optional[v1TrialClosed]" = None,
-        trialCreated: "typing.Optional[v1TrialCreated]" = None,
-        trialExitedEarly: "typing.Optional[v1TrialExitedEarly]" = None,
-        trialProgress: "typing.Optional[v1TrialProgress]" = None,
-        validationCompleted: "typing.Optional[v1ValidationCompleted]" = None,
+        experimentInactive: "typing.Optional[v1ExperimentInactive]" = Unset,
+        initialOperations: "typing.Optional[v1InitialOperations]" = Unset,
+        trialClosed: "typing.Optional[v1TrialClosed]" = Unset,
+        trialCreated: "typing.Optional[v1TrialCreated]" = Unset,
+        trialExitedEarly: "typing.Optional[v1TrialExitedEarly]" = Unset,
+        trialProgress: "typing.Optional[v1TrialProgress]" = Unset,
+        validationCompleted: "typing.Optional[v1ValidationCompleted]" = Unset,
     ):
         self.id = id
         self.initialOperations = initialOperations
@@ -7043,31 +7048,31 @@ class v1SearcherEvent:
     def to_json(self) -> typing.Any:
         o = {}
         o["id"] = self.id
-        if self.initialOperations is not None:
-            o["initialOperations"] = self.initialOperations.to_json()
-        if self.trialCreated is not None:
-            o["trialCreated"] = self.trialCreated.to_json()
-        if self.validationCompleted is not None:
-            o["validationCompleted"] = self.validationCompleted.to_json()
-        if self.trialClosed is not None:
-            o["trialClosed"] = self.trialClosed.to_json()
-        if self.trialExitedEarly is not None:
-            o["trialExitedEarly"] = self.trialExitedEarly.to_json()
-        if self.trialProgress is not None:
-            o["trialProgress"] = self.trialProgress.to_json()
-        if self.experimentInactive is not None:
-            o["experimentInactive"] = self.experimentInactive.to_json()
+        if self.initialOperations != Unset:
+            o["initialOperations"] = self.initialOperations.to_json() if self.initialOperations is not None else None
+        if self.trialCreated != Unset:
+            o["trialCreated"] = self.trialCreated.to_json() if self.trialCreated is not None else None
+        if self.validationCompleted != Unset:
+            o["validationCompleted"] = self.validationCompleted.to_json() if self.validationCompleted is not None else None
+        if self.trialClosed != Unset:
+            o["trialClosed"] = self.trialClosed.to_json() if self.trialClosed is not None else None
+        if self.trialExitedEarly != Unset:
+            o["trialExitedEarly"] = self.trialExitedEarly.to_json() if self.trialExitedEarly is not None else None
+        if self.trialProgress != Unset:
+            o["trialProgress"] = self.trialProgress.to_json() if self.trialProgress is not None else None
+        if self.experimentInactive != Unset:
+            o["experimentInactive"] = self.experimentInactive.to_json() if self.experimentInactive is not None else None
         return o
 
 class v1SearcherOperation:
     def __init__(
         self,
         *,
-        closeTrial: "typing.Optional[v1CloseTrialOperation]" = None,
-        createTrial: "typing.Optional[v1CreateTrialOperation]" = None,
-        setSearcherProgress: "typing.Optional[v1SetSearcherProgressOperation]" = None,
-        shutDown: "typing.Optional[v1ShutDownOperation]" = None,
-        trialOperation: "typing.Optional[v1TrialOperation]" = None,
+        closeTrial: "typing.Optional[v1CloseTrialOperation]" = Unset,
+        createTrial: "typing.Optional[v1CreateTrialOperation]" = Unset,
+        setSearcherProgress: "typing.Optional[v1SetSearcherProgressOperation]" = Unset,
+        shutDown: "typing.Optional[v1ShutDownOperation]" = Unset,
+        trialOperation: "typing.Optional[v1TrialOperation]" = Unset,
     ):
         self.trialOperation = trialOperation
         self.createTrial = createTrial
@@ -7087,24 +7092,24 @@ class v1SearcherOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.trialOperation is not None:
-            o["trialOperation"] = self.trialOperation.to_json()
-        if self.createTrial is not None:
-            o["createTrial"] = self.createTrial.to_json()
-        if self.closeTrial is not None:
-            o["closeTrial"] = self.closeTrial.to_json()
-        if self.shutDown is not None:
-            o["shutDown"] = self.shutDown.to_json()
-        if self.setSearcherProgress is not None:
-            o["setSearcherProgress"] = self.setSearcherProgress.to_json()
+        if self.trialOperation != Unset:
+            o["trialOperation"] = self.trialOperation.to_json() if self.trialOperation is not None else None
+        if self.createTrial != Unset:
+            o["createTrial"] = self.createTrial.to_json() if self.createTrial is not None else None
+        if self.closeTrial != Unset:
+            o["closeTrial"] = self.closeTrial.to_json() if self.closeTrial is not None else None
+        if self.shutDown != Unset:
+            o["shutDown"] = self.shutDown.to_json() if self.shutDown is not None else None
+        if self.setSearcherProgress != Unset:
+            o["setSearcherProgress"] = self.setSearcherProgress.to_json() if self.setSearcherProgress is not None else None
         return o
 
 class v1SetCommandPriorityRequest:
     def __init__(
         self,
         *,
-        commandId: "typing.Optional[str]" = None,
-        priority: "typing.Optional[int]" = None,
+        commandId: "typing.Optional[str]" = Unset,
+        priority: "typing.Optional[int]" = Unset,
     ):
         self.commandId = commandId
         self.priority = priority
@@ -7118,17 +7123,17 @@ class v1SetCommandPriorityRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.commandId is not None:
-            o["commandId"] = self.commandId
-        if self.priority is not None:
-            o["priority"] = self.priority
+        if self.commandId != Unset:
+            o["commandId"] = self.commandId if self.commandId is not None else None
+        if self.priority != Unset:
+            o["priority"] = self.priority if self.priority is not None else None
         return o
 
 class v1SetCommandPriorityResponse:
     def __init__(
         self,
         *,
-        command: "typing.Optional[v1Command]" = None,
+        command: "typing.Optional[v1Command]" = Unset,
     ):
         self.command = command
 
@@ -7140,16 +7145,16 @@ class v1SetCommandPriorityResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.command is not None:
-            o["command"] = self.command.to_json()
+        if self.command != Unset:
+            o["command"] = self.command.to_json() if self.command is not None else None
         return o
 
 class v1SetNotebookPriorityRequest:
     def __init__(
         self,
         *,
-        notebookId: "typing.Optional[str]" = None,
-        priority: "typing.Optional[int]" = None,
+        notebookId: "typing.Optional[str]" = Unset,
+        priority: "typing.Optional[int]" = Unset,
     ):
         self.notebookId = notebookId
         self.priority = priority
@@ -7163,17 +7168,17 @@ class v1SetNotebookPriorityRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.notebookId is not None:
-            o["notebookId"] = self.notebookId
-        if self.priority is not None:
-            o["priority"] = self.priority
+        if self.notebookId != Unset:
+            o["notebookId"] = self.notebookId if self.notebookId is not None else None
+        if self.priority != Unset:
+            o["priority"] = self.priority if self.priority is not None else None
         return o
 
 class v1SetNotebookPriorityResponse:
     def __init__(
         self,
         *,
-        notebook: "typing.Optional[v1Notebook]" = None,
+        notebook: "typing.Optional[v1Notebook]" = Unset,
     ):
         self.notebook = notebook
 
@@ -7185,15 +7190,15 @@ class v1SetNotebookPriorityResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.notebook is not None:
-            o["notebook"] = self.notebook.to_json()
+        if self.notebook != Unset:
+            o["notebook"] = self.notebook.to_json() if self.notebook is not None else None
         return o
 
 class v1SetSearcherProgressOperation:
     def __init__(
         self,
         *,
-        progress: "typing.Optional[float]" = None,
+        progress: "typing.Optional[float]" = Unset,
     ):
         self.progress = progress
 
@@ -7205,16 +7210,16 @@ class v1SetSearcherProgressOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.progress is not None:
-            o["progress"] = dump_float(self.progress)
+        if self.progress != Unset:
+            o["progress"] = dump_float(self.progress) if self.progress is not None else None
         return o
 
 class v1SetShellPriorityRequest:
     def __init__(
         self,
         *,
-        priority: "typing.Optional[int]" = None,
-        shellId: "typing.Optional[str]" = None,
+        priority: "typing.Optional[int]" = Unset,
+        shellId: "typing.Optional[str]" = Unset,
     ):
         self.shellId = shellId
         self.priority = priority
@@ -7228,17 +7233,17 @@ class v1SetShellPriorityRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.shellId is not None:
-            o["shellId"] = self.shellId
-        if self.priority is not None:
-            o["priority"] = self.priority
+        if self.shellId != Unset:
+            o["shellId"] = self.shellId if self.shellId is not None else None
+        if self.priority != Unset:
+            o["priority"] = self.priority if self.priority is not None else None
         return o
 
 class v1SetShellPriorityResponse:
     def __init__(
         self,
         *,
-        shell: "typing.Optional[v1Shell]" = None,
+        shell: "typing.Optional[v1Shell]" = Unset,
     ):
         self.shell = shell
 
@@ -7250,16 +7255,16 @@ class v1SetShellPriorityResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.shell is not None:
-            o["shell"] = self.shell.to_json()
+        if self.shell != Unset:
+            o["shell"] = self.shell.to_json() if self.shell is not None else None
         return o
 
 class v1SetTensorboardPriorityRequest:
     def __init__(
         self,
         *,
-        priority: "typing.Optional[int]" = None,
-        tensorboardId: "typing.Optional[str]" = None,
+        priority: "typing.Optional[int]" = Unset,
+        tensorboardId: "typing.Optional[str]" = Unset,
     ):
         self.tensorboardId = tensorboardId
         self.priority = priority
@@ -7273,17 +7278,17 @@ class v1SetTensorboardPriorityRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.tensorboardId is not None:
-            o["tensorboardId"] = self.tensorboardId
-        if self.priority is not None:
-            o["priority"] = self.priority
+        if self.tensorboardId != Unset:
+            o["tensorboardId"] = self.tensorboardId if self.tensorboardId is not None else None
+        if self.priority != Unset:
+            o["priority"] = self.priority if self.priority is not None else None
         return o
 
 class v1SetTensorboardPriorityResponse:
     def __init__(
         self,
         *,
-        tensorboard: "typing.Optional[v1Tensorboard]" = None,
+        tensorboard: "typing.Optional[v1Tensorboard]" = Unset,
     ):
         self.tensorboard = tensorboard
 
@@ -7295,15 +7300,15 @@ class v1SetTensorboardPriorityResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.tensorboard is not None:
-            o["tensorboard"] = self.tensorboard.to_json()
+        if self.tensorboard != Unset:
+            o["tensorboard"] = self.tensorboard.to_json() if self.tensorboard is not None else None
         return o
 
 class v1SetUserPasswordResponse:
     def __init__(
         self,
         *,
-        user: "typing.Optional[v1User]" = None,
+        user: "typing.Optional[v1User]" = Unset,
     ):
         self.user = user
 
@@ -7315,8 +7320,8 @@ class v1SetUserPasswordResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.user is not None:
-            o["user"] = self.user.to_json()
+        if self.user != Unset:
+            o["user"] = self.user.to_json() if self.user is not None else None
         return o
 
 class v1Shell:
@@ -7330,14 +7335,14 @@ class v1Shell:
         startTime: str,
         state: "determinedtaskv1State",
         username: str,
-        addresses: "typing.Optional[typing.Sequence[typing.Dict[str, typing.Any]]]" = None,
-        agentUserGroup: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        container: "typing.Optional[v1Container]" = None,
-        displayName: "typing.Optional[str]" = None,
-        exitStatus: "typing.Optional[str]" = None,
-        privateKey: "typing.Optional[str]" = None,
-        publicKey: "typing.Optional[str]" = None,
-        userId: "typing.Optional[int]" = None,
+        addresses: "typing.Optional[typing.Sequence[typing.Dict[str, typing.Any]]]" = Unset,
+        agentUserGroup: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        container: "typing.Optional[v1Container]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
+        exitStatus: "typing.Optional[str]" = Unset,
+        privateKey: "typing.Optional[str]" = Unset,
+        publicKey: "typing.Optional[str]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
     ):
         self.id = id
         self.description = description
@@ -7381,24 +7386,24 @@ class v1Shell:
         o["description"] = self.description
         o["state"] = self.state.value
         o["startTime"] = self.startTime
-        if self.container is not None:
-            o["container"] = self.container.to_json()
-        if self.privateKey is not None:
-            o["privateKey"] = self.privateKey
-        if self.publicKey is not None:
-            o["publicKey"] = self.publicKey
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.userId is not None:
-            o["userId"] = self.userId
+        if self.container != Unset:
+            o["container"] = self.container.to_json() if self.container is not None else None
+        if self.privateKey != Unset:
+            o["privateKey"] = self.privateKey if self.privateKey is not None else None
+        if self.publicKey != Unset:
+            o["publicKey"] = self.publicKey if self.publicKey is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
         o["username"] = self.username
         o["resourcePool"] = self.resourcePool
-        if self.exitStatus is not None:
-            o["exitStatus"] = self.exitStatus
-        if self.addresses is not None:
-            o["addresses"] = self.addresses
-        if self.agentUserGroup is not None:
-            o["agentUserGroup"] = self.agentUserGroup
+        if self.exitStatus != Unset:
+            o["exitStatus"] = self.exitStatus if self.exitStatus is not None else None
+        if self.addresses != Unset:
+            o["addresses"] = self.addresses if self.addresses is not None else None
+        if self.agentUserGroup != Unset:
+            o["agentUserGroup"] = self.agentUserGroup if self.agentUserGroup is not None else None
         o["jobId"] = self.jobId
         return o
 
@@ -7406,7 +7411,7 @@ class v1ShutDownOperation:
     def __init__(
         self,
         *,
-        placeholder: "typing.Optional[int]" = None,
+        placeholder: "typing.Optional[int]" = Unset,
     ):
         self.placeholder = placeholder
 
@@ -7418,19 +7423,19 @@ class v1ShutDownOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.placeholder is not None:
-            o["placeholder"] = self.placeholder
+        if self.placeholder != Unset:
+            o["placeholder"] = self.placeholder if self.placeholder is not None else None
         return o
 
 class v1Slot:
     def __init__(
         self,
         *,
-        container: "typing.Optional[v1Container]" = None,
-        device: "typing.Optional[v1Device]" = None,
-        draining: "typing.Optional[bool]" = None,
-        enabled: "typing.Optional[bool]" = None,
-        id: "typing.Optional[str]" = None,
+        container: "typing.Optional[v1Container]" = Unset,
+        device: "typing.Optional[v1Device]" = Unset,
+        draining: "typing.Optional[bool]" = Unset,
+        enabled: "typing.Optional[bool]" = Unset,
+        id: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.device = device
@@ -7450,16 +7455,16 @@ class v1Slot:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.id is not None:
-            o["id"] = self.id
-        if self.device is not None:
-            o["device"] = self.device.to_json()
-        if self.enabled is not None:
-            o["enabled"] = self.enabled
-        if self.container is not None:
-            o["container"] = self.container.to_json()
-        if self.draining is not None:
-            o["draining"] = self.draining
+        if self.id != Unset:
+            o["id"] = self.id if self.id is not None else None
+        if self.device != Unset:
+            o["device"] = self.device.to_json() if self.device is not None else None
+        if self.enabled != Unset:
+            o["enabled"] = self.enabled if self.enabled is not None else None
+        if self.container != Unset:
+            o["container"] = self.container.to_json() if self.container is not None else None
+        if self.draining != Unset:
+            o["draining"] = self.draining if self.draining is not None else None
         return o
 
 class v1SummarizeTrialResponse:
@@ -7516,9 +7521,9 @@ class v1Task:
     def __init__(
         self,
         *,
-        allocations: "typing.Optional[typing.Sequence[v1Allocation]]" = None,
-        taskId: "typing.Optional[str]" = None,
-        taskType: "typing.Optional[str]" = None,
+        allocations: "typing.Optional[typing.Sequence[v1Allocation]]" = Unset,
+        taskId: "typing.Optional[str]" = Unset,
+        taskType: "typing.Optional[str]" = Unset,
     ):
         self.taskId = taskId
         self.taskType = taskType
@@ -7534,24 +7539,24 @@ class v1Task:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.taskId is not None:
-            o["taskId"] = self.taskId
-        if self.taskType is not None:
-            o["taskType"] = self.taskType
-        if self.allocations is not None:
-            o["allocations"] = [x.to_json() for x in self.allocations]
+        if self.taskId != Unset:
+            o["taskId"] = self.taskId if self.taskId is not None else None
+        if self.taskType != Unset:
+            o["taskType"] = self.taskType if self.taskType is not None else None
+        if self.allocations != Unset:
+            o["allocations"] = [x.to_json() for x in self.allocations] if self.allocations is not None else None
         return o
 
 class v1TaskLogsFieldsResponse:
     def __init__(
         self,
         *,
-        agentIds: "typing.Optional[typing.Sequence[str]]" = None,
-        allocationIds: "typing.Optional[typing.Sequence[str]]" = None,
-        containerIds: "typing.Optional[typing.Sequence[str]]" = None,
-        rankIds: "typing.Optional[typing.Sequence[int]]" = None,
-        sources: "typing.Optional[typing.Sequence[str]]" = None,
-        stdtypes: "typing.Optional[typing.Sequence[str]]" = None,
+        agentIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+        allocationIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+        containerIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+        rankIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        sources: "typing.Optional[typing.Sequence[str]]" = Unset,
+        stdtypes: "typing.Optional[typing.Sequence[str]]" = Unset,
     ):
         self.allocationIds = allocationIds
         self.agentIds = agentIds
@@ -7573,18 +7578,18 @@ class v1TaskLogsFieldsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.allocationIds is not None:
-            o["allocationIds"] = self.allocationIds
-        if self.agentIds is not None:
-            o["agentIds"] = self.agentIds
-        if self.containerIds is not None:
-            o["containerIds"] = self.containerIds
-        if self.rankIds is not None:
-            o["rankIds"] = self.rankIds
-        if self.stdtypes is not None:
-            o["stdtypes"] = self.stdtypes
-        if self.sources is not None:
-            o["sources"] = self.sources
+        if self.allocationIds != Unset:
+            o["allocationIds"] = self.allocationIds if self.allocationIds is not None else None
+        if self.agentIds != Unset:
+            o["agentIds"] = self.agentIds if self.agentIds is not None else None
+        if self.containerIds != Unset:
+            o["containerIds"] = self.containerIds if self.containerIds is not None else None
+        if self.rankIds != Unset:
+            o["rankIds"] = self.rankIds if self.rankIds is not None else None
+        if self.stdtypes != Unset:
+            o["stdtypes"] = self.stdtypes if self.stdtypes is not None else None
+        if self.sources != Unset:
+            o["sources"] = self.sources if self.sources is not None else None
         return o
 
 class v1TaskLogsResponse:
@@ -7652,13 +7657,13 @@ class v1Tensorboard:
         startTime: str,
         state: "determinedtaskv1State",
         username: str,
-        container: "typing.Optional[v1Container]" = None,
-        displayName: "typing.Optional[str]" = None,
-        exitStatus: "typing.Optional[str]" = None,
-        experimentIds: "typing.Optional[typing.Sequence[int]]" = None,
-        serviceAddress: "typing.Optional[str]" = None,
-        trialIds: "typing.Optional[typing.Sequence[int]]" = None,
-        userId: "typing.Optional[int]" = None,
+        container: "typing.Optional[v1Container]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
+        exitStatus: "typing.Optional[str]" = Unset,
+        experimentIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        serviceAddress: "typing.Optional[str]" = Unset,
+        trialIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        userId: "typing.Optional[int]" = Unset,
     ):
         self.id = id
         self.description = description
@@ -7700,22 +7705,22 @@ class v1Tensorboard:
         o["description"] = self.description
         o["state"] = self.state.value
         o["startTime"] = self.startTime
-        if self.container is not None:
-            o["container"] = self.container.to_json()
-        if self.experimentIds is not None:
-            o["experimentIds"] = self.experimentIds
-        if self.trialIds is not None:
-            o["trialIds"] = self.trialIds
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.userId is not None:
-            o["userId"] = self.userId
+        if self.container != Unset:
+            o["container"] = self.container.to_json() if self.container is not None else None
+        if self.experimentIds != Unset:
+            o["experimentIds"] = self.experimentIds if self.experimentIds is not None else None
+        if self.trialIds != Unset:
+            o["trialIds"] = self.trialIds if self.trialIds is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.userId != Unset:
+            o["userId"] = self.userId if self.userId is not None else None
         o["username"] = self.username
-        if self.serviceAddress is not None:
-            o["serviceAddress"] = self.serviceAddress
+        if self.serviceAddress != Unset:
+            o["serviceAddress"] = self.serviceAddress if self.serviceAddress is not None else None
         o["resourcePool"] = self.resourcePool
-        if self.exitStatus is not None:
-            o["exitStatus"] = self.exitStatus
+        if self.exitStatus != Unset:
+            o["exitStatus"] = self.exitStatus if self.exitStatus is not None else None
         o["jobId"] = self.jobId
         return o
 
@@ -7742,10 +7747,10 @@ class v1TimestampFieldFilter:
     def __init__(
         self,
         *,
-        gt: "typing.Optional[str]" = None,
-        gte: "typing.Optional[str]" = None,
-        lt: "typing.Optional[str]" = None,
-        lte: "typing.Optional[str]" = None,
+        gt: "typing.Optional[str]" = Unset,
+        gte: "typing.Optional[str]" = Unset,
+        lt: "typing.Optional[str]" = Unset,
+        lte: "typing.Optional[str]" = Unset,
     ):
         self.lt = lt
         self.lte = lte
@@ -7763,14 +7768,14 @@ class v1TimestampFieldFilter:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.lt is not None:
-            o["lt"] = self.lt
-        if self.lte is not None:
-            o["lte"] = self.lte
-        if self.gt is not None:
-            o["gt"] = self.gt
-        if self.gte is not None:
-            o["gte"] = self.gte
+        if self.lt != Unset:
+            o["lt"] = self.lt if self.lt is not None else None
+        if self.lte != Unset:
+            o["lte"] = self.lte if self.lte is not None else None
+        if self.gt != Unset:
+            o["gt"] = self.gt if self.gt is not None else None
+        if self.gte != Unset:
+            o["gte"] = self.gte if self.gte is not None else None
         return o
 
 class v1TrialClosed:
@@ -7867,22 +7872,22 @@ class v1TrialFilters:
     def __init__(
         self,
         *,
-        endTime: "typing.Optional[v1TimestampFieldFilter]" = None,
-        experimentIds: "typing.Optional[typing.Sequence[int]]" = None,
-        hparams: "typing.Optional[typing.Sequence[v1ColumnFilter]]" = None,
-        projectIds: "typing.Optional[typing.Sequence[int]]" = None,
-        rankWithinExp: "typing.Optional[TrialFiltersRankWithinExp]" = None,
-        searcher: "typing.Optional[str]" = None,
-        searcherMetric: "typing.Optional[str]" = None,
-        searcherMetricValue: "typing.Optional[v1DoubleFieldFilter]" = None,
-        startTime: "typing.Optional[v1TimestampFieldFilter]" = None,
-        states: "typing.Optional[typing.Sequence[determinedtrialv1State]]" = None,
-        tags: "typing.Optional[typing.Sequence[v1TrialTag]]" = None,
-        trainingMetrics: "typing.Optional[typing.Sequence[v1ColumnFilter]]" = None,
-        trialIds: "typing.Optional[typing.Sequence[int]]" = None,
-        userIds: "typing.Optional[typing.Sequence[int]]" = None,
-        validationMetrics: "typing.Optional[typing.Sequence[v1ColumnFilter]]" = None,
-        workspaceIds: "typing.Optional[typing.Sequence[int]]" = None,
+        endTime: "typing.Optional[v1TimestampFieldFilter]" = Unset,
+        experimentIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        hparams: "typing.Optional[typing.Sequence[v1ColumnFilter]]" = Unset,
+        projectIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        rankWithinExp: "typing.Optional[TrialFiltersRankWithinExp]" = Unset,
+        searcher: "typing.Optional[str]" = Unset,
+        searcherMetric: "typing.Optional[str]" = Unset,
+        searcherMetricValue: "typing.Optional[v1DoubleFieldFilter]" = Unset,
+        startTime: "typing.Optional[v1TimestampFieldFilter]" = Unset,
+        states: "typing.Optional[typing.Sequence[determinedtrialv1State]]" = Unset,
+        tags: "typing.Optional[typing.Sequence[v1TrialTag]]" = Unset,
+        trainingMetrics: "typing.Optional[typing.Sequence[v1ColumnFilter]]" = Unset,
+        trialIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        validationMetrics: "typing.Optional[typing.Sequence[v1ColumnFilter]]" = Unset,
+        workspaceIds: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.experimentIds = experimentIds
         self.projectIds = projectIds
@@ -7924,49 +7929,49 @@ class v1TrialFilters:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.experimentIds is not None:
-            o["experimentIds"] = self.experimentIds
-        if self.projectIds is not None:
-            o["projectIds"] = self.projectIds
-        if self.workspaceIds is not None:
-            o["workspaceIds"] = self.workspaceIds
-        if self.validationMetrics is not None:
-            o["validationMetrics"] = [x.to_json() for x in self.validationMetrics]
-        if self.trainingMetrics is not None:
-            o["trainingMetrics"] = [x.to_json() for x in self.trainingMetrics]
-        if self.hparams is not None:
-            o["hparams"] = [x.to_json() for x in self.hparams]
-        if self.userIds is not None:
-            o["userIds"] = self.userIds
-        if self.searcher is not None:
-            o["searcher"] = self.searcher
-        if self.tags is not None:
-            o["tags"] = [x.to_json() for x in self.tags]
-        if self.rankWithinExp is not None:
-            o["rankWithinExp"] = self.rankWithinExp.to_json()
-        if self.startTime is not None:
-            o["startTime"] = self.startTime.to_json()
-        if self.endTime is not None:
-            o["endTime"] = self.endTime.to_json()
-        if self.states is not None:
-            o["states"] = [x.value for x in self.states]
-        if self.searcherMetric is not None:
-            o["searcherMetric"] = self.searcherMetric
-        if self.searcherMetricValue is not None:
-            o["searcherMetricValue"] = self.searcherMetricValue.to_json()
-        if self.trialIds is not None:
-            o["trialIds"] = self.trialIds
+        if self.experimentIds != Unset:
+            o["experimentIds"] = self.experimentIds if self.experimentIds is not None else None
+        if self.projectIds != Unset:
+            o["projectIds"] = self.projectIds if self.projectIds is not None else None
+        if self.workspaceIds != Unset:
+            o["workspaceIds"] = self.workspaceIds if self.workspaceIds is not None else None
+        if self.validationMetrics != Unset:
+            o["validationMetrics"] = [x.to_json() for x in self.validationMetrics] if self.validationMetrics is not None else None
+        if self.trainingMetrics != Unset:
+            o["trainingMetrics"] = [x.to_json() for x in self.trainingMetrics] if self.trainingMetrics is not None else None
+        if self.hparams != Unset:
+            o["hparams"] = [x.to_json() for x in self.hparams] if self.hparams is not None else None
+        if self.userIds != Unset:
+            o["userIds"] = self.userIds if self.userIds is not None else None
+        if self.searcher != Unset:
+            o["searcher"] = self.searcher if self.searcher is not None else None
+        if self.tags != Unset:
+            o["tags"] = [x.to_json() for x in self.tags] if self.tags is not None else None
+        if self.rankWithinExp != Unset:
+            o["rankWithinExp"] = self.rankWithinExp.to_json() if self.rankWithinExp is not None else None
+        if self.startTime != Unset:
+            o["startTime"] = self.startTime.to_json() if self.startTime is not None else None
+        if self.endTime != Unset:
+            o["endTime"] = self.endTime.to_json() if self.endTime is not None else None
+        if self.states != Unset:
+            o["states"] = [x.value for x in self.states] if self.states is not None else None
+        if self.searcherMetric != Unset:
+            o["searcherMetric"] = self.searcherMetric if self.searcherMetric is not None else None
+        if self.searcherMetricValue != Unset:
+            o["searcherMetricValue"] = self.searcherMetricValue.to_json() if self.searcherMetricValue is not None else None
+        if self.trialIds != Unset:
+            o["trialIds"] = self.trialIds if self.trialIds is not None else None
         return o
 
 class v1TrialLogsFieldsResponse:
     def __init__(
         self,
         *,
-        agentIds: "typing.Optional[typing.Sequence[str]]" = None,
-        containerIds: "typing.Optional[typing.Sequence[str]]" = None,
-        rankIds: "typing.Optional[typing.Sequence[int]]" = None,
-        sources: "typing.Optional[typing.Sequence[str]]" = None,
-        stdtypes: "typing.Optional[typing.Sequence[str]]" = None,
+        agentIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+        containerIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+        rankIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+        sources: "typing.Optional[typing.Sequence[str]]" = Unset,
+        stdtypes: "typing.Optional[typing.Sequence[str]]" = Unset,
     ):
         self.agentIds = agentIds
         self.containerIds = containerIds
@@ -7986,16 +7991,16 @@ class v1TrialLogsFieldsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.agentIds is not None:
-            o["agentIds"] = self.agentIds
-        if self.containerIds is not None:
-            o["containerIds"] = self.containerIds
-        if self.rankIds is not None:
-            o["rankIds"] = self.rankIds
-        if self.stdtypes is not None:
-            o["stdtypes"] = self.stdtypes
-        if self.sources is not None:
-            o["sources"] = self.sources
+        if self.agentIds != Unset:
+            o["agentIds"] = self.agentIds if self.agentIds is not None else None
+        if self.containerIds != Unset:
+            o["containerIds"] = self.containerIds if self.containerIds is not None else None
+        if self.rankIds != Unset:
+            o["rankIds"] = self.rankIds if self.rankIds is not None else None
+        if self.stdtypes != Unset:
+            o["stdtypes"] = self.stdtypes if self.stdtypes is not None else None
+        if self.sources != Unset:
+            o["sources"] = self.sources if self.sources is not None else None
         return o
 
 class v1TrialLogsResponse:
@@ -8064,7 +8069,7 @@ class v1TrialOperation:
     def __init__(
         self,
         *,
-        validateAfter: "typing.Optional[v1ValidateAfterOperation]" = None,
+        validateAfter: "typing.Optional[v1ValidateAfterOperation]" = Unset,
     ):
         self.validateAfter = validateAfter
 
@@ -8076,16 +8081,16 @@ class v1TrialOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.validateAfter is not None:
-            o["validateAfter"] = self.validateAfter.to_json()
+        if self.validateAfter != Unset:
+            o["validateAfter"] = self.validateAfter.to_json() if self.validateAfter is not None else None
         return o
 
 class v1TrialPatch:
     def __init__(
         self,
         *,
-        addTag: "typing.Optional[typing.Sequence[v1TrialTag]]" = None,
-        removeTag: "typing.Optional[typing.Sequence[v1TrialTag]]" = None,
+        addTag: "typing.Optional[typing.Sequence[v1TrialTag]]" = Unset,
+        removeTag: "typing.Optional[typing.Sequence[v1TrialTag]]" = Unset,
     ):
         self.addTag = addTag
         self.removeTag = removeTag
@@ -8099,10 +8104,10 @@ class v1TrialPatch:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.addTag is not None:
-            o["addTag"] = [x.to_json() for x in self.addTag]
-        if self.removeTag is not None:
-            o["removeTag"] = [x.to_json() for x in self.removeTag]
+        if self.addTag != Unset:
+            o["addTag"] = [x.to_json() for x in self.addTag] if self.addTag is not None else None
+        if self.removeTag != Unset:
+            o["removeTag"] = [x.to_json() for x in self.removeTag] if self.removeTag is not None else None
         return o
 
 class v1TrialProfilerMetricLabels:
@@ -8111,9 +8116,9 @@ class v1TrialProfilerMetricLabels:
         *,
         name: str,
         trialId: int,
-        agentId: "typing.Optional[str]" = None,
-        gpuUuid: "typing.Optional[str]" = None,
-        metricType: "typing.Optional[TrialProfilerMetricLabelsProfilerMetricType]" = None,
+        agentId: "typing.Optional[str]" = Unset,
+        gpuUuid: "typing.Optional[str]" = Unset,
+        metricType: "typing.Optional[TrialProfilerMetricLabelsProfilerMetricType]" = Unset,
     ):
         self.trialId = trialId
         self.name = name
@@ -8135,12 +8140,12 @@ class v1TrialProfilerMetricLabels:
         o = {}
         o["trialId"] = self.trialId
         o["name"] = self.name
-        if self.agentId is not None:
-            o["agentId"] = self.agentId
-        if self.gpuUuid is not None:
-            o["gpuUuid"] = self.gpuUuid
-        if self.metricType is not None:
-            o["metricType"] = self.metricType.value
+        if self.agentId != Unset:
+            o["agentId"] = self.agentId if self.agentId is not None else None
+        if self.gpuUuid != Unset:
+            o["gpuUuid"] = self.gpuUuid if self.gpuUuid is not None else None
+        if self.metricType != Unset:
+            o["metricType"] = self.metricType.value if self.metricType is not None else None
         return o
 
 class v1TrialProfilerMetricsBatch:
@@ -8220,8 +8225,8 @@ class v1TrialSimulation:
     def __init__(
         self,
         *,
-        occurrences: "typing.Optional[int]" = None,
-        operations: "typing.Optional[typing.Sequence[v1RunnableOperation]]" = None,
+        occurrences: "typing.Optional[int]" = Unset,
+        operations: "typing.Optional[typing.Sequence[v1RunnableOperation]]" = Unset,
     ):
         self.operations = operations
         self.occurrences = occurrences
@@ -8235,10 +8240,10 @@ class v1TrialSimulation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.operations is not None:
-            o["operations"] = [x.to_json() for x in self.operations]
-        if self.occurrences is not None:
-            o["occurrences"] = self.occurrences
+        if self.operations != Unset:
+            o["operations"] = [x.to_json() for x in self.operations] if self.operations is not None else None
+        if self.occurrences != Unset:
+            o["occurrences"] = self.occurrences if self.occurrences is not None else None
         return o
 
 class v1TrialSorter:
@@ -8247,7 +8252,7 @@ class v1TrialSorter:
         *,
         field: str,
         namespace: "TrialSorterNamespace",
-        orderBy: "typing.Optional[v1OrderBy]" = None,
+        orderBy: "typing.Optional[v1OrderBy]" = Unset,
     ):
         self.namespace = namespace
         self.field = field
@@ -8265,8 +8270,8 @@ class v1TrialSorter:
         o = {}
         o["namespace"] = self.namespace.value
         o["field"] = self.field
-        if self.orderBy is not None:
-            o["orderBy"] = self.orderBy.value
+        if self.orderBy != Unset:
+            o["orderBy"] = self.orderBy.value if self.orderBy is not None else None
         return o
 
 class v1TrialTag:
@@ -8435,10 +8440,10 @@ class v1Trigger:
     def __init__(
         self,
         *,
-        condition: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        id: "typing.Optional[int]" = None,
-        triggerType: "typing.Optional[v1TriggerType]" = None,
-        webhookId: "typing.Optional[int]" = None,
+        condition: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
+        id: "typing.Optional[int]" = Unset,
+        triggerType: "typing.Optional[v1TriggerType]" = Unset,
+        webhookId: "typing.Optional[int]" = Unset,
     ):
         self.id = id
         self.triggerType = triggerType
@@ -8456,14 +8461,14 @@ class v1Trigger:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.id is not None:
-            o["id"] = self.id
-        if self.triggerType is not None:
-            o["triggerType"] = self.triggerType.value
-        if self.condition is not None:
-            o["condition"] = self.condition
-        if self.webhookId is not None:
-            o["webhookId"] = self.webhookId
+        if self.id != Unset:
+            o["id"] = self.id if self.id is not None else None
+        if self.triggerType != Unset:
+            o["triggerType"] = self.triggerType.value if self.triggerType is not None else None
+        if self.condition != Unset:
+            o["condition"] = self.condition if self.condition is not None else None
+        if self.webhookId != Unset:
+            o["webhookId"] = self.webhookId if self.webhookId is not None else None
         return o
 
 class v1TriggerType(enum.Enum):
@@ -8476,9 +8481,9 @@ class v1UpdateGroupRequest:
         self,
         *,
         groupId: int,
-        addUsers: "typing.Optional[typing.Sequence[int]]" = None,
-        name: "typing.Optional[str]" = None,
-        removeUsers: "typing.Optional[typing.Sequence[int]]" = None,
+        addUsers: "typing.Optional[typing.Sequence[int]]" = Unset,
+        name: "typing.Optional[str]" = Unset,
+        removeUsers: "typing.Optional[typing.Sequence[int]]" = Unset,
     ):
         self.groupId = groupId
         self.name = name
@@ -8497,12 +8502,12 @@ class v1UpdateGroupRequest:
     def to_json(self) -> typing.Any:
         o = {}
         o["groupId"] = self.groupId
-        if self.name is not None:
-            o["name"] = self.name
-        if self.addUsers is not None:
-            o["addUsers"] = self.addUsers
-        if self.removeUsers is not None:
-            o["removeUsers"] = self.removeUsers
+        if self.name != Unset:
+            o["name"] = self.name if self.name is not None else None
+        if self.addUsers != Unset:
+            o["addUsers"] = self.addUsers if self.addUsers is not None else None
+        if self.removeUsers != Unset:
+            o["removeUsers"] = self.removeUsers if self.removeUsers is not None else None
         return o
 
 class v1UpdateGroupResponse:
@@ -8548,8 +8553,8 @@ class v1UpdateTrialTagsRequest:
         self,
         *,
         patch: "v1TrialPatch",
-        filters: "typing.Optional[v1TrialFilters]" = None,
-        trial: "typing.Optional[UpdateTrialTagsRequestIds]" = None,
+        filters: "typing.Optional[v1TrialFilters]" = Unset,
+        trial: "typing.Optional[UpdateTrialTagsRequestIds]" = Unset,
     ):
         self.filters = filters
         self.trial = trial
@@ -8565,10 +8570,10 @@ class v1UpdateTrialTagsRequest:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.filters is not None:
-            o["filters"] = self.filters.to_json()
-        if self.trial is not None:
-            o["trial"] = self.trial.to_json()
+        if self.filters != Unset:
+            o["filters"] = self.filters.to_json() if self.filters is not None else None
+        if self.trial != Unset:
+            o["trial"] = self.trial.to_json() if self.trial is not None else None
         o["patch"] = self.patch.to_json()
         return o
 
@@ -8576,7 +8581,7 @@ class v1UpdateTrialTagsResponse:
     def __init__(
         self,
         *,
-        rowsAffected: "typing.Optional[int]" = None,
+        rowsAffected: "typing.Optional[int]" = Unset,
     ):
         self.rowsAffected = rowsAffected
 
@@ -8588,8 +8593,8 @@ class v1UpdateTrialTagsResponse:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.rowsAffected is not None:
-            o["rowsAffected"] = self.rowsAffected
+        if self.rowsAffected != Unset:
+            o["rowsAffected"] = self.rowsAffected if self.rowsAffected is not None else None
         return o
 
 class v1User:
@@ -8599,10 +8604,10 @@ class v1User:
         active: bool,
         admin: bool,
         username: str,
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        displayName: "typing.Optional[str]" = None,
-        id: "typing.Optional[int]" = None,
-        modifiedAt: "typing.Optional[str]" = None,
+        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = Unset,
+        displayName: "typing.Optional[str]" = Unset,
+        id: "typing.Optional[int]" = Unset,
+        modifiedAt: "typing.Optional[str]" = Unset,
     ):
         self.id = id
         self.username = username
@@ -8626,17 +8631,17 @@ class v1User:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.id is not None:
-            o["id"] = self.id
+        if self.id != Unset:
+            o["id"] = self.id if self.id is not None else None
         o["username"] = self.username
         o["admin"] = self.admin
         o["active"] = self.active
-        if self.agentUserGroup is not None:
-            o["agentUserGroup"] = self.agentUserGroup.to_json()
-        if self.displayName is not None:
-            o["displayName"] = self.displayName
-        if self.modifiedAt is not None:
-            o["modifiedAt"] = self.modifiedAt
+        if self.agentUserGroup != Unset:
+            o["agentUserGroup"] = self.agentUserGroup.to_json() if self.agentUserGroup is not None else None
+        if self.displayName != Unset:
+            o["displayName"] = self.displayName if self.displayName is not None else None
+        if self.modifiedAt != Unset:
+            o["modifiedAt"] = self.modifiedAt if self.modifiedAt is not None else None
         return o
 
 class v1UserRoleAssignment:
@@ -8667,8 +8672,8 @@ class v1UserWebSetting:
         self,
         *,
         key: str,
-        storagePath: "typing.Optional[str]" = None,
-        value: "typing.Optional[str]" = None,
+        storagePath: "typing.Optional[str]" = Unset,
+        value: "typing.Optional[str]" = Unset,
     ):
         self.key = key
         self.storagePath = storagePath
@@ -8685,18 +8690,18 @@ class v1UserWebSetting:
     def to_json(self) -> typing.Any:
         o = {}
         o["key"] = self.key
-        if self.storagePath is not None:
-            o["storagePath"] = self.storagePath
-        if self.value is not None:
-            o["value"] = self.value
+        if self.storagePath != Unset:
+            o["storagePath"] = self.storagePath if self.storagePath is not None else None
+        if self.value != Unset:
+            o["value"] = self.value if self.value is not None else None
         return o
 
 class v1ValidateAfterOperation:
     def __init__(
         self,
         *,
-        length: "typing.Optional[str]" = None,
-        requestId: "typing.Optional[str]" = None,
+        length: "typing.Optional[str]" = Unset,
+        requestId: "typing.Optional[str]" = Unset,
     ):
         self.requestId = requestId
         self.length = length
@@ -8710,10 +8715,10 @@ class v1ValidateAfterOperation:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.requestId is not None:
-            o["requestId"] = self.requestId
-        if self.length is not None:
-            o["length"] = self.length
+        if self.requestId != Unset:
+            o["requestId"] = self.requestId if self.requestId is not None else None
+        if self.length != Unset:
+            o["length"] = self.length if self.length is not None else None
         return o
 
 class v1ValidationCompleted:
@@ -8776,8 +8781,8 @@ class v1Webhook:
         *,
         url: str,
         webhookType: "v1WebhookType",
-        id: "typing.Optional[int]" = None,
-        triggers: "typing.Optional[typing.Sequence[v1Trigger]]" = None,
+        id: "typing.Optional[int]" = Unset,
+        triggers: "typing.Optional[typing.Sequence[v1Trigger]]" = Unset,
     ):
         self.id = id
         self.url = url
@@ -8795,11 +8800,11 @@ class v1Webhook:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.id is not None:
-            o["id"] = self.id
+        if self.id != Unset:
+            o["id"] = self.id if self.id is not None else None
         o["url"] = self.url
-        if self.triggers is not None:
-            o["triggers"] = [x.to_json() for x in self.triggers]
+        if self.triggers != Unset:
+            o["triggers"] = [x.to_json() for x in self.triggers] if self.triggers is not None else None
         o["webhookType"] = self.webhookType.value
         return o
 
@@ -8812,9 +8817,9 @@ class v1WorkloadContainer:
     def __init__(
         self,
         *,
-        checkpoint: "typing.Optional[v1CheckpointWorkload]" = None,
-        training: "typing.Optional[v1MetricsWorkload]" = None,
-        validation: "typing.Optional[v1MetricsWorkload]" = None,
+        checkpoint: "typing.Optional[v1CheckpointWorkload]" = Unset,
+        training: "typing.Optional[v1MetricsWorkload]" = Unset,
+        validation: "typing.Optional[v1MetricsWorkload]" = Unset,
     ):
         self.training = training
         self.validation = validation
@@ -8830,12 +8835,12 @@ class v1WorkloadContainer:
 
     def to_json(self) -> typing.Any:
         o = {}
-        if self.training is not None:
-            o["training"] = self.training.to_json()
-        if self.validation is not None:
-            o["validation"] = self.validation.to_json()
-        if self.checkpoint is not None:
-            o["checkpoint"] = self.checkpoint.to_json()
+        if self.training != Unset:
+            o["training"] = self.training.to_json() if self.training is not None else None
+        if self.validation != Unset:
+            o["validation"] = self.validation.to_json() if self.validation is not None else None
+        if self.checkpoint != Unset:
+            o["checkpoint"] = self.checkpoint.to_json() if self.checkpoint is not None else None
         return o
 
 class v1Workspace:
@@ -8853,8 +8858,8 @@ class v1Workspace:
         state: "v1WorkspaceState",
         userId: int,
         username: str,
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
+        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = Unset,
+        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = Unset,
     ):
         self.id = id
         self.name = name
@@ -8901,10 +8906,10 @@ class v1Workspace:
         o["numExperiments"] = self.numExperiments
         o["state"] = self.state.value
         o["errorMessage"] = self.errorMessage
-        if self.agentUserGroup is not None:
-            o["agentUserGroup"] = self.agentUserGroup.to_json()
-        if self.checkpointStorageConfig is not None:
-            o["checkpointStorageConfig"] = self.checkpointStorageConfig
+        if self.agentUserGroup != Unset:
+            o["agentUserGroup"] = self.agentUserGroup.to_json() if self.agentUserGroup is not None else None
+        if self.checkpointStorageConfig != Unset:
+            o["checkpointStorageConfig"] = self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None
         return o
 
 class v1WorkspaceState(enum.Enum):
@@ -9021,11 +9026,11 @@ def get_AllocationPreemptionSignal(
     session: "api.Session",
     *,
     allocationId: str,
-    timeoutSeconds: "typing.Optional[int]" = None,
+    timeoutSeconds: "typing.Optional[int]" = Unset,
 ) -> "v1AllocationPreemptionSignalResponse":
-    _params = {
-        "timeoutSeconds": timeoutSeconds,
-    }
+    _params = {} # GEN HERE?
+    if timeoutSeconds != Unset:
+        _params["timeoutSeconds"] = timeoutSeconds
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/allocations/{allocationId}/signals/preemption",
@@ -9226,23 +9231,29 @@ def post_CancelExperiment(
 def get_CompareTrials(
     session: "api.Session",
     *,
-    endBatches: "typing.Optional[int]" = None,
-    maxDatapoints: "typing.Optional[int]" = None,
-    metricNames: "typing.Optional[typing.Sequence[str]]" = None,
-    metricType: "typing.Optional[v1MetricType]" = None,
-    scale: "typing.Optional[v1Scale]" = None,
-    startBatches: "typing.Optional[int]" = None,
-    trialIds: "typing.Optional[typing.Sequence[int]]" = None,
+    endBatches: "typing.Optional[int]" = Unset,
+    maxDatapoints: "typing.Optional[int]" = Unset,
+    metricNames: "typing.Optional[typing.Sequence[str]]" = Unset,
+    metricType: "typing.Optional[v1MetricType]" = Unset,
+    scale: "typing.Optional[v1Scale]" = Unset,
+    startBatches: "typing.Optional[int]" = Unset,
+    trialIds: "typing.Optional[typing.Sequence[int]]" = Unset,
 ) -> "v1CompareTrialsResponse":
-    _params = {
-        "endBatches": endBatches,
-        "maxDatapoints": maxDatapoints,
-        "metricNames": metricNames,
-        "metricType": metricType.value if metricType is not None else None,
-        "scale": scale.value if scale is not None else None,
-        "startBatches": startBatches,
-        "trialIds": trialIds,
-    }
+    _params = {} # GEN HERE?
+    if endBatches != Unset:
+        _params["endBatches"] = endBatches
+    if maxDatapoints != Unset:
+        _params["maxDatapoints"] = maxDatapoints
+    if metricNames != Unset:
+        _params["metricNames"] = metricNames
+    if metricType != Unset:
+        _params["metricType"] = metricType.value if metricType is not None else None # HERE?
+    if scale != Unset:
+        _params["scale"] = scale.value if scale is not None else None # HERE?
+    if startBatches != Unset:
+        _params["startBatches"] = startBatches
+    if trialIds != Unset:
+        _params["trialIds"] = trialIds
     _resp = session._do_request(
         method="GET",
         path="/api/v1/trials/compare",
@@ -9520,11 +9531,11 @@ def delete_DeleteTemplate(
 def delete_DeleteTrialsCollection(
     session: "api.Session",
     *,
-    id: "typing.Optional[int]" = None,
+    id: "typing.Optional[int]" = Unset,
 ) -> None:
-    _params = {
-        "id": id,
-    }
+    _params = {} # GEN HERE?
+    if id != Unset:
+        _params["id"] = id
     _resp = session._do_request(
         method="DELETE",
         path="/api/v1/trial-comparison/collections",
@@ -9666,12 +9677,12 @@ def get_ExpCompareMetricNames(
     session: "api.Session",
     *,
     trialId: "typing.Sequence[int]",
-    periodSeconds: "typing.Optional[int]" = None,
+    periodSeconds: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1ExpCompareMetricNamesResponse]":
-    _params = {
-        "periodSeconds": periodSeconds,
-        "trialId": trialId,
-    }
+    _params = {} # GEN HERE?
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
+    _params["trialId"] = trialId
     _resp = session._do_request(
         method="GET",
         path="/api/v1/trials/metrics-stream/metric-names",
@@ -9700,22 +9711,26 @@ def get_ExpCompareTrialsSample(
     experimentIds: "typing.Sequence[int]",
     metricName: str,
     metricType: "v1MetricType",
-    endBatches: "typing.Optional[int]" = None,
-    maxDatapoints: "typing.Optional[int]" = None,
-    maxTrials: "typing.Optional[int]" = None,
-    periodSeconds: "typing.Optional[int]" = None,
-    startBatches: "typing.Optional[int]" = None,
+    endBatches: "typing.Optional[int]" = Unset,
+    maxDatapoints: "typing.Optional[int]" = Unset,
+    maxTrials: "typing.Optional[int]" = Unset,
+    periodSeconds: "typing.Optional[int]" = Unset,
+    startBatches: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1ExpCompareTrialsSampleResponse]":
-    _params = {
-        "endBatches": endBatches,
-        "experimentIds": experimentIds,
-        "maxDatapoints": maxDatapoints,
-        "maxTrials": maxTrials,
-        "metricName": metricName,
-        "metricType": metricType.value,
-        "periodSeconds": periodSeconds,
-        "startBatches": startBatches,
-    }
+    _params = {} # GEN HERE?
+    if endBatches != Unset:
+        _params["endBatches"] = endBatches
+    _params["experimentIds"] = experimentIds
+    if maxDatapoints != Unset:
+        _params["maxDatapoints"] = maxDatapoints
+    if maxTrials != Unset:
+        _params["maxTrials"] = maxTrials
+    _params["metricName"] = metricName
+    _params["metricType"] = metricType.value
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
+    if startBatches != Unset:
+        _params["startBatches"] = startBatches
     _resp = session._do_request(
         method="GET",
         path="/api/v1/experiments-compare",
@@ -9779,19 +9794,23 @@ def get_GetAgent(
 def get_GetAgents(
     session: "api.Session",
     *,
-    label: "typing.Optional[str]" = None,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetAgentsRequestSortBy]" = None,
+    label: "typing.Optional[str]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetAgentsRequestSortBy]" = Unset,
 ) -> "v1GetAgentsResponse":
-    _params = {
-        "label": label,
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if label != Unset:
+        _params["label"] = label
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path="/api/v1/agents",
@@ -9869,21 +9888,26 @@ def get_GetCommand(
 def get_GetCommands(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = None,
-    userIds: "typing.Optional[typing.Sequence[int]]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = Unset,
+    userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetCommandsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "userIds": userIds,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if userIds != Unset:
+        _params["userIds"] = userIds
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/commands",
@@ -9942,19 +9966,23 @@ def get_GetExperimentCheckpoints(
     session: "api.Session",
     *,
     id: int,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetExperimentCheckpointsRequestSortBy]" = None,
-    states: "typing.Optional[typing.Sequence[determinedcheckpointv1State]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetExperimentCheckpointsRequestSortBy]" = Unset,
+    states: "typing.Optional[typing.Sequence[determinedcheckpointv1State]]" = Unset,
 ) -> "v1GetExperimentCheckpointsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "states": [x.value for x in states] if states is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if states != Unset:
+        _params["states"] = [x.value for x in states] if states is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{id}/checkpoints",
@@ -9972,11 +10000,11 @@ def get_GetExperimentCheckpoints(
 def get_GetExperimentLabels(
     session: "api.Session",
     *,
-    projectId: "typing.Optional[int]" = None,
+    projectId: "typing.Optional[int]" = Unset,
 ) -> "v1GetExperimentLabelsResponse":
-    _params = {
-        "projectId": projectId,
-    }
+    _params = {} # GEN HERE?
+    if projectId != Unset:
+        _params["projectId"] = projectId
     _resp = session._do_request(
         method="GET",
         path="/api/v1/experiment/labels",
@@ -9995,19 +10023,23 @@ def get_GetExperimentTrials(
     session: "api.Session",
     *,
     experimentId: int,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetExperimentTrialsRequestSortBy]" = None,
-    states: "typing.Optional[typing.Sequence[determinedexperimentv1State]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetExperimentTrialsRequestSortBy]" = Unset,
+    states: "typing.Optional[typing.Sequence[determinedexperimentv1State]]" = Unset,
 ) -> "v1GetExperimentTrialsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "states": [x.value for x in states] if states is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if states != Unset:
+        _params["states"] = [x.value for x in states] if states is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{experimentId}/trials",
@@ -10045,45 +10077,62 @@ def get_GetExperimentValidationHistory(
 def get_GetExperiments(
     session: "api.Session",
     *,
-    archived: "typing.Optional[bool]" = None,
-    description: "typing.Optional[str]" = None,
-    experimentIdFilter_gt: "typing.Optional[int]" = None,
-    experimentIdFilter_gte: "typing.Optional[int]" = None,
-    experimentIdFilter_incl: "typing.Optional[typing.Sequence[int]]" = None,
-    experimentIdFilter_lt: "typing.Optional[int]" = None,
-    experimentIdFilter_lte: "typing.Optional[int]" = None,
-    experimentIdFilter_notIn: "typing.Optional[typing.Sequence[int]]" = None,
-    labels: "typing.Optional[typing.Sequence[str]]" = None,
-    limit: "typing.Optional[int]" = None,
-    name: "typing.Optional[str]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    projectId: "typing.Optional[int]" = None,
-    sortBy: "typing.Optional[v1GetExperimentsRequestSortBy]" = None,
-    states: "typing.Optional[typing.Sequence[determinedexperimentv1State]]" = None,
-    userIds: "typing.Optional[typing.Sequence[int]]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    archived: "typing.Optional[bool]" = Unset,
+    description: "typing.Optional[str]" = Unset,
+    experimentIdFilter_gt: "typing.Optional[int]" = Unset,
+    experimentIdFilter_gte: "typing.Optional[int]" = Unset,
+    experimentIdFilter_incl: "typing.Optional[typing.Sequence[int]]" = Unset,
+    experimentIdFilter_lt: "typing.Optional[int]" = Unset,
+    experimentIdFilter_lte: "typing.Optional[int]" = Unset,
+    experimentIdFilter_notIn: "typing.Optional[typing.Sequence[int]]" = Unset,
+    labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    name: "typing.Optional[str]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    projectId: "typing.Optional[int]" = Unset,
+    sortBy: "typing.Optional[v1GetExperimentsRequestSortBy]" = Unset,
+    states: "typing.Optional[typing.Sequence[determinedexperimentv1State]]" = Unset,
+    userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetExperimentsResponse":
-    _params = {
-        "archived": str(archived).lower() if archived is not None else None,
-        "description": description,
-        "experimentIdFilter.gt": experimentIdFilter_gt,
-        "experimentIdFilter.gte": experimentIdFilter_gte,
-        "experimentIdFilter.incl": experimentIdFilter_incl,
-        "experimentIdFilter.lt": experimentIdFilter_lt,
-        "experimentIdFilter.lte": experimentIdFilter_lte,
-        "experimentIdFilter.notIn": experimentIdFilter_notIn,
-        "labels": labels,
-        "limit": limit,
-        "name": name,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "projectId": projectId,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "states": [x.value for x in states] if states is not None else None,
-        "userIds": userIds,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if archived != Unset:
+        _params["archived"] = str(archived).lower() if archived is not None else None # HERE?
+    if description != Unset:
+        _params["description"] = description
+    if experimentIdFilter_gt != Unset:
+        _params["experimentIdFilter.gt"] = experimentIdFilter_gt
+    if experimentIdFilter_gte != Unset:
+        _params["experimentIdFilter.gte"] = experimentIdFilter_gte
+    if experimentIdFilter_incl != Unset:
+        _params["experimentIdFilter.incl"] = experimentIdFilter_incl
+    if experimentIdFilter_lt != Unset:
+        _params["experimentIdFilter.lt"] = experimentIdFilter_lt
+    if experimentIdFilter_lte != Unset:
+        _params["experimentIdFilter.lte"] = experimentIdFilter_lte
+    if experimentIdFilter_notIn != Unset:
+        _params["experimentIdFilter.notIn"] = experimentIdFilter_notIn
+    if labels != Unset:
+        _params["labels"] = labels
+    if limit != Unset:
+        _params["limit"] = limit
+    if name != Unset:
+        _params["name"] = name
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if projectId != Unset:
+        _params["projectId"] = projectId
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if states != Unset:
+        _params["states"] = [x.value for x in states] if states is not None else None # HERE?
+    if userIds != Unset:
+        _params["userIds"] = userIds
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/experiments",
@@ -10142,11 +10191,11 @@ def get_GetGroupsAndUsersAssignedToWorkspace(
     session: "api.Session",
     *,
     workspaceId: int,
-    name: "typing.Optional[str]" = None,
+    name: "typing.Optional[str]" = Unset,
 ) -> "v1GetGroupsAndUsersAssignedToWorkspaceResponse":
-    _params = {
-        "name": name,
-    }
+    _params = {} # GEN HERE?
+    if name != Unset:
+        _params["name"] = name
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/roles/workspace/{workspaceId}",
@@ -10165,11 +10214,11 @@ def get_GetHPImportance(
     session: "api.Session",
     *,
     experimentId: int,
-    periodSeconds: "typing.Optional[int]" = None,
+    periodSeconds: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1GetHPImportanceResponse]":
-    _params = {
-        "periodSeconds": periodSeconds,
-    }
+    _params = {} # GEN HERE?
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{experimentId}/hyperparameter-importance",
@@ -10195,11 +10244,11 @@ def get_GetHPImportance(
 def get_GetJobQueueStats(
     session: "api.Session",
     *,
-    resourcePools: "typing.Optional[typing.Sequence[str]]" = None,
+    resourcePools: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetJobQueueStatsResponse":
-    _params = {
-        "resourcePools": resourcePools,
-    }
+    _params = {} # GEN HERE?
+    if resourcePools != Unset:
+        _params["resourcePools"] = resourcePools
     _resp = session._do_request(
         method="GET",
         path="/api/v1/job-queues/stats",
@@ -10217,19 +10266,23 @@ def get_GetJobQueueStats(
 def get_GetJobs(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    resourcePool: "typing.Optional[str]" = None,
-    states: "typing.Optional[typing.Sequence[determinedjobv1State]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    resourcePool: "typing.Optional[str]" = Unset,
+    states: "typing.Optional[typing.Sequence[determinedjobv1State]]" = Unset,
 ) -> "v1GetJobsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "resourcePool": resourcePool,
-        "states": [x.value for x in states] if states is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if resourcePool != Unset:
+        _params["resourcePool"] = resourcePool
+    if states != Unset:
+        _params["states"] = [x.value for x in states] if states is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path="/api/v1/job-queues",
@@ -10404,17 +10457,20 @@ def get_GetModelVersions(
     session: "api.Session",
     *,
     modelName: str,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetModelVersionsRequestSortBy]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetModelVersionsRequestSortBy]" = Unset,
 ) -> "v1GetModelVersionsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/models/{modelName}/versions",
@@ -10432,31 +10488,41 @@ def get_GetModelVersions(
 def get_GetModels(
     session: "api.Session",
     *,
-    archived: "typing.Optional[bool]" = None,
-    description: "typing.Optional[str]" = None,
-    id: "typing.Optional[int]" = None,
-    labels: "typing.Optional[typing.Sequence[str]]" = None,
-    limit: "typing.Optional[int]" = None,
-    name: "typing.Optional[str]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetModelsRequestSortBy]" = None,
-    userIds: "typing.Optional[typing.Sequence[int]]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    archived: "typing.Optional[bool]" = Unset,
+    description: "typing.Optional[str]" = Unset,
+    id: "typing.Optional[int]" = Unset,
+    labels: "typing.Optional[typing.Sequence[str]]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    name: "typing.Optional[str]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetModelsRequestSortBy]" = Unset,
+    userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetModelsResponse":
-    _params = {
-        "archived": str(archived).lower() if archived is not None else None,
-        "description": description,
-        "id": id,
-        "labels": labels,
-        "limit": limit,
-        "name": name,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "userIds": userIds,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if archived != Unset:
+        _params["archived"] = str(archived).lower() if archived is not None else None # HERE?
+    if description != Unset:
+        _params["description"] = description
+    if id != Unset:
+        _params["id"] = id
+    if labels != Unset:
+        _params["labels"] = labels
+    if limit != Unset:
+        _params["limit"] = limit
+    if name != Unset:
+        _params["name"] = name
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if userIds != Unset:
+        _params["userIds"] = userIds
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/models",
@@ -10494,21 +10560,26 @@ def get_GetNotebook(
 def get_GetNotebooks(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = None,
-    userIds: "typing.Optional[typing.Sequence[int]]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = Unset,
+    userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetNotebooksResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "userIds": userIds,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if userIds != Unset:
+        _params["userIds"] = userIds
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/notebooks",
@@ -10564,13 +10635,14 @@ def get_GetProject(
 def get_GetResourcePools(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
 ) -> "v1GetResourcePoolsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
     _resp = session._do_request(
         method="GET",
         path="/api/v1/resource-pools",
@@ -10688,21 +10760,26 @@ def get_GetShell(
 def get_GetShells(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = None,
-    userIds: "typing.Optional[typing.Sequence[int]]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = Unset,
+    userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetShellsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "userIds": userIds,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if userIds != Unset:
+        _params["userIds"] = userIds
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/shells",
@@ -10819,19 +10896,23 @@ def get_GetTemplate(
 def get_GetTemplates(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    name: "typing.Optional[str]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetTemplatesRequestSortBy]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    name: "typing.Optional[str]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetTemplatesRequestSortBy]" = Unset,
 ) -> "v1GetTemplatesResponse":
-    _params = {
-        "limit": limit,
-        "name": name,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if name != Unset:
+        _params["name"] = name
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path="/api/v1/templates",
@@ -10869,21 +10950,26 @@ def get_GetTensorboard(
 def get_GetTensorboards(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = None,
-    userIds: "typing.Optional[typing.Sequence[int]]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetTensorboardsRequestSortBy]" = Unset,
+    userIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetTensorboardsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "userIds": userIds,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if userIds != Unset:
+        _params["userIds"] = userIds
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/tensorboards",
@@ -10922,19 +11008,23 @@ def get_GetTrialCheckpoints(
     session: "api.Session",
     *,
     id: int,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetTrialCheckpointsRequestSortBy]" = None,
-    states: "typing.Optional[typing.Sequence[determinedcheckpointv1State]]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetTrialCheckpointsRequestSortBy]" = Unset,
+    states: "typing.Optional[typing.Sequence[determinedcheckpointv1State]]" = Unset,
 ) -> "v1GetTrialCheckpointsResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "states": [x.value for x in states] if states is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if states != Unset:
+        _params["states"] = [x.value for x in states] if states is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{id}/checkpoints",
@@ -10953,11 +11043,11 @@ def get_GetTrialProfilerAvailableSeries(
     session: "api.Session",
     *,
     trialId: int,
-    follow: "typing.Optional[bool]" = None,
+    follow: "typing.Optional[bool]" = Unset,
 ) -> "typing.Iterable[v1GetTrialProfilerAvailableSeriesResponse]":
-    _params = {
-        "follow": str(follow).lower() if follow is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{trialId}/profiler/available_series",
@@ -10984,19 +11074,23 @@ def get_GetTrialProfilerMetrics(
     session: "api.Session",
     *,
     labels_trialId: int,
-    follow: "typing.Optional[bool]" = None,
-    labels_agentId: "typing.Optional[str]" = None,
-    labels_gpuUuid: "typing.Optional[str]" = None,
-    labels_metricType: "typing.Optional[TrialProfilerMetricLabelsProfilerMetricType]" = None,
-    labels_name: "typing.Optional[str]" = None,
+    follow: "typing.Optional[bool]" = Unset,
+    labels_agentId: "typing.Optional[str]" = Unset,
+    labels_gpuUuid: "typing.Optional[str]" = Unset,
+    labels_metricType: "typing.Optional[TrialProfilerMetricLabelsProfilerMetricType]" = Unset,
+    labels_name: "typing.Optional[str]" = Unset,
 ) -> "typing.Iterable[v1GetTrialProfilerMetricsResponse]":
-    _params = {
-        "follow": str(follow).lower() if follow is not None else None,
-        "labels.agentId": labels_agentId,
-        "labels.gpuUuid": labels_gpuUuid,
-        "labels.metricType": labels_metricType.value if labels_metricType is not None else None,
-        "labels.name": labels_name,
-    }
+    _params = {} # GEN HERE?
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
+    if labels_agentId != Unset:
+        _params["labels.agentId"] = labels_agentId
+    if labels_gpuUuid != Unset:
+        _params["labels.gpuUuid"] = labels_gpuUuid
+    if labels_metricType != Unset:
+        _params["labels.metricType"] = labels_metricType.value if labels_metricType is not None else None # HERE?
+    if labels_name != Unset:
+        _params["labels.name"] = labels_name
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{labels_trialId}/profiler/metrics",
@@ -11023,23 +11117,29 @@ def get_GetTrialWorkloads(
     session: "api.Session",
     *,
     trialId: int,
-    filter: "typing.Optional[GetTrialWorkloadsRequestFilterOption]" = None,
-    includeBatchMetrics: "typing.Optional[bool]" = None,
-    limit: "typing.Optional[int]" = None,
-    metricType: "typing.Optional[v1MetricType]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortKey: "typing.Optional[str]" = None,
+    filter: "typing.Optional[GetTrialWorkloadsRequestFilterOption]" = Unset,
+    includeBatchMetrics: "typing.Optional[bool]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    metricType: "typing.Optional[v1MetricType]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortKey: "typing.Optional[str]" = Unset,
 ) -> "v1GetTrialWorkloadsResponse":
-    _params = {
-        "filter": filter.value if filter is not None else None,
-        "includeBatchMetrics": str(includeBatchMetrics).lower() if includeBatchMetrics is not None else None,
-        "limit": limit,
-        "metricType": metricType.value if metricType is not None else None,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortKey": sortKey,
-    }
+    _params = {} # GEN HERE?
+    if filter != Unset:
+        _params["filter"] = filter.value if filter is not None else None # HERE?
+    if includeBatchMetrics != Unset:
+        _params["includeBatchMetrics"] = str(includeBatchMetrics).lower() if includeBatchMetrics is not None else None # HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if metricType != Unset:
+        _params["metricType"] = metricType.value if metricType is not None else None # HERE?
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortKey != Unset:
+        _params["sortKey"] = sortKey
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{trialId}/workloads",
@@ -11057,11 +11157,11 @@ def get_GetTrialWorkloads(
 def get_GetTrialsCollections(
     session: "api.Session",
     *,
-    projectId: "typing.Optional[int]" = None,
+    projectId: "typing.Optional[int]" = Unset,
 ) -> "v1GetTrialsCollectionsResponse":
-    _params = {
-        "projectId": projectId,
-    }
+    _params = {} # GEN HERE?
+    if projectId != Unset:
+        _params["projectId"] = projectId
     _resp = session._do_request(
         method="GET",
         path="/api/v1/trial-comparison/collections",
@@ -11117,17 +11217,20 @@ def get_GetUserSetting(
 def get_GetUsers(
     session: "api.Session",
     *,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetUsersRequestSortBy]" = None,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetUsersRequestSortBy]" = Unset,
 ) -> "v1GetUsersResponse":
-    _params = {
-        "limit": limit,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path="/api/v1/users",
@@ -11184,23 +11287,29 @@ def get_GetWorkspaceProjects(
     session: "api.Session",
     *,
     id: int,
-    archived: "typing.Optional[bool]" = None,
-    limit: "typing.Optional[int]" = None,
-    name: "typing.Optional[str]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    sortBy: "typing.Optional[v1GetWorkspaceProjectsRequestSortBy]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    archived: "typing.Optional[bool]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    name: "typing.Optional[str]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    sortBy: "typing.Optional[v1GetWorkspaceProjectsRequestSortBy]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetWorkspaceProjectsResponse":
-    _params = {
-        "archived": str(archived).lower() if archived is not None else None,
-        "limit": limit,
-        "name": name,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if archived != Unset:
+        _params["archived"] = str(archived).lower() if archived is not None else None # HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if name != Unset:
+        _params["name"] = name
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/workspaces/{id}/projects",
@@ -11218,25 +11327,32 @@ def get_GetWorkspaceProjects(
 def get_GetWorkspaces(
     session: "api.Session",
     *,
-    archived: "typing.Optional[bool]" = None,
-    limit: "typing.Optional[int]" = None,
-    name: "typing.Optional[str]" = None,
-    offset: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    pinned: "typing.Optional[bool]" = None,
-    sortBy: "typing.Optional[v1GetWorkspacesRequestSortBy]" = None,
-    users: "typing.Optional[typing.Sequence[str]]" = None,
+    archived: "typing.Optional[bool]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    name: "typing.Optional[str]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    pinned: "typing.Optional[bool]" = Unset,
+    sortBy: "typing.Optional[v1GetWorkspacesRequestSortBy]" = Unset,
+    users: "typing.Optional[typing.Sequence[str]]" = Unset,
 ) -> "v1GetWorkspacesResponse":
-    _params = {
-        "archived": str(archived).lower() if archived is not None else None,
-        "limit": limit,
-        "name": name,
-        "offset": offset,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "pinned": str(pinned).lower() if pinned is not None else None,
-        "sortBy": sortBy.value if sortBy is not None else None,
-        "users": users,
-    }
+    _params = {} # GEN HERE?
+    if archived != Unset:
+        _params["archived"] = str(archived).lower() if archived is not None else None # HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if name != Unset:
+        _params["name"] = name
+    if offset != Unset:
+        _params["offset"] = offset
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if pinned != Unset:
+        _params["pinned"] = str(pinned).lower() if pinned is not None else None # HERE?
+    if sortBy != Unset:
+        _params["sortBy"] = sortBy.value if sortBy is not None else None # HERE?
+    if users != Unset:
+        _params["users"] = users
     _resp = session._do_request(
         method="GET",
         path="/api/v1/workspaces",
@@ -11555,15 +11671,17 @@ def post_MarkAllocationResourcesDaemon(
 def get_MasterLogs(
     session: "api.Session",
     *,
-    follow: "typing.Optional[bool]" = None,
-    limit: "typing.Optional[int]" = None,
-    offset: "typing.Optional[int]" = None,
+    follow: "typing.Optional[bool]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    offset: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1MasterLogsResponse]":
-    _params = {
-        "follow": str(follow).lower() if follow is not None else None,
-        "limit": limit,
-        "offset": offset,
-    }
+    _params = {} # GEN HERE?
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if offset != Unset:
+        _params["offset"] = offset
     _resp = session._do_request(
         method="GET",
         path="/api/v1/master/logs",
@@ -11592,13 +11710,13 @@ def get_MetricBatches(
     experimentId: int,
     metricName: str,
     metricType: "v1MetricType",
-    periodSeconds: "typing.Optional[int]" = None,
+    periodSeconds: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1MetricBatchesResponse]":
-    _params = {
-        "metricName": metricName,
-        "metricType": metricType.value,
-        "periodSeconds": periodSeconds,
-    }
+    _params = {} # GEN HERE?
+    _params["metricName"] = metricName
+    _params["metricType"] = metricType.value
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{experimentId}/metrics-stream/batches",
@@ -11625,11 +11743,11 @@ def get_MetricNames(
     session: "api.Session",
     *,
     experimentId: int,
-    periodSeconds: "typing.Optional[int]" = None,
+    periodSeconds: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1MetricNamesResponse]":
-    _params = {
-        "periodSeconds": periodSeconds,
-    }
+    _params = {} # GEN HERE?
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{experimentId}/metrics-stream/metric-names",
@@ -12354,15 +12472,17 @@ def post_ResetUserSetting(
 def get_ResourceAllocationAggregated(
     session: "api.Session",
     *,
-    endDate: "typing.Optional[str]" = None,
-    period: "typing.Optional[v1ResourceAllocationAggregationPeriod]" = None,
-    startDate: "typing.Optional[str]" = None,
+    endDate: "typing.Optional[str]" = Unset,
+    period: "typing.Optional[v1ResourceAllocationAggregationPeriod]" = Unset,
+    startDate: "typing.Optional[str]" = Unset,
 ) -> "v1ResourceAllocationAggregatedResponse":
-    _params = {
-        "endDate": endDate,
-        "period": period.value if period is not None else None,
-        "startDate": startDate,
-    }
+    _params = {} # GEN HERE?
+    if endDate != Unset:
+        _params["endDate"] = endDate
+    if period != Unset:
+        _params["period"] = period.value if period is not None else None # HERE?
+    if startDate != Unset:
+        _params["startDate"] = startDate
     _resp = session._do_request(
         method="GET",
         path="/api/v1/resources/allocation/aggregated",
@@ -12380,13 +12500,14 @@ def get_ResourceAllocationAggregated(
 def get_ResourceAllocationRaw(
     session: "api.Session",
     *,
-    timestampAfter: "typing.Optional[str]" = None,
-    timestampBefore: "typing.Optional[str]" = None,
+    timestampAfter: "typing.Optional[str]" = Unset,
+    timestampBefore: "typing.Optional[str]" = Unset,
 ) -> "v1ResourceAllocationRawResponse":
-    _params = {
-        "timestampAfter": timestampAfter,
-        "timestampBefore": timestampBefore,
-    }
+    _params = {} # GEN HERE?
+    if timestampAfter != Unset:
+        _params["timestampAfter"] = timestampAfter
+    if timestampBefore != Unset:
+        _params["timestampBefore"] = timestampBefore
     _resp = session._do_request(
         method="GET",
         path="/api/v1/resources/allocation/raw",
@@ -12530,21 +12651,26 @@ def get_SummarizeTrial(
     session: "api.Session",
     *,
     trialId: int,
-    endBatches: "typing.Optional[int]" = None,
-    maxDatapoints: "typing.Optional[int]" = None,
-    metricNames: "typing.Optional[typing.Sequence[str]]" = None,
-    metricType: "typing.Optional[v1MetricType]" = None,
-    scale: "typing.Optional[v1Scale]" = None,
-    startBatches: "typing.Optional[int]" = None,
+    endBatches: "typing.Optional[int]" = Unset,
+    maxDatapoints: "typing.Optional[int]" = Unset,
+    metricNames: "typing.Optional[typing.Sequence[str]]" = Unset,
+    metricType: "typing.Optional[v1MetricType]" = Unset,
+    scale: "typing.Optional[v1Scale]" = Unset,
+    startBatches: "typing.Optional[int]" = Unset,
 ) -> "v1SummarizeTrialResponse":
-    _params = {
-        "endBatches": endBatches,
-        "maxDatapoints": maxDatapoints,
-        "metricNames": metricNames,
-        "metricType": metricType.value if metricType is not None else None,
-        "scale": scale.value if scale is not None else None,
-        "startBatches": startBatches,
-    }
+    _params = {} # GEN HERE?
+    if endBatches != Unset:
+        _params["endBatches"] = endBatches
+    if maxDatapoints != Unset:
+        _params["maxDatapoints"] = maxDatapoints
+    if metricNames != Unset:
+        _params["metricNames"] = metricNames
+    if metricType != Unset:
+        _params["metricType"] = metricType.value if metricType is not None else None # HERE?
+    if scale != Unset:
+        _params["scale"] = scale.value if scale is not None else None # HERE?
+    if startBatches != Unset:
+        _params["startBatches"] = startBatches
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{trialId}/summarize",
@@ -12563,35 +12689,47 @@ def get_TaskLogs(
     session: "api.Session",
     *,
     taskId: str,
-    agentIds: "typing.Optional[typing.Sequence[str]]" = None,
-    allocationIds: "typing.Optional[typing.Sequence[str]]" = None,
-    containerIds: "typing.Optional[typing.Sequence[str]]" = None,
-    follow: "typing.Optional[bool]" = None,
-    levels: "typing.Optional[typing.Sequence[v1LogLevel]]" = None,
-    limit: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    rankIds: "typing.Optional[typing.Sequence[int]]" = None,
-    searchText: "typing.Optional[str]" = None,
-    sources: "typing.Optional[typing.Sequence[str]]" = None,
-    stdtypes: "typing.Optional[typing.Sequence[str]]" = None,
-    timestampAfter: "typing.Optional[str]" = None,
-    timestampBefore: "typing.Optional[str]" = None,
+    agentIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+    allocationIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+    containerIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+    follow: "typing.Optional[bool]" = Unset,
+    levels: "typing.Optional[typing.Sequence[v1LogLevel]]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    rankIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    searchText: "typing.Optional[str]" = Unset,
+    sources: "typing.Optional[typing.Sequence[str]]" = Unset,
+    stdtypes: "typing.Optional[typing.Sequence[str]]" = Unset,
+    timestampAfter: "typing.Optional[str]" = Unset,
+    timestampBefore: "typing.Optional[str]" = Unset,
 ) -> "typing.Iterable[v1TaskLogsResponse]":
-    _params = {
-        "agentIds": agentIds,
-        "allocationIds": allocationIds,
-        "containerIds": containerIds,
-        "follow": str(follow).lower() if follow is not None else None,
-        "levels": [x.value for x in levels] if levels is not None else None,
-        "limit": limit,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "rankIds": rankIds,
-        "searchText": searchText,
-        "sources": sources,
-        "stdtypes": stdtypes,
-        "timestampAfter": timestampAfter,
-        "timestampBefore": timestampBefore,
-    }
+    _params = {} # GEN HERE?
+    if agentIds != Unset:
+        _params["agentIds"] = agentIds
+    if allocationIds != Unset:
+        _params["allocationIds"] = allocationIds
+    if containerIds != Unset:
+        _params["containerIds"] = containerIds
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
+    if levels != Unset:
+        _params["levels"] = [x.value for x in levels] if levels is not None else None # HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if rankIds != Unset:
+        _params["rankIds"] = rankIds
+    if searchText != Unset:
+        _params["searchText"] = searchText
+    if sources != Unset:
+        _params["sources"] = sources
+    if stdtypes != Unset:
+        _params["stdtypes"] = stdtypes
+    if timestampAfter != Unset:
+        _params["timestampAfter"] = timestampAfter
+    if timestampBefore != Unset:
+        _params["timestampBefore"] = timestampBefore
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/tasks/{taskId}/logs",
@@ -12618,11 +12756,11 @@ def get_TaskLogsFields(
     session: "api.Session",
     *,
     taskId: str,
-    follow: "typing.Optional[bool]" = None,
+    follow: "typing.Optional[bool]" = Unset,
 ) -> "typing.Iterable[v1TaskLogsFieldsResponse]":
-    _params = {
-        "follow": str(follow).lower() if follow is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/tasks/{taskId}/logs/fields",
@@ -12669,33 +12807,44 @@ def get_TrialLogs(
     session: "api.Session",
     *,
     trialId: int,
-    agentIds: "typing.Optional[typing.Sequence[str]]" = None,
-    containerIds: "typing.Optional[typing.Sequence[str]]" = None,
-    follow: "typing.Optional[bool]" = None,
-    levels: "typing.Optional[typing.Sequence[v1LogLevel]]" = None,
-    limit: "typing.Optional[int]" = None,
-    orderBy: "typing.Optional[v1OrderBy]" = None,
-    rankIds: "typing.Optional[typing.Sequence[int]]" = None,
-    searchText: "typing.Optional[str]" = None,
-    sources: "typing.Optional[typing.Sequence[str]]" = None,
-    stdtypes: "typing.Optional[typing.Sequence[str]]" = None,
-    timestampAfter: "typing.Optional[str]" = None,
-    timestampBefore: "typing.Optional[str]" = None,
+    agentIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+    containerIds: "typing.Optional[typing.Sequence[str]]" = Unset,
+    follow: "typing.Optional[bool]" = Unset,
+    levels: "typing.Optional[typing.Sequence[v1LogLevel]]" = Unset,
+    limit: "typing.Optional[int]" = Unset,
+    orderBy: "typing.Optional[v1OrderBy]" = Unset,
+    rankIds: "typing.Optional[typing.Sequence[int]]" = Unset,
+    searchText: "typing.Optional[str]" = Unset,
+    sources: "typing.Optional[typing.Sequence[str]]" = Unset,
+    stdtypes: "typing.Optional[typing.Sequence[str]]" = Unset,
+    timestampAfter: "typing.Optional[str]" = Unset,
+    timestampBefore: "typing.Optional[str]" = Unset,
 ) -> "typing.Iterable[v1TrialLogsResponse]":
-    _params = {
-        "agentIds": agentIds,
-        "containerIds": containerIds,
-        "follow": str(follow).lower() if follow is not None else None,
-        "levels": [x.value for x in levels] if levels is not None else None,
-        "limit": limit,
-        "orderBy": orderBy.value if orderBy is not None else None,
-        "rankIds": rankIds,
-        "searchText": searchText,
-        "sources": sources,
-        "stdtypes": stdtypes,
-        "timestampAfter": timestampAfter,
-        "timestampBefore": timestampBefore,
-    }
+    _params = {} # GEN HERE?
+    if agentIds != Unset:
+        _params["agentIds"] = agentIds
+    if containerIds != Unset:
+        _params["containerIds"] = containerIds
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
+    if levels != Unset:
+        _params["levels"] = [x.value for x in levels] if levels is not None else None # HERE?
+    if limit != Unset:
+        _params["limit"] = limit
+    if orderBy != Unset:
+        _params["orderBy"] = orderBy.value if orderBy is not None else None # HERE?
+    if rankIds != Unset:
+        _params["rankIds"] = rankIds
+    if searchText != Unset:
+        _params["searchText"] = searchText
+    if sources != Unset:
+        _params["sources"] = sources
+    if stdtypes != Unset:
+        _params["stdtypes"] = stdtypes
+    if timestampAfter != Unset:
+        _params["timestampAfter"] = timestampAfter
+    if timestampBefore != Unset:
+        _params["timestampBefore"] = timestampBefore
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{trialId}/logs",
@@ -12722,11 +12871,11 @@ def get_TrialLogsFields(
     session: "api.Session",
     *,
     trialId: int,
-    follow: "typing.Optional[bool]" = None,
+    follow: "typing.Optional[bool]" = Unset,
 ) -> "typing.Iterable[v1TrialLogsFieldsResponse]":
-    _params = {
-        "follow": str(follow).lower() if follow is not None else None,
-    }
+    _params = {} # GEN HERE?
+    if follow != Unset:
+        _params["follow"] = str(follow).lower() if follow is not None else None # HERE?
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/trials/{trialId}/logs/fields",
@@ -12755,21 +12904,25 @@ def get_TrialsSample(
     experimentId: int,
     metricName: str,
     metricType: "v1MetricType",
-    endBatches: "typing.Optional[int]" = None,
-    maxDatapoints: "typing.Optional[int]" = None,
-    maxTrials: "typing.Optional[int]" = None,
-    periodSeconds: "typing.Optional[int]" = None,
-    startBatches: "typing.Optional[int]" = None,
+    endBatches: "typing.Optional[int]" = Unset,
+    maxDatapoints: "typing.Optional[int]" = Unset,
+    maxTrials: "typing.Optional[int]" = Unset,
+    periodSeconds: "typing.Optional[int]" = Unset,
+    startBatches: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1TrialsSampleResponse]":
-    _params = {
-        "endBatches": endBatches,
-        "maxDatapoints": maxDatapoints,
-        "maxTrials": maxTrials,
-        "metricName": metricName,
-        "metricType": metricType.value,
-        "periodSeconds": periodSeconds,
-        "startBatches": startBatches,
-    }
+    _params = {} # GEN HERE?
+    if endBatches != Unset:
+        _params["endBatches"] = endBatches
+    if maxDatapoints != Unset:
+        _params["maxDatapoints"] = maxDatapoints
+    if maxTrials != Unset:
+        _params["maxTrials"] = maxTrials
+    _params["metricName"] = metricName
+    _params["metricType"] = metricType.value
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
+    if startBatches != Unset:
+        _params["startBatches"] = startBatches
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{experimentId}/metrics-stream/trials-sample",
@@ -12799,16 +12952,17 @@ def get_TrialsSnapshot(
     experimentId: int,
     metricName: str,
     metricType: "v1MetricType",
-    batchesMargin: "typing.Optional[int]" = None,
-    periodSeconds: "typing.Optional[int]" = None,
+    batchesMargin: "typing.Optional[int]" = Unset,
+    periodSeconds: "typing.Optional[int]" = Unset,
 ) -> "typing.Iterable[v1TrialsSnapshotResponse]":
-    _params = {
-        "batchesMargin": batchesMargin,
-        "batchesProcessed": batchesProcessed,
-        "metricName": metricName,
-        "metricType": metricType.value,
-        "periodSeconds": periodSeconds,
-    }
+    _params = {} # GEN HERE?
+    if batchesMargin != Unset:
+        _params["batchesMargin"] = batchesMargin
+    _params["batchesProcessed"] = batchesProcessed
+    _params["metricName"] = metricName
+    _params["metricType"] = metricType.value
+    if periodSeconds != Unset:
+        _params["periodSeconds"] = periodSeconds
     _resp = session._do_request(
         method="GET",
         path=f"/api/v1/experiments/{experimentId}/metrics-stream/trials-snapshot",

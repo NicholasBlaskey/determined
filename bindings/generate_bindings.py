@@ -268,11 +268,9 @@ class Parameter:
     def gen_function_param(self) -> Code:
         if self.required:
             typestr = self.type.annotation()
-            default = ""
         else:
             typestr = f'"typing.Optional[{self.type.annotation(prequoted=True)}]"'
-            default = " = None"
-        default = "" if self.required else " = None"
+        default = "" if self.required else " = Unset"
         return f"    {self.name}: {typestr}{default},"
 
     def dump(self) -> Code:
@@ -329,8 +327,8 @@ class Class(TypeDef):
             if v.required:
                 out.append(f'        o["{k}"] = {parsed}')
             else:
-                out.append(f'        if self.{k} is not None:')
-                out.append(f'            o["{k}"] = {parsed}')                
+                out.append(f'        if self.{k} != Unset:')
+                out.append(f'            o["{k}"] = {parsed} if self.{k} is not None else None')
         out += ["        return o"]
         
         return "\n".join(out)
@@ -421,17 +419,22 @@ class Function:
             pathstr = "f" + pathstr
 
         if query_params:
-            out += ["    _params = {"]
+            out += ["    _params = {} # GEN HERE?"]
             for p in query_params:
                 param = self.params[p]
                 if param.type.need_urlparam_dump():
                     value = f"{param.type.dump_as_urlparam(param.name)}"
                     if not param.required:
-                        value += f" if {param.name} is not None else None"
+                        value += f" if {param.name} is not None else None # HERE?"
                 else:
                     value = param.name
-                out += [f'        "{self.params[p].serialized_name}": {value},']
-            out += ["    }"]
+
+                if not param.required:
+                    out += [f'    if {param.name} != Unset:']
+                    out += [f'        _params["{self.params[p].serialized_name}"] = {value}']
+                else:
+                    out += [f'    _params["{self.params[p].serialized_name}"] = {value}']     
+                
         else:
             out += ["    _params = None"]
 
@@ -714,6 +717,11 @@ import math
 import typing
 
 import requests
+
+class _unset: 
+    pass
+Unset = _unset()
+
 
 if typing.TYPE_CHECKING:
     from determined.common import api
