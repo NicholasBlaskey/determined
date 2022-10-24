@@ -82,12 +82,12 @@ class ExpCompareTrialsSampleResponseExpTrial:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "hparams": self.hparams,
-            "data": [x.to_json() for x in self.data],
-            "experimentId": self.experimentId,
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["hparams"] = self.hparams
+        o["data"] = [x.to_json() for x in self.data]
+        o["experimentId"] = self.experimentId
+        return o
 
 class GetHPImportanceResponseMetricHPImportance:
     def __init__(
@@ -116,13 +116,18 @@ class GetHPImportanceResponseMetricHPImportance:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "hpImportance": {k: dump_float(v) for k, v in self.hpImportance.items()} if self.hpImportance is not None else None,
-            "experimentProgress": dump_float(self.experimentProgress) if self.experimentProgress is not None else None,
-            "error": self.error if self.error is not None else None,
-            "pending": self.pending if self.pending is not None else None,
-            "inProgress": self.inProgress if self.inProgress is not None else None,
-        }
+        o = {}
+        if self.hpImportance is not None:
+            o["hpImportance"] = {k: dump_float(v) for k, v in self.hpImportance.items()}
+        if self.experimentProgress is not None:
+            o["experimentProgress"] = dump_float(self.experimentProgress)
+        if self.error is not None:
+            o["error"] = self.error
+        if self.pending is not None:
+            o["pending"] = self.pending
+        if self.inProgress is not None:
+            o["inProgress"] = self.inProgress
+        return o
 
 class GetTrialWorkloadsRequestFilterOption(enum.Enum):
     FILTER_OPTION_UNSPECIFIED = "FILTER_OPTION_UNSPECIFIED"
@@ -148,10 +153,12 @@ class TrialFiltersRankWithinExp:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "sorter": self.sorter.to_json() if self.sorter is not None else None,
-            "rank": self.rank if self.rank is not None else None,
-        }
+        o = {}
+        if self.sorter is not None:
+            o["sorter"] = self.sorter.to_json()
+        if self.rank is not None:
+            o["rank"] = self.rank
+        return o
 
 class TrialProfilerMetricLabelsProfilerMetricType(enum.Enum):
     PROFILER_METRIC_TYPE_UNSPECIFIED = "PROFILER_METRIC_TYPE_UNSPECIFIED"
@@ -180,9 +187,10 @@ class UpdateTrialTagsRequestIds:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "ids": self.ids if self.ids is not None else None,
-        }
+        o = {}
+        if self.ids is not None:
+            o["ids"] = self.ids
+        return o
 
 class determinedcheckpointv1State(enum.Enum):
     STATE_UNSPECIFIED = "STATE_UNSPECIFIED"
@@ -279,10 +287,32 @@ class protobufAny:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "typeUrl": self.typeUrl if self.typeUrl is not None else None,
-            "value": self.value if self.value is not None else None,
-        }
+        o = {}
+        if self.typeUrl is not None:
+            o["typeUrl"] = self.typeUrl
+        if self.value is not None:
+            o["value"] = self.value
+        return o
+
+class protobufFieldMask:
+    def __init__(
+        self,
+        *,
+        paths: "typing.Optional[typing.Sequence[str]]" = None,
+    ):
+        self.paths = paths
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "protobufFieldMask":
+        return cls(
+            paths=obj.get("paths", None),
+        )
+
+    def to_json(self) -> typing.Any:
+        o = {}
+        if self.paths is not None:
+            o["paths"] = self.paths
+        return o
 
 class protobufNullValue(enum.Enum):
     NULL_VALUE = "NULL_VALUE"
@@ -311,12 +341,16 @@ class runtimeError:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "error": self.error if self.error is not None else None,
-            "code": self.code if self.code is not None else None,
-            "message": self.message if self.message is not None else None,
-            "details": [x.to_json() for x in self.details] if self.details is not None else None,
-        }
+        o = {}
+        if self.error is not None:
+            o["error"] = self.error
+        if self.code is not None:
+            o["code"] = self.code
+        if self.message is not None:
+            o["message"] = self.message
+        if self.details is not None:
+            o["details"] = [x.to_json() for x in self.details]
+        return o
 
 class runtimeStreamError:
     def __init__(
@@ -345,13 +379,18 @@ class runtimeStreamError:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "grpcCode": self.grpcCode if self.grpcCode is not None else None,
-            "httpCode": self.httpCode if self.httpCode is not None else None,
-            "message": self.message if self.message is not None else None,
-            "httpStatus": self.httpStatus if self.httpStatus is not None else None,
-            "details": [x.to_json() for x in self.details] if self.details is not None else None,
-        }
+        o = {}
+        if self.grpcCode is not None:
+            o["grpcCode"] = self.grpcCode
+        if self.httpCode is not None:
+            o["httpCode"] = self.httpCode
+        if self.message is not None:
+            o["message"] = self.message
+        if self.httpStatus is not None:
+            o["httpStatus"] = self.httpStatus
+        if self.details is not None:
+            o["details"] = [x.to_json() for x in self.details]
+        return o
 
 class trialv1Trial:
     def __init__(
@@ -416,25 +455,35 @@ class trialv1Trial:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "experimentId": self.experimentId,
-            "startTime": self.startTime,
-            "endTime": self.endTime if self.endTime is not None else None,
-            "state": self.state.value,
-            "restarts": self.restarts,
-            "hparams": self.hparams,
-            "totalBatchesProcessed": self.totalBatchesProcessed,
-            "bestValidation": self.bestValidation.to_json() if self.bestValidation is not None else None,
-            "latestValidation": self.latestValidation.to_json() if self.latestValidation is not None else None,
-            "bestCheckpoint": self.bestCheckpoint.to_json() if self.bestCheckpoint is not None else None,
-            "latestTraining": self.latestTraining.to_json() if self.latestTraining is not None else None,
-            "runnerState": self.runnerState if self.runnerState is not None else None,
-            "wallClockTime": dump_float(self.wallClockTime) if self.wallClockTime is not None else None,
-            "warmStartCheckpointUuid": self.warmStartCheckpointUuid if self.warmStartCheckpointUuid is not None else None,
-            "taskId": self.taskId if self.taskId is not None else None,
-            "totalCheckpointSize": self.totalCheckpointSize if self.totalCheckpointSize is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        o["experimentId"] = self.experimentId
+        o["startTime"] = self.startTime
+        if self.endTime is not None:
+            o["endTime"] = self.endTime
+        o["state"] = self.state.value
+        o["restarts"] = self.restarts
+        o["hparams"] = self.hparams
+        o["totalBatchesProcessed"] = self.totalBatchesProcessed
+        if self.bestValidation is not None:
+            o["bestValidation"] = self.bestValidation.to_json()
+        if self.latestValidation is not None:
+            o["latestValidation"] = self.latestValidation.to_json()
+        if self.bestCheckpoint is not None:
+            o["bestCheckpoint"] = self.bestCheckpoint.to_json()
+        if self.latestTraining is not None:
+            o["latestTraining"] = self.latestTraining.to_json()
+        if self.runnerState is not None:
+            o["runnerState"] = self.runnerState
+        if self.wallClockTime is not None:
+            o["wallClockTime"] = dump_float(self.wallClockTime)
+        if self.warmStartCheckpointUuid is not None:
+            o["warmStartCheckpointUuid"] = self.warmStartCheckpointUuid
+        if self.taskId is not None:
+            o["taskId"] = self.taskId
+        if self.totalCheckpointSize is not None:
+            o["totalCheckpointSize"] = self.totalCheckpointSize
+        return o
 
 class v1AckAllocationPreemptionSignalRequest:
     def __init__(
@@ -451,9 +500,9 @@ class v1AckAllocationPreemptionSignalRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId,
-        }
+        o = {}
+        o["allocationId"] = self.allocationId
+        return o
 
 class v1AddProjectNoteResponse:
     def __init__(
@@ -470,9 +519,9 @@ class v1AddProjectNoteResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notes": [x.to_json() for x in self.notes],
-        }
+        o = {}
+        o["notes"] = [x.to_json() for x in self.notes]
+        return o
 
 class v1Agent:
     def __init__(
@@ -516,18 +565,27 @@ class v1Agent:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "registeredTime": self.registeredTime if self.registeredTime is not None else None,
-            "slots": {k: v.to_json() for k, v in self.slots.items()} if self.slots is not None else None,
-            "containers": {k: v.to_json() for k, v in self.containers.items()} if self.containers is not None else None,
-            "label": self.label if self.label is not None else None,
-            "addresses": self.addresses if self.addresses is not None else None,
-            "enabled": self.enabled if self.enabled is not None else None,
-            "draining": self.draining if self.draining is not None else None,
-            "version": self.version if self.version is not None else None,
-            "resourcePools": self.resourcePools if self.resourcePools is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        if self.registeredTime is not None:
+            o["registeredTime"] = self.registeredTime
+        if self.slots is not None:
+            o["slots"] = {k: v.to_json() for k, v in self.slots.items()}
+        if self.containers is not None:
+            o["containers"] = {k: v.to_json() for k, v in self.containers.items()}
+        if self.label is not None:
+            o["label"] = self.label
+        if self.addresses is not None:
+            o["addresses"] = self.addresses
+        if self.enabled is not None:
+            o["enabled"] = self.enabled
+        if self.draining is not None:
+            o["draining"] = self.draining
+        if self.version is not None:
+            o["version"] = self.version
+        if self.resourcePools is not None:
+            o["resourcePools"] = self.resourcePools
+        return o
 
 class v1AgentUserGroup:
     def __init__(
@@ -553,12 +611,16 @@ class v1AgentUserGroup:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agentUid": self.agentUid if self.agentUid is not None else None,
-            "agentGid": self.agentGid if self.agentGid is not None else None,
-            "agentUser": self.agentUser if self.agentUser is not None else None,
-            "agentGroup": self.agentGroup if self.agentGroup is not None else None,
-        }
+        o = {}
+        if self.agentUid is not None:
+            o["agentUid"] = self.agentUid
+        if self.agentGid is not None:
+            o["agentGid"] = self.agentGid
+        if self.agentUser is not None:
+            o["agentUser"] = self.agentUser
+        if self.agentGroup is not None:
+            o["agentGroup"] = self.agentGroup
+        return o
 
 class v1AggregateQueueStats:
     def __init__(
@@ -578,10 +640,10 @@ class v1AggregateQueueStats:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "periodStart": self.periodStart,
-            "seconds": dump_float(self.seconds),
-        }
+        o = {}
+        o["periodStart"] = self.periodStart
+        o["seconds"] = dump_float(self.seconds)
+        return o
 
 class v1Allocation:
     def __init__(
@@ -613,14 +675,20 @@ class v1Allocation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "taskId": self.taskId if self.taskId is not None else None,
-            "state": self.state.value if self.state is not None else None,
-            "isReady": self.isReady if self.isReady is not None else None,
-            "startTime": self.startTime if self.startTime is not None else None,
-            "endTime": self.endTime if self.endTime is not None else None,
-            "allocationId": self.allocationId if self.allocationId is not None else None,
-        }
+        o = {}
+        if self.taskId is not None:
+            o["taskId"] = self.taskId
+        if self.state is not None:
+            o["state"] = self.state.value
+        if self.isReady is not None:
+            o["isReady"] = self.isReady
+        if self.startTime is not None:
+            o["startTime"] = self.startTime
+        if self.endTime is not None:
+            o["endTime"] = self.endTime
+        if self.allocationId is not None:
+            o["allocationId"] = self.allocationId
+        return o
 
 class v1AllocationAllGatherRequest:
     def __init__(
@@ -646,12 +714,14 @@ class v1AllocationAllGatherRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId,
-            "requestUuid": self.requestUuid if self.requestUuid is not None else None,
-            "numPeers": self.numPeers if self.numPeers is not None else None,
-            "data": self.data,
-        }
+        o = {}
+        o["allocationId"] = self.allocationId
+        if self.requestUuid is not None:
+            o["requestUuid"] = self.requestUuid
+        if self.numPeers is not None:
+            o["numPeers"] = self.numPeers
+        o["data"] = self.data
+        return o
 
 class v1AllocationAllGatherResponse:
     def __init__(
@@ -668,9 +738,9 @@ class v1AllocationAllGatherResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "data": self.data,
-        }
+        o = {}
+        o["data"] = self.data
+        return o
 
 class v1AllocationPendingPreemptionSignalRequest:
     def __init__(
@@ -687,9 +757,9 @@ class v1AllocationPendingPreemptionSignalRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId,
-        }
+        o = {}
+        o["allocationId"] = self.allocationId
+        return o
 
 class v1AllocationPreemptionSignalResponse:
     def __init__(
@@ -706,9 +776,10 @@ class v1AllocationPreemptionSignalResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "preempt": self.preempt if self.preempt is not None else None,
-        }
+        o = {}
+        if self.preempt is not None:
+            o["preempt"] = self.preempt
+        return o
 
 class v1AllocationReadyRequest:
     def __init__(
@@ -725,9 +796,10 @@ class v1AllocationReadyRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId if self.allocationId is not None else None,
-        }
+        o = {}
+        if self.allocationId is not None:
+            o["allocationId"] = self.allocationId
+        return o
 
 class v1AllocationRendezvousInfoResponse:
     def __init__(
@@ -744,9 +816,9 @@ class v1AllocationRendezvousInfoResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "rendezvousInfo": self.rendezvousInfo.to_json(),
-        }
+        o = {}
+        o["rendezvousInfo"] = self.rendezvousInfo.to_json()
+        return o
 
 class v1AllocationWaitingRequest:
     def __init__(
@@ -763,9 +835,10 @@ class v1AllocationWaitingRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId if self.allocationId is not None else None,
-        }
+        o = {}
+        if self.allocationId is not None:
+            o["allocationId"] = self.allocationId
+        return o
 
 class v1AssignRolesRequest:
     def __init__(
@@ -785,10 +858,12 @@ class v1AssignRolesRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groupRoleAssignments": [x.to_json() for x in self.groupRoleAssignments] if self.groupRoleAssignments is not None else None,
-            "userRoleAssignments": [x.to_json() for x in self.userRoleAssignments] if self.userRoleAssignments is not None else None,
-        }
+        o = {}
+        if self.groupRoleAssignments is not None:
+            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments]
+        if self.userRoleAssignments is not None:
+            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments]
+        return o
 
 class v1AugmentedTrial:
     def __init__(
@@ -865,29 +940,33 @@ class v1AugmentedTrial:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "state": self.state.value,
-            "hparams": self.hparams,
-            "trainingMetrics": self.trainingMetrics,
-            "validationMetrics": self.validationMetrics,
-            "tags": self.tags,
-            "startTime": self.startTime,
-            "endTime": self.endTime,
-            "searcherType": self.searcherType,
-            "rankWithinExp": self.rankWithinExp if self.rankWithinExp is not None else None,
-            "experimentId": self.experimentId,
-            "experimentName": self.experimentName,
-            "experimentDescription": self.experimentDescription,
-            "experimentLabels": self.experimentLabels,
-            "userId": self.userId,
-            "projectId": self.projectId,
-            "workspaceId": self.workspaceId,
-            "totalBatches": self.totalBatches,
-            "searcherMetric": self.searcherMetric if self.searcherMetric is not None else None,
-            "searcherMetricValue": dump_float(self.searcherMetricValue) if self.searcherMetricValue is not None else None,
-            "searcherMetricLoss": dump_float(self.searcherMetricLoss) if self.searcherMetricLoss is not None else None,
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["state"] = self.state.value
+        o["hparams"] = self.hparams
+        o["trainingMetrics"] = self.trainingMetrics
+        o["validationMetrics"] = self.validationMetrics
+        o["tags"] = self.tags
+        o["startTime"] = self.startTime
+        o["endTime"] = self.endTime
+        o["searcherType"] = self.searcherType
+        if self.rankWithinExp is not None:
+            o["rankWithinExp"] = self.rankWithinExp
+        o["experimentId"] = self.experimentId
+        o["experimentName"] = self.experimentName
+        o["experimentDescription"] = self.experimentDescription
+        o["experimentLabels"] = self.experimentLabels
+        o["userId"] = self.userId
+        o["projectId"] = self.projectId
+        o["workspaceId"] = self.workspaceId
+        o["totalBatches"] = self.totalBatches
+        if self.searcherMetric is not None:
+            o["searcherMetric"] = self.searcherMetric
+        if self.searcherMetricValue is not None:
+            o["searcherMetricValue"] = dump_float(self.searcherMetricValue)
+        if self.searcherMetricLoss is not None:
+            o["searcherMetricLoss"] = dump_float(self.searcherMetricLoss)
+        return o
 
 class v1AwsCustomTag:
     def __init__(
@@ -907,10 +986,10 @@ class v1AwsCustomTag:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "key": self.key,
-            "value": self.value,
-        }
+        o = {}
+        o["key"] = self.key
+        o["value"] = self.value
+        return o
 
 class v1Checkpoint:
     def __init__(
@@ -948,16 +1027,19 @@ class v1Checkpoint:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "taskId": self.taskId if self.taskId is not None else None,
-            "allocationId": self.allocationId if self.allocationId is not None else None,
-            "uuid": self.uuid,
-            "reportTime": self.reportTime if self.reportTime is not None else None,
-            "resources": self.resources,
-            "metadata": self.metadata,
-            "state": self.state.value,
-            "training": self.training.to_json(),
-        }
+        o = {}
+        if self.taskId is not None:
+            o["taskId"] = self.taskId
+        if self.allocationId is not None:
+            o["allocationId"] = self.allocationId
+        o["uuid"] = self.uuid
+        if self.reportTime is not None:
+            o["reportTime"] = self.reportTime
+        o["resources"] = self.resources
+        o["metadata"] = self.metadata
+        o["state"] = self.state.value
+        o["training"] = self.training.to_json()
+        return o
 
 class v1CheckpointTrainingMetadata:
     def __init__(
@@ -992,15 +1074,22 @@ class v1CheckpointTrainingMetadata:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId if self.trialId is not None else None,
-            "experimentId": self.experimentId if self.experimentId is not None else None,
-            "experimentConfig": self.experimentConfig if self.experimentConfig is not None else None,
-            "hparams": self.hparams if self.hparams is not None else None,
-            "trainingMetrics": self.trainingMetrics.to_json() if self.trainingMetrics is not None else None,
-            "validationMetrics": self.validationMetrics.to_json() if self.validationMetrics is not None else None,
-            "searcherMetric": dump_float(self.searcherMetric) if self.searcherMetric is not None else None,
-        }
+        o = {}
+        if self.trialId is not None:
+            o["trialId"] = self.trialId
+        if self.experimentId is not None:
+            o["experimentId"] = self.experimentId
+        if self.experimentConfig is not None:
+            o["experimentConfig"] = self.experimentConfig
+        if self.hparams is not None:
+            o["hparams"] = self.hparams
+        if self.trainingMetrics is not None:
+            o["trainingMetrics"] = self.trainingMetrics.to_json()
+        if self.validationMetrics is not None:
+            o["validationMetrics"] = self.validationMetrics.to_json()
+        if self.searcherMetric is not None:
+            o["searcherMetric"] = dump_float(self.searcherMetric)
+        return o
 
 class v1CheckpointWorkload:
     def __init__(
@@ -1032,14 +1121,18 @@ class v1CheckpointWorkload:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "uuid": self.uuid if self.uuid is not None else None,
-            "endTime": self.endTime if self.endTime is not None else None,
-            "state": self.state.value,
-            "resources": self.resources if self.resources is not None else None,
-            "totalBatches": self.totalBatches,
-            "metadata": self.metadata if self.metadata is not None else None,
-        }
+        o = {}
+        if self.uuid is not None:
+            o["uuid"] = self.uuid
+        if self.endTime is not None:
+            o["endTime"] = self.endTime
+        o["state"] = self.state.value
+        if self.resources is not None:
+            o["resources"] = self.resources
+        o["totalBatches"] = self.totalBatches
+        if self.metadata is not None:
+            o["metadata"] = self.metadata
+        return o
 
 class v1CloseTrialOperation:
     def __init__(
@@ -1056,9 +1149,10 @@ class v1CloseTrialOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId if self.requestId is not None else None,
-        }
+        o = {}
+        if self.requestId is not None:
+            o["requestId"] = self.requestId
+        return o
 
 class v1ColumnFilter:
     def __init__(
@@ -1078,10 +1172,12 @@ class v1ColumnFilter:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name if self.name is not None else None,
-            "filter": self.filter.to_json() if self.filter is not None else None,
-        }
+        o = {}
+        if self.name is not None:
+            o["name"] = self.name
+        if self.filter is not None:
+            o["filter"] = self.filter.to_json()
+        return o
 
 class v1Command:
     def __init__(
@@ -1128,19 +1224,23 @@ class v1Command:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "description": self.description,
-            "state": self.state.value,
-            "startTime": self.startTime,
-            "container": self.container.to_json() if self.container is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "username": self.username,
-            "resourcePool": self.resourcePool,
-            "exitStatus": self.exitStatus if self.exitStatus is not None else None,
-            "jobId": self.jobId,
-        }
+        o = {}
+        o["id"] = self.id
+        o["description"] = self.description
+        o["state"] = self.state.value
+        o["startTime"] = self.startTime
+        if self.container is not None:
+            o["container"] = self.container.to_json()
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.userId is not None:
+            o["userId"] = self.userId
+        o["username"] = self.username
+        o["resourcePool"] = self.resourcePool
+        if self.exitStatus is not None:
+            o["exitStatus"] = self.exitStatus
+        o["jobId"] = self.jobId
+        return o
 
 class v1ComparableTrial:
     def __init__(
@@ -1160,10 +1260,10 @@ class v1ComparableTrial:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trial": self.trial.to_json(),
-            "metrics": [x.to_json() for x in self.metrics],
-        }
+        o = {}
+        o["trial"] = self.trial.to_json()
+        o["metrics"] = [x.to_json() for x in self.metrics]
+        return o
 
 class v1CompareTrialsResponse:
     def __init__(
@@ -1180,9 +1280,9 @@ class v1CompareTrialsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trials": [x.to_json() for x in self.trials],
-        }
+        o = {}
+        o["trials"] = [x.to_json() for x in self.trials]
+        return o
 
 class v1CompleteValidateAfterOperation:
     def __init__(
@@ -1202,10 +1302,12 @@ class v1CompleteValidateAfterOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "op": self.op.to_json() if self.op is not None else None,
-            "searcherMetric": dump_float(self.searcherMetric) if self.searcherMetric is not None else None,
-        }
+        o = {}
+        if self.op is not None:
+            o["op"] = self.op.to_json()
+        if self.searcherMetric is not None:
+            o["searcherMetric"] = dump_float(self.searcherMetric)
+        return o
 
 class v1Container:
     def __init__(
@@ -1231,12 +1333,14 @@ class v1Container:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "parent": self.parent if self.parent is not None else None,
-            "id": self.id,
-            "state": self.state.value,
-            "devices": [x.to_json() for x in self.devices] if self.devices is not None else None,
-        }
+        o = {}
+        if self.parent is not None:
+            o["parent"] = self.parent
+        o["id"] = self.id
+        o["state"] = self.state.value
+        if self.devices is not None:
+            o["devices"] = [x.to_json() for x in self.devices]
+        return o
 
 class v1CreateExperimentRequest:
     def __init__(
@@ -1268,14 +1372,20 @@ class v1CreateExperimentRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "modelDefinition": [x.to_json() for x in self.modelDefinition] if self.modelDefinition is not None else None,
-            "config": self.config if self.config is not None else None,
-            "validateOnly": self.validateOnly if self.validateOnly is not None else None,
-            "parentId": self.parentId if self.parentId is not None else None,
-            "activate": self.activate if self.activate is not None else None,
-            "projectId": self.projectId if self.projectId is not None else None,
-        }
+        o = {}
+        if self.modelDefinition is not None:
+            o["modelDefinition"] = [x.to_json() for x in self.modelDefinition]
+        if self.config is not None:
+            o["config"] = self.config
+        if self.validateOnly is not None:
+            o["validateOnly"] = self.validateOnly
+        if self.parentId is not None:
+            o["parentId"] = self.parentId
+        if self.activate is not None:
+            o["activate"] = self.activate
+        if self.projectId is not None:
+            o["projectId"] = self.projectId
+        return o
 
 class v1CreateExperimentResponse:
     def __init__(
@@ -1295,10 +1405,10 @@ class v1CreateExperimentResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experiment": self.experiment.to_json(),
-            "config": self.config,
-        }
+        o = {}
+        o["experiment"] = self.experiment.to_json()
+        o["config"] = self.config
+        return o
 
 class v1CreateGroupRequest:
     def __init__(
@@ -1318,10 +1428,11 @@ class v1CreateGroupRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "addUsers": self.addUsers if self.addUsers is not None else None,
-        }
+        o = {}
+        o["name"] = self.name
+        if self.addUsers is not None:
+            o["addUsers"] = self.addUsers
+        return o
 
 class v1CreateGroupResponse:
     def __init__(
@@ -1338,9 +1449,9 @@ class v1CreateGroupResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "group": self.group.to_json(),
-        }
+        o = {}
+        o["group"] = self.group.to_json()
+        return o
 
 class v1CreateTrialOperation:
     def __init__(
@@ -1360,10 +1471,12 @@ class v1CreateTrialOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId if self.requestId is not None else None,
-            "hyperparams": self.hyperparams if self.hyperparams is not None else None,
-        }
+        o = {}
+        if self.requestId is not None:
+            o["requestId"] = self.requestId
+        if self.hyperparams is not None:
+            o["hyperparams"] = self.hyperparams
+        return o
 
 class v1CreateTrialsCollectionRequest:
     def __init__(
@@ -1389,12 +1502,12 @@ class v1CreateTrialsCollectionRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "projectId": self.projectId,
-            "filters": self.filters.to_json(),
-            "sorter": self.sorter.to_json(),
-        }
+        o = {}
+        o["name"] = self.name
+        o["projectId"] = self.projectId
+        o["filters"] = self.filters.to_json()
+        o["sorter"] = self.sorter.to_json()
+        return o
 
 class v1CreateTrialsCollectionResponse:
     def __init__(
@@ -1411,9 +1524,10 @@ class v1CreateTrialsCollectionResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "collection": self.collection.to_json() if self.collection is not None else None,
-        }
+        o = {}
+        if self.collection is not None:
+            o["collection"] = self.collection.to_json()
+        return o
 
 class v1CurrentUserResponse:
     def __init__(
@@ -1430,9 +1544,9 @@ class v1CurrentUserResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "user": self.user.to_json(),
-        }
+        o = {}
+        o["user"] = self.user.to_json()
+        return o
 
 class v1DataPoint:
     def __init__(
@@ -1452,10 +1566,10 @@ class v1DataPoint:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "batches": self.batches,
-            "value": dump_float(self.value),
-        }
+        o = {}
+        o["batches"] = self.batches
+        o["value"] = dump_float(self.value)
+        return o
 
 class v1DeleteCheckpointsRequest:
     def __init__(
@@ -1472,9 +1586,9 @@ class v1DeleteCheckpointsRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpointUuids": self.checkpointUuids,
-        }
+        o = {}
+        o["checkpointUuids"] = self.checkpointUuids
+        return o
 
 class v1DeleteProjectResponse:
     def __init__(
@@ -1491,9 +1605,9 @@ class v1DeleteProjectResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "completed": self.completed,
-        }
+        o = {}
+        o["completed"] = self.completed
+        return o
 
 class v1DeleteWorkspaceResponse:
     def __init__(
@@ -1510,9 +1624,9 @@ class v1DeleteWorkspaceResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "completed": self.completed,
-        }
+        o = {}
+        o["completed"] = self.completed
+        return o
 
 class v1Device:
     def __init__(
@@ -1538,12 +1652,16 @@ class v1Device:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id if self.id is not None else None,
-            "brand": self.brand if self.brand is not None else None,
-            "uuid": self.uuid if self.uuid is not None else None,
-            "type": self.type.value if self.type is not None else None,
-        }
+        o = {}
+        if self.id is not None:
+            o["id"] = self.id
+        if self.brand is not None:
+            o["brand"] = self.brand
+        if self.uuid is not None:
+            o["uuid"] = self.uuid
+        if self.type is not None:
+            o["type"] = self.type.value
+        return o
 
 class v1DisableAgentRequest:
     def __init__(
@@ -1563,10 +1681,12 @@ class v1DisableAgentRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agentId": self.agentId if self.agentId is not None else None,
-            "drain": self.drain if self.drain is not None else None,
-        }
+        o = {}
+        if self.agentId is not None:
+            o["agentId"] = self.agentId
+        if self.drain is not None:
+            o["drain"] = self.drain
+        return o
 
 class v1DisableAgentResponse:
     def __init__(
@@ -1583,9 +1703,10 @@ class v1DisableAgentResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agent": self.agent.to_json() if self.agent is not None else None,
-        }
+        o = {}
+        if self.agent is not None:
+            o["agent"] = self.agent.to_json()
+        return o
 
 class v1DisableSlotResponse:
     def __init__(
@@ -1602,9 +1723,10 @@ class v1DisableSlotResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "slot": self.slot.to_json() if self.slot is not None else None,
-        }
+        o = {}
+        if self.slot is not None:
+            o["slot"] = self.slot.to_json()
+        return o
 
 class v1DoubleFieldFilter:
     def __init__(
@@ -1630,12 +1752,16 @@ class v1DoubleFieldFilter:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "lt": dump_float(self.lt) if self.lt is not None else None,
-            "lte": dump_float(self.lte) if self.lte is not None else None,
-            "gt": dump_float(self.gt) if self.gt is not None else None,
-            "gte": dump_float(self.gte) if self.gte is not None else None,
-        }
+        o = {}
+        if self.lt is not None:
+            o["lt"] = dump_float(self.lt)
+        if self.lte is not None:
+            o["lte"] = dump_float(self.lte)
+        if self.gt is not None:
+            o["gt"] = dump_float(self.gt)
+        if self.gte is not None:
+            o["gte"] = dump_float(self.gte)
+        return o
 
 class v1EnableAgentResponse:
     def __init__(
@@ -1652,9 +1778,10 @@ class v1EnableAgentResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agent": self.agent.to_json() if self.agent is not None else None,
-        }
+        o = {}
+        if self.agent is not None:
+            o["agent"] = self.agent.to_json()
+        return o
 
 class v1EnableSlotResponse:
     def __init__(
@@ -1671,9 +1798,10 @@ class v1EnableSlotResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "slot": self.slot.to_json() if self.slot is not None else None,
-        }
+        o = {}
+        if self.slot is not None:
+            o["slot"] = self.slot.to_json()
+        return o
 
 class v1ExpCompareMetricNamesResponse:
     def __init__(
@@ -1693,10 +1821,12 @@ class v1ExpCompareMetricNamesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trainingMetrics": self.trainingMetrics if self.trainingMetrics is not None else None,
-            "validationMetrics": self.validationMetrics if self.validationMetrics is not None else None,
-        }
+        o = {}
+        if self.trainingMetrics is not None:
+            o["trainingMetrics"] = self.trainingMetrics
+        if self.validationMetrics is not None:
+            o["validationMetrics"] = self.validationMetrics
+        return o
 
 class v1ExpCompareTrialsSampleResponse:
     def __init__(
@@ -1719,11 +1849,11 @@ class v1ExpCompareTrialsSampleResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trials": [x.to_json() for x in self.trials],
-            "promotedTrials": self.promotedTrials,
-            "demotedTrials": self.demotedTrials,
-        }
+        o = {}
+        o["trials"] = [x.to_json() for x in self.trials]
+        o["promotedTrials"] = self.promotedTrials
+        o["demotedTrials"] = self.demotedTrials
+        return o
 
 class v1Experiment:
     def __init__(
@@ -1818,35 +1948,49 @@ class v1Experiment:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "description": self.description if self.description is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "startTime": self.startTime,
-            "endTime": self.endTime if self.endTime is not None else None,
-            "state": self.state.value,
-            "archived": self.archived,
-            "numTrials": self.numTrials,
-            "trialIds": self.trialIds if self.trialIds is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "username": self.username,
-            "resourcePool": self.resourcePool if self.resourcePool is not None else None,
-            "searcherType": self.searcherType,
-            "name": self.name,
-            "notes": self.notes if self.notes is not None else None,
-            "jobId": self.jobId,
-            "forkedFrom": self.forkedFrom if self.forkedFrom is not None else None,
-            "progress": dump_float(self.progress) if self.progress is not None else None,
-            "projectId": self.projectId,
-            "projectName": self.projectName if self.projectName is not None else None,
-            "workspaceId": self.workspaceId if self.workspaceId is not None else None,
-            "workspaceName": self.workspaceName if self.workspaceName is not None else None,
-            "parentArchived": self.parentArchived if self.parentArchived is not None else None,
-            "config": self.config,
-            "originalConfig": self.originalConfig,
-            "projectOwnerId": self.projectOwnerId,
-        }
+        o = {}
+        o["id"] = self.id
+        if self.description is not None:
+            o["description"] = self.description
+        if self.labels is not None:
+            o["labels"] = self.labels
+        o["startTime"] = self.startTime
+        if self.endTime is not None:
+            o["endTime"] = self.endTime
+        o["state"] = self.state.value
+        o["archived"] = self.archived
+        o["numTrials"] = self.numTrials
+        if self.trialIds is not None:
+            o["trialIds"] = self.trialIds
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.userId is not None:
+            o["userId"] = self.userId
+        o["username"] = self.username
+        if self.resourcePool is not None:
+            o["resourcePool"] = self.resourcePool
+        o["searcherType"] = self.searcherType
+        o["name"] = self.name
+        if self.notes is not None:
+            o["notes"] = self.notes
+        o["jobId"] = self.jobId
+        if self.forkedFrom is not None:
+            o["forkedFrom"] = self.forkedFrom
+        if self.progress is not None:
+            o["progress"] = dump_float(self.progress)
+        o["projectId"] = self.projectId
+        if self.projectName is not None:
+            o["projectName"] = self.projectName
+        if self.workspaceId is not None:
+            o["workspaceId"] = self.workspaceId
+        if self.workspaceName is not None:
+            o["workspaceName"] = self.workspaceName
+        if self.parentArchived is not None:
+            o["parentArchived"] = self.parentArchived
+        o["config"] = self.config
+        o["originalConfig"] = self.originalConfig
+        o["projectOwnerId"] = self.projectOwnerId
+        return o
 
 class v1ExperimentInactive:
     def __init__(
@@ -1863,9 +2007,9 @@ class v1ExperimentInactive:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experimentState": self.experimentState.value,
-        }
+        o = {}
+        o["experimentState"] = self.experimentState.value
+        return o
 
 class v1ExperimentSimulation:
     def __init__(
@@ -1888,11 +2032,14 @@ class v1ExperimentSimulation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "config": self.config if self.config is not None else None,
-            "seed": self.seed if self.seed is not None else None,
-            "trials": [x.to_json() for x in self.trials] if self.trials is not None else None,
-        }
+        o = {}
+        if self.config is not None:
+            o["config"] = self.config
+        if self.seed is not None:
+            o["seed"] = self.seed
+        if self.trials is not None:
+            o["trials"] = [x.to_json() for x in self.trials]
+        return o
 
 class v1File:
     def __init__(
@@ -1927,15 +2074,15 @@ class v1File:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "path": self.path,
-            "type": self.type,
-            "content": self.content,
-            "mtime": self.mtime,
-            "mode": self.mode,
-            "uid": self.uid,
-            "gid": self.gid,
-        }
+        o = {}
+        o["path"] = self.path
+        o["type"] = self.type
+        o["content"] = self.content
+        o["mtime"] = self.mtime
+        o["mode"] = self.mode
+        o["uid"] = self.uid
+        o["gid"] = self.gid
+        return o
 
 class v1FileNode:
     def __init__(
@@ -1970,15 +2117,22 @@ class v1FileNode:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "path": self.path if self.path is not None else None,
-            "name": self.name if self.name is not None else None,
-            "modifiedTime": self.modifiedTime if self.modifiedTime is not None else None,
-            "contentLength": self.contentLength if self.contentLength is not None else None,
-            "isDir": self.isDir if self.isDir is not None else None,
-            "contentType": self.contentType if self.contentType is not None else None,
-            "files": [x.to_json() for x in self.files] if self.files is not None else None,
-        }
+        o = {}
+        if self.path is not None:
+            o["path"] = self.path
+        if self.name is not None:
+            o["name"] = self.name
+        if self.modifiedTime is not None:
+            o["modifiedTime"] = self.modifiedTime
+        if self.contentLength is not None:
+            o["contentLength"] = self.contentLength
+        if self.isDir is not None:
+            o["isDir"] = self.isDir
+        if self.contentType is not None:
+            o["contentType"] = self.contentType
+        if self.files is not None:
+            o["files"] = [x.to_json() for x in self.files]
+        return o
 
 class v1FittingPolicy(enum.Enum):
     FITTING_POLICY_UNSPECIFIED = "FITTING_POLICY_UNSPECIFIED"
@@ -2012,12 +2166,12 @@ class v1GetActiveTasksCountResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "commands": self.commands,
-            "notebooks": self.notebooks,
-            "shells": self.shells,
-            "tensorboards": self.tensorboards,
-        }
+        o = {}
+        o["commands"] = self.commands
+        o["notebooks"] = self.notebooks
+        o["shells"] = self.shells
+        o["tensorboards"] = self.tensorboards
+        return o
 
 class v1GetAgentResponse:
     def __init__(
@@ -2034,9 +2188,10 @@ class v1GetAgentResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agent": self.agent.to_json() if self.agent is not None else None,
-        }
+        o = {}
+        if self.agent is not None:
+            o["agent"] = self.agent.to_json()
+        return o
 
 class v1GetAgentsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2061,10 +2216,12 @@ class v1GetAgentsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agents": [x.to_json() for x in self.agents] if self.agents is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.agents is not None:
+            o["agents"] = [x.to_json() for x in self.agents]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetBestSearcherValidationMetricResponse:
     def __init__(
@@ -2081,9 +2238,10 @@ class v1GetBestSearcherValidationMetricResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "metric": dump_float(self.metric) if self.metric is not None else None,
-        }
+        o = {}
+        if self.metric is not None:
+            o["metric"] = dump_float(self.metric)
+        return o
 
 class v1GetCheckpointResponse:
     def __init__(
@@ -2100,9 +2258,9 @@ class v1GetCheckpointResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpoint": self.checkpoint.to_json(),
-        }
+        o = {}
+        o["checkpoint"] = self.checkpoint.to_json()
+        return o
 
 class v1GetCommandResponse:
     def __init__(
@@ -2122,10 +2280,12 @@ class v1GetCommandResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "command": self.command.to_json() if self.command is not None else None,
-            "config": self.config if self.config is not None else None,
-        }
+        o = {}
+        if self.command is not None:
+            o["command"] = self.command.to_json()
+        if self.config is not None:
+            o["config"] = self.config
+        return o
 
 class v1GetCommandsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2151,10 +2311,12 @@ class v1GetCommandsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "commands": [x.to_json() for x in self.commands] if self.commands is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.commands is not None:
+            o["commands"] = [x.to_json() for x in self.commands]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetCurrentTrialSearcherOperationResponse:
     def __init__(
@@ -2174,10 +2336,12 @@ class v1GetCurrentTrialSearcherOperationResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "op": self.op.to_json() if self.op is not None else None,
-            "completed": self.completed if self.completed is not None else None,
-        }
+        o = {}
+        if self.op is not None:
+            o["op"] = self.op.to_json()
+        if self.completed is not None:
+            o["completed"] = self.completed
+        return o
 
 class v1GetExperimentCheckpointsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2206,10 +2370,10 @@ class v1GetExperimentCheckpointsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpoints": [x.to_json() for x in self.checkpoints],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["checkpoints"] = [x.to_json() for x in self.checkpoints]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetExperimentLabelsResponse:
     def __init__(
@@ -2226,9 +2390,10 @@ class v1GetExperimentLabelsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "labels": self.labels if self.labels is not None else None,
-        }
+        o = {}
+        if self.labels is not None:
+            o["labels"] = self.labels
+        return o
 
 class v1GetExperimentResponse:
     def __init__(
@@ -2248,10 +2413,11 @@ class v1GetExperimentResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experiment": self.experiment.to_json(),
-            "jobSummary": self.jobSummary.to_json() if self.jobSummary is not None else None,
-        }
+        o = {}
+        o["experiment"] = self.experiment.to_json()
+        if self.jobSummary is not None:
+            o["jobSummary"] = self.jobSummary.to_json()
+        return o
 
 class v1GetExperimentTrialsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2283,10 +2449,10 @@ class v1GetExperimentTrialsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trials": [x.to_json() for x in self.trials],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["trials"] = [x.to_json() for x in self.trials]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetExperimentValidationHistoryResponse:
     def __init__(
@@ -2303,9 +2469,10 @@ class v1GetExperimentValidationHistoryResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "validationHistory": [x.to_json() for x in self.validationHistory] if self.validationHistory is not None else None,
-        }
+        o = {}
+        if self.validationHistory is not None:
+            o["validationHistory"] = [x.to_json() for x in self.validationHistory]
+        return o
 
 class v1GetExperimentsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2340,10 +2507,10 @@ class v1GetExperimentsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experiments": [x.to_json() for x in self.experiments],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["experiments"] = [x.to_json() for x in self.experiments]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetGroupResponse:
     def __init__(
@@ -2360,9 +2527,9 @@ class v1GetGroupResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "group": self.group.to_json(),
-        }
+        o = {}
+        o["group"] = self.group.to_json()
+        return o
 
 class v1GetGroupsAndUsersAssignedToWorkspaceResponse:
     def __init__(
@@ -2385,11 +2552,11 @@ class v1GetGroupsAndUsersAssignedToWorkspaceResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groups": [x.to_json() for x in self.groups],
-            "usersAssignedDirectly": [x.to_json() for x in self.usersAssignedDirectly],
-            "assignments": [x.to_json() for x in self.assignments],
-        }
+        o = {}
+        o["groups"] = [x.to_json() for x in self.groups]
+        o["usersAssignedDirectly"] = [x.to_json() for x in self.usersAssignedDirectly]
+        o["assignments"] = [x.to_json() for x in self.assignments]
+        return o
 
 class v1GetGroupsRequest:
     def __init__(
@@ -2415,12 +2582,15 @@ class v1GetGroupsRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "userId": self.userId if self.userId is not None else None,
-            "name": self.name if self.name is not None else None,
-            "offset": self.offset if self.offset is not None else None,
-            "limit": self.limit,
-        }
+        o = {}
+        if self.userId is not None:
+            o["userId"] = self.userId
+        if self.name is not None:
+            o["name"] = self.name
+        if self.offset is not None:
+            o["offset"] = self.offset
+        o["limit"] = self.limit
+        return o
 
 class v1GetGroupsResponse:
     def __init__(
@@ -2440,10 +2610,12 @@ class v1GetGroupsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groups": [x.to_json() for x in self.groups] if self.groups is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.groups is not None:
+            o["groups"] = [x.to_json() for x in self.groups]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetHPImportanceResponse:
     def __init__(
@@ -2463,10 +2635,10 @@ class v1GetHPImportanceResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trainingMetrics": {k: v.to_json() for k, v in self.trainingMetrics.items()},
-            "validationMetrics": {k: v.to_json() for k, v in self.validationMetrics.items()},
-        }
+        o = {}
+        o["trainingMetrics"] = {k: v.to_json() for k, v in self.trainingMetrics.items()}
+        o["validationMetrics"] = {k: v.to_json() for k, v in self.validationMetrics.items()}
+        return o
 
 class v1GetJobQueueStatsResponse:
     def __init__(
@@ -2483,9 +2655,9 @@ class v1GetJobQueueStatsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "results": [x.to_json() for x in self.results],
-        }
+        o = {}
+        o["results"] = [x.to_json() for x in self.results]
+        return o
 
 class v1GetJobsResponse:
     def __init__(
@@ -2505,10 +2677,10 @@ class v1GetJobsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "pagination": self.pagination.to_json(),
-            "jobs": [x.to_json() for x in self.jobs],
-        }
+        o = {}
+        o["pagination"] = self.pagination.to_json()
+        o["jobs"] = [x.to_json() for x in self.jobs]
+        return o
 
 class v1GetMasterConfigResponse:
     def __init__(
@@ -2525,9 +2697,9 @@ class v1GetMasterConfigResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "config": self.config,
-        }
+        o = {}
+        o["config"] = self.config
+        return o
 
 class v1GetMasterResponse:
     def __init__(
@@ -2571,18 +2743,24 @@ class v1GetMasterResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "version": self.version,
-            "masterId": self.masterId,
-            "clusterId": self.clusterId,
-            "clusterName": self.clusterName,
-            "telemetryEnabled": self.telemetryEnabled if self.telemetryEnabled is not None else None,
-            "ssoProviders": [x.to_json() for x in self.ssoProviders] if self.ssoProviders is not None else None,
-            "externalLoginUri": self.externalLoginUri if self.externalLoginUri is not None else None,
-            "externalLogoutUri": self.externalLogoutUri if self.externalLogoutUri is not None else None,
-            "branding": self.branding if self.branding is not None else None,
-            "rbacEnabled": self.rbacEnabled if self.rbacEnabled is not None else None,
-        }
+        o = {}
+        o["version"] = self.version
+        o["masterId"] = self.masterId
+        o["clusterId"] = self.clusterId
+        o["clusterName"] = self.clusterName
+        if self.telemetryEnabled is not None:
+            o["telemetryEnabled"] = self.telemetryEnabled
+        if self.ssoProviders is not None:
+            o["ssoProviders"] = [x.to_json() for x in self.ssoProviders]
+        if self.externalLoginUri is not None:
+            o["externalLoginUri"] = self.externalLoginUri
+        if self.externalLogoutUri is not None:
+            o["externalLogoutUri"] = self.externalLogoutUri
+        if self.branding is not None:
+            o["branding"] = self.branding
+        if self.rbacEnabled is not None:
+            o["rbacEnabled"] = self.rbacEnabled
+        return o
 
 class v1GetModelDefFileRequest:
     def __init__(
@@ -2602,10 +2780,12 @@ class v1GetModelDefFileRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experimentId": self.experimentId if self.experimentId is not None else None,
-            "path": self.path if self.path is not None else None,
-        }
+        o = {}
+        if self.experimentId is not None:
+            o["experimentId"] = self.experimentId
+        if self.path is not None:
+            o["path"] = self.path
+        return o
 
 class v1GetModelDefFileResponse:
     def __init__(
@@ -2622,9 +2802,10 @@ class v1GetModelDefFileResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "file": self.file if self.file is not None else None,
-        }
+        o = {}
+        if self.file is not None:
+            o["file"] = self.file
+        return o
 
 class v1GetModelDefResponse:
     def __init__(
@@ -2641,9 +2822,9 @@ class v1GetModelDefResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "b64Tgz": self.b64Tgz,
-        }
+        o = {}
+        o["b64Tgz"] = self.b64Tgz
+        return o
 
 class v1GetModelDefTreeResponse:
     def __init__(
@@ -2660,9 +2841,10 @@ class v1GetModelDefTreeResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "files": [x.to_json() for x in self.files] if self.files is not None else None,
-        }
+        o = {}
+        if self.files is not None:
+            o["files"] = [x.to_json() for x in self.files]
+        return o
 
 class v1GetModelLabelsResponse:
     def __init__(
@@ -2679,9 +2861,9 @@ class v1GetModelLabelsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "labels": self.labels,
-        }
+        o = {}
+        o["labels"] = self.labels
+        return o
 
 class v1GetModelResponse:
     def __init__(
@@ -2698,9 +2880,9 @@ class v1GetModelResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "model": self.model.to_json(),
-        }
+        o = {}
+        o["model"] = self.model.to_json()
+        return o
 
 class v1GetModelVersionResponse:
     def __init__(
@@ -2717,9 +2899,9 @@ class v1GetModelVersionResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "modelVersion": self.modelVersion.to_json(),
-        }
+        o = {}
+        o["modelVersion"] = self.modelVersion.to_json()
+        return o
 
 class v1GetModelVersionsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2747,11 +2929,11 @@ class v1GetModelVersionsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "model": self.model.to_json(),
-            "modelVersions": [x.to_json() for x in self.modelVersions],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["model"] = self.model.to_json()
+        o["modelVersions"] = [x.to_json() for x in self.modelVersions]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetModelsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2779,10 +2961,10 @@ class v1GetModelsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "models": [x.to_json() for x in self.models],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["models"] = [x.to_json() for x in self.models]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetNotebookResponse:
     def __init__(
@@ -2802,10 +2984,12 @@ class v1GetNotebookResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebook": self.notebook.to_json() if self.notebook is not None else None,
-            "config": self.config if self.config is not None else None,
-        }
+        o = {}
+        if self.notebook is not None:
+            o["notebook"] = self.notebook.to_json()
+        if self.config is not None:
+            o["config"] = self.config
+        return o
 
 class v1GetNotebooksRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -2831,10 +3015,12 @@ class v1GetNotebooksResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebooks": [x.to_json() for x in self.notebooks] if self.notebooks is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.notebooks is not None:
+            o["notebooks"] = [x.to_json() for x in self.notebooks]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetPermissionsSummaryResponse:
     def __init__(
@@ -2854,10 +3040,10 @@ class v1GetPermissionsSummaryResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roles": [x.to_json() for x in self.roles],
-            "assignments": [x.to_json() for x in self.assignments],
-        }
+        o = {}
+        o["roles"] = [x.to_json() for x in self.roles]
+        o["assignments"] = [x.to_json() for x in self.assignments]
+        return o
 
 class v1GetProjectResponse:
     def __init__(
@@ -2874,9 +3060,9 @@ class v1GetProjectResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "project": self.project.to_json(),
-        }
+        o = {}
+        o["project"] = self.project.to_json()
+        return o
 
 class v1GetResourcePoolsResponse:
     def __init__(
@@ -2896,10 +3082,12 @@ class v1GetResourcePoolsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "resourcePools": [x.to_json() for x in self.resourcePools] if self.resourcePools is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.resourcePools is not None:
+            o["resourcePools"] = [x.to_json() for x in self.resourcePools]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetRolesAssignedToGroupResponse:
     def __init__(
@@ -2916,9 +3104,10 @@ class v1GetRolesAssignedToGroupResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roles": [x.to_json() for x in self.roles] if self.roles is not None else None,
-        }
+        o = {}
+        if self.roles is not None:
+            o["roles"] = [x.to_json() for x in self.roles]
+        return o
 
 class v1GetRolesAssignedToUserResponse:
     def __init__(
@@ -2935,9 +3124,10 @@ class v1GetRolesAssignedToUserResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roles": [x.to_json() for x in self.roles] if self.roles is not None else None,
-        }
+        o = {}
+        if self.roles is not None:
+            o["roles"] = [x.to_json() for x in self.roles]
+        return o
 
 class v1GetRolesByIDRequest:
     def __init__(
@@ -2954,9 +3144,10 @@ class v1GetRolesByIDRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roleIds": self.roleIds if self.roleIds is not None else None,
-        }
+        o = {}
+        if self.roleIds is not None:
+            o["roleIds"] = self.roleIds
+        return o
 
 class v1GetRolesByIDResponse:
     def __init__(
@@ -2973,9 +3164,10 @@ class v1GetRolesByIDResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roles": [x.to_json() for x in self.roles] if self.roles is not None else None,
-        }
+        o = {}
+        if self.roles is not None:
+            o["roles"] = [x.to_json() for x in self.roles]
+        return o
 
 class v1GetSearcherEventsResponse:
     def __init__(
@@ -2992,9 +3184,10 @@ class v1GetSearcherEventsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "searcherEvents": [x.to_json() for x in self.searcherEvents] if self.searcherEvents is not None else None,
-        }
+        o = {}
+        if self.searcherEvents is not None:
+            o["searcherEvents"] = [x.to_json() for x in self.searcherEvents]
+        return o
 
 class v1GetShellResponse:
     def __init__(
@@ -3014,10 +3207,12 @@ class v1GetShellResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "shell": self.shell.to_json() if self.shell is not None else None,
-            "config": self.config if self.config is not None else None,
-        }
+        o = {}
+        if self.shell is not None:
+            o["shell"] = self.shell.to_json()
+        if self.config is not None:
+            o["config"] = self.config
+        return o
 
 class v1GetShellsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3043,10 +3238,12 @@ class v1GetShellsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "shells": [x.to_json() for x in self.shells] if self.shells is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.shells is not None:
+            o["shells"] = [x.to_json() for x in self.shells]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetSlotResponse:
     def __init__(
@@ -3063,9 +3260,10 @@ class v1GetSlotResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "slot": self.slot.to_json() if self.slot is not None else None,
-        }
+        o = {}
+        if self.slot is not None:
+            o["slot"] = self.slot.to_json()
+        return o
 
 class v1GetSlotsResponse:
     def __init__(
@@ -3082,9 +3280,10 @@ class v1GetSlotsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "slots": [x.to_json() for x in self.slots] if self.slots is not None else None,
-        }
+        o = {}
+        if self.slots is not None:
+            o["slots"] = [x.to_json() for x in self.slots]
+        return o
 
 class v1GetTaskResponse:
     def __init__(
@@ -3101,9 +3300,10 @@ class v1GetTaskResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "task": self.task.to_json() if self.task is not None else None,
-        }
+        o = {}
+        if self.task is not None:
+            o["task"] = self.task.to_json()
+        return o
 
 class v1GetTelemetryResponse:
     def __init__(
@@ -3123,10 +3323,11 @@ class v1GetTelemetryResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "enabled": self.enabled,
-            "segmentKey": self.segmentKey if self.segmentKey is not None else None,
-        }
+        o = {}
+        o["enabled"] = self.enabled
+        if self.segmentKey is not None:
+            o["segmentKey"] = self.segmentKey
+        return o
 
 class v1GetTemplateResponse:
     def __init__(
@@ -3143,9 +3344,10 @@ class v1GetTemplateResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "template": self.template.to_json() if self.template is not None else None,
-        }
+        o = {}
+        if self.template is not None:
+            o["template"] = self.template.to_json()
+        return o
 
 class v1GetTemplatesRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3169,10 +3371,12 @@ class v1GetTemplatesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "templates": [x.to_json() for x in self.templates] if self.templates is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.templates is not None:
+            o["templates"] = [x.to_json() for x in self.templates]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetTensorboardResponse:
     def __init__(
@@ -3192,10 +3396,12 @@ class v1GetTensorboardResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "tensorboard": self.tensorboard.to_json() if self.tensorboard is not None else None,
-            "config": self.config if self.config is not None else None,
-        }
+        o = {}
+        if self.tensorboard is not None:
+            o["tensorboard"] = self.tensorboard.to_json()
+        if self.config is not None:
+            o["config"] = self.config
+        return o
 
 class v1GetTensorboardsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3221,10 +3427,12 @@ class v1GetTensorboardsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "tensorboards": [x.to_json() for x in self.tensorboards] if self.tensorboards is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.tensorboards is not None:
+            o["tensorboards"] = [x.to_json() for x in self.tensorboards]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetTrialCheckpointsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3251,10 +3459,10 @@ class v1GetTrialCheckpointsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpoints": [x.to_json() for x in self.checkpoints],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["checkpoints"] = [x.to_json() for x in self.checkpoints]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetTrialProfilerAvailableSeriesResponse:
     def __init__(
@@ -3271,9 +3479,9 @@ class v1GetTrialProfilerAvailableSeriesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "labels": [x.to_json() for x in self.labels],
-        }
+        o = {}
+        o["labels"] = [x.to_json() for x in self.labels]
+        return o
 
 class v1GetTrialProfilerMetricsResponse:
     def __init__(
@@ -3290,9 +3498,9 @@ class v1GetTrialProfilerMetricsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "batch": self.batch.to_json(),
-        }
+        o = {}
+        o["batch"] = self.batch.to_json()
+        return o
 
 class v1GetTrialResponse:
     def __init__(
@@ -3309,9 +3517,9 @@ class v1GetTrialResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trial": self.trial.to_json(),
-        }
+        o = {}
+        o["trial"] = self.trial.to_json()
+        return o
 
 class v1GetTrialWorkloadsResponse:
     def __init__(
@@ -3331,10 +3539,10 @@ class v1GetTrialWorkloadsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "workloads": [x.to_json() for x in self.workloads],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["workloads"] = [x.to_json() for x in self.workloads]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetTrialsCollectionsResponse:
     def __init__(
@@ -3351,9 +3559,10 @@ class v1GetTrialsCollectionsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "collections": [x.to_json() for x in self.collections] if self.collections is not None else None,
-        }
+        o = {}
+        if self.collections is not None:
+            o["collections"] = [x.to_json() for x in self.collections]
+        return o
 
 class v1GetUserResponse:
     def __init__(
@@ -3370,9 +3579,9 @@ class v1GetUserResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "user": self.user.to_json(),
-        }
+        o = {}
+        o["user"] = self.user.to_json()
+        return o
 
 class v1GetUserSettingResponse:
     def __init__(
@@ -3389,9 +3598,9 @@ class v1GetUserSettingResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "settings": [x.to_json() for x in self.settings],
-        }
+        o = {}
+        o["settings"] = [x.to_json() for x in self.settings]
+        return o
 
 class v1GetUsersRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3419,10 +3628,12 @@ class v1GetUsersResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "users": [x.to_json() for x in self.users] if self.users is not None else None,
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-        }
+        o = {}
+        if self.users is not None:
+            o["users"] = [x.to_json() for x in self.users]
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetWebhooksResponse:
     def __init__(
@@ -3439,9 +3650,9 @@ class v1GetWebhooksResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "webhooks": [x.to_json() for x in self.webhooks],
-        }
+        o = {}
+        o["webhooks"] = [x.to_json() for x in self.webhooks]
+        return o
 
 class v1GetWorkspaceProjectsRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3469,10 +3680,10 @@ class v1GetWorkspaceProjectsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "projects": [x.to_json() for x in self.projects],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["projects"] = [x.to_json() for x in self.projects]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1GetWorkspaceResponse:
     def __init__(
@@ -3489,9 +3700,9 @@ class v1GetWorkspaceResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "workspace": self.workspace.to_json(),
-        }
+        o = {}
+        o["workspace"] = self.workspace.to_json()
+        return o
 
 class v1GetWorkspacesRequestSortBy(enum.Enum):
     SORT_BY_UNSPECIFIED = "SORT_BY_UNSPECIFIED"
@@ -3516,10 +3727,10 @@ class v1GetWorkspacesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "workspaces": [x.to_json() for x in self.workspaces],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["workspaces"] = [x.to_json() for x in self.workspaces]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1Group:
     def __init__(
@@ -3539,10 +3750,12 @@ class v1Group:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groupId": self.groupId if self.groupId is not None else None,
-            "name": self.name if self.name is not None else None,
-        }
+        o = {}
+        if self.groupId is not None:
+            o["groupId"] = self.groupId
+        if self.name is not None:
+            o["name"] = self.name
+        return o
 
 class v1GroupDetails:
     def __init__(
@@ -3565,11 +3778,14 @@ class v1GroupDetails:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groupId": self.groupId if self.groupId is not None else None,
-            "name": self.name if self.name is not None else None,
-            "users": [x.to_json() for x in self.users] if self.users is not None else None,
-        }
+        o = {}
+        if self.groupId is not None:
+            o["groupId"] = self.groupId
+        if self.name is not None:
+            o["name"] = self.name
+        if self.users is not None:
+            o["users"] = [x.to_json() for x in self.users]
+        return o
 
 class v1GroupRoleAssignment:
     def __init__(
@@ -3589,10 +3805,10 @@ class v1GroupRoleAssignment:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groupId": self.groupId,
-            "roleAssignment": self.roleAssignment.to_json(),
-        }
+        o = {}
+        o["groupId"] = self.groupId
+        o["roleAssignment"] = self.roleAssignment.to_json()
+        return o
 
 class v1GroupSearchResult:
     def __init__(
@@ -3612,10 +3828,10 @@ class v1GroupSearchResult:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "group": self.group.to_json(),
-            "numMembers": self.numMembers,
-        }
+        o = {}
+        o["group"] = self.group.to_json()
+        o["numMembers"] = self.numMembers
+        return o
 
 class v1IdleNotebookRequest:
     def __init__(
@@ -3635,10 +3851,12 @@ class v1IdleNotebookRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebookId": self.notebookId if self.notebookId is not None else None,
-            "idle": self.idle if self.idle is not None else None,
-        }
+        o = {}
+        if self.notebookId is not None:
+            o["notebookId"] = self.notebookId
+        if self.idle is not None:
+            o["idle"] = self.idle
+        return o
 
 class v1InitialOperations:
     def __init__(
@@ -3655,9 +3873,10 @@ class v1InitialOperations:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "placeholder": self.placeholder if self.placeholder is not None else None,
-        }
+        o = {}
+        if self.placeholder is not None:
+            o["placeholder"] = self.placeholder
+        return o
 
 class v1Int32FieldFilter:
     def __init__(
@@ -3689,14 +3908,20 @@ class v1Int32FieldFilter:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "lt": self.lt if self.lt is not None else None,
-            "lte": self.lte if self.lte is not None else None,
-            "gt": self.gt if self.gt is not None else None,
-            "gte": self.gte if self.gte is not None else None,
-            "incl": self.incl if self.incl is not None else None,
-            "notIn": self.notIn if self.notIn is not None else None,
-        }
+        o = {}
+        if self.lt is not None:
+            o["lt"] = self.lt
+        if self.lte is not None:
+            o["lte"] = self.lte
+        if self.gt is not None:
+            o["gt"] = self.gt
+        if self.gte is not None:
+            o["gte"] = self.gte
+        if self.incl is not None:
+            o["incl"] = self.incl
+        if self.notIn is not None:
+            o["notIn"] = self.notIn
+        return o
 
 class v1Job:
     def __init__(
@@ -3755,23 +3980,28 @@ class v1Job:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "summary": self.summary.to_json() if self.summary is not None else None,
-            "type": self.type.value,
-            "submissionTime": self.submissionTime,
-            "username": self.username,
-            "userId": self.userId if self.userId is not None else None,
-            "resourcePool": self.resourcePool,
-            "isPreemptible": self.isPreemptible,
-            "priority": self.priority if self.priority is not None else None,
-            "weight": dump_float(self.weight) if self.weight is not None else None,
-            "entityId": self.entityId,
-            "jobId": self.jobId,
-            "requestedSlots": self.requestedSlots,
-            "allocatedSlots": self.allocatedSlots,
-            "name": self.name,
-            "progress": dump_float(self.progress) if self.progress is not None else None,
-        }
+        o = {}
+        if self.summary is not None:
+            o["summary"] = self.summary.to_json()
+        o["type"] = self.type.value
+        o["submissionTime"] = self.submissionTime
+        o["username"] = self.username
+        if self.userId is not None:
+            o["userId"] = self.userId
+        o["resourcePool"] = self.resourcePool
+        o["isPreemptible"] = self.isPreemptible
+        if self.priority is not None:
+            o["priority"] = self.priority
+        if self.weight is not None:
+            o["weight"] = dump_float(self.weight)
+        o["entityId"] = self.entityId
+        o["jobId"] = self.jobId
+        o["requestedSlots"] = self.requestedSlots
+        o["allocatedSlots"] = self.allocatedSlots
+        o["name"] = self.name
+        if self.progress is not None:
+            o["progress"] = dump_float(self.progress)
+        return o
 
 class v1JobSummary:
     def __init__(
@@ -3791,10 +4021,10 @@ class v1JobSummary:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "state": self.state.value,
-            "jobsAhead": self.jobsAhead,
-        }
+        o = {}
+        o["state"] = self.state.value
+        o["jobsAhead"] = self.jobsAhead
+        return o
 
 class v1K8PriorityClass:
     def __init__(
@@ -3814,10 +4044,12 @@ class v1K8PriorityClass:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "priorityClass": self.priorityClass if self.priorityClass is not None else None,
-            "priorityValue": self.priorityValue if self.priorityValue is not None else None,
-        }
+        o = {}
+        if self.priorityClass is not None:
+            o["priorityClass"] = self.priorityClass
+        if self.priorityValue is not None:
+            o["priorityValue"] = self.priorityValue
+        return o
 
 class v1KillCommandResponse:
     def __init__(
@@ -3834,9 +4066,10 @@ class v1KillCommandResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "command": self.command.to_json() if self.command is not None else None,
-        }
+        o = {}
+        if self.command is not None:
+            o["command"] = self.command.to_json()
+        return o
 
 class v1KillNotebookResponse:
     def __init__(
@@ -3853,9 +4086,10 @@ class v1KillNotebookResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebook": self.notebook.to_json() if self.notebook is not None else None,
-        }
+        o = {}
+        if self.notebook is not None:
+            o["notebook"] = self.notebook.to_json()
+        return o
 
 class v1KillShellResponse:
     def __init__(
@@ -3872,9 +4106,10 @@ class v1KillShellResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "shell": self.shell.to_json() if self.shell is not None else None,
-        }
+        o = {}
+        if self.shell is not None:
+            o["shell"] = self.shell.to_json()
+        return o
 
 class v1KillTensorboardResponse:
     def __init__(
@@ -3891,9 +4126,10 @@ class v1KillTensorboardResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "tensorboard": self.tensorboard.to_json() if self.tensorboard is not None else None,
-        }
+        o = {}
+        if self.tensorboard is not None:
+            o["tensorboard"] = self.tensorboard.to_json()
+        return o
 
 class v1LaunchCommandRequest:
     def __init__(
@@ -3919,12 +4155,16 @@ class v1LaunchCommandRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "config": self.config if self.config is not None else None,
-            "templateName": self.templateName if self.templateName is not None else None,
-            "files": [x.to_json() for x in self.files] if self.files is not None else None,
-            "data": self.data if self.data is not None else None,
-        }
+        o = {}
+        if self.config is not None:
+            o["config"] = self.config
+        if self.templateName is not None:
+            o["templateName"] = self.templateName
+        if self.files is not None:
+            o["files"] = [x.to_json() for x in self.files]
+        if self.data is not None:
+            o["data"] = self.data
+        return o
 
 class v1LaunchCommandResponse:
     def __init__(
@@ -3944,10 +4184,10 @@ class v1LaunchCommandResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "command": self.command.to_json(),
-            "config": self.config,
-        }
+        o = {}
+        o["command"] = self.command.to_json()
+        o["config"] = self.config
+        return o
 
 class v1LaunchNotebookRequest:
     def __init__(
@@ -3973,12 +4213,16 @@ class v1LaunchNotebookRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "config": self.config if self.config is not None else None,
-            "templateName": self.templateName if self.templateName is not None else None,
-            "files": [x.to_json() for x in self.files] if self.files is not None else None,
-            "preview": self.preview if self.preview is not None else None,
-        }
+        o = {}
+        if self.config is not None:
+            o["config"] = self.config
+        if self.templateName is not None:
+            o["templateName"] = self.templateName
+        if self.files is not None:
+            o["files"] = [x.to_json() for x in self.files]
+        if self.preview is not None:
+            o["preview"] = self.preview
+        return o
 
 class v1LaunchNotebookResponse:
     def __init__(
@@ -3998,10 +4242,10 @@ class v1LaunchNotebookResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebook": self.notebook.to_json(),
-            "config": self.config,
-        }
+        o = {}
+        o["notebook"] = self.notebook.to_json()
+        o["config"] = self.config
+        return o
 
 class v1LaunchShellRequest:
     def __init__(
@@ -4027,12 +4271,16 @@ class v1LaunchShellRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "config": self.config if self.config is not None else None,
-            "templateName": self.templateName if self.templateName is not None else None,
-            "files": [x.to_json() for x in self.files] if self.files is not None else None,
-            "data": self.data if self.data is not None else None,
-        }
+        o = {}
+        if self.config is not None:
+            o["config"] = self.config
+        if self.templateName is not None:
+            o["templateName"] = self.templateName
+        if self.files is not None:
+            o["files"] = [x.to_json() for x in self.files]
+        if self.data is not None:
+            o["data"] = self.data
+        return o
 
 class v1LaunchShellResponse:
     def __init__(
@@ -4052,10 +4300,10 @@ class v1LaunchShellResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "shell": self.shell.to_json(),
-            "config": self.config,
-        }
+        o = {}
+        o["shell"] = self.shell.to_json()
+        o["config"] = self.config
+        return o
 
 class v1LaunchTensorboardRequest:
     def __init__(
@@ -4084,13 +4332,18 @@ class v1LaunchTensorboardRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experimentIds": self.experimentIds if self.experimentIds is not None else None,
-            "trialIds": self.trialIds if self.trialIds is not None else None,
-            "config": self.config if self.config is not None else None,
-            "templateName": self.templateName if self.templateName is not None else None,
-            "files": [x.to_json() for x in self.files] if self.files is not None else None,
-        }
+        o = {}
+        if self.experimentIds is not None:
+            o["experimentIds"] = self.experimentIds
+        if self.trialIds is not None:
+            o["trialIds"] = self.trialIds
+        if self.config is not None:
+            o["config"] = self.config
+        if self.templateName is not None:
+            o["templateName"] = self.templateName
+        if self.files is not None:
+            o["files"] = [x.to_json() for x in self.files]
+        return o
 
 class v1LaunchTensorboardResponse:
     def __init__(
@@ -4110,10 +4363,10 @@ class v1LaunchTensorboardResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "tensorboard": self.tensorboard.to_json(),
-            "config": self.config,
-        }
+        o = {}
+        o["tensorboard"] = self.tensorboard.to_json()
+        o["config"] = self.config
+        return o
 
 class v1ListRolesRequest:
     def __init__(
@@ -4133,10 +4386,11 @@ class v1ListRolesRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "offset": self.offset if self.offset is not None else None,
-            "limit": self.limit,
-        }
+        o = {}
+        if self.offset is not None:
+            o["offset"] = self.offset
+        o["limit"] = self.limit
+        return o
 
 class v1ListRolesResponse:
     def __init__(
@@ -4156,10 +4410,10 @@ class v1ListRolesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roles": [x.to_json() for x in self.roles],
-            "pagination": self.pagination.to_json(),
-        }
+        o = {}
+        o["roles"] = [x.to_json() for x in self.roles]
+        o["pagination"] = self.pagination.to_json()
+        return o
 
 class v1LogEntry:
     def __init__(
@@ -4185,12 +4439,15 @@ class v1LogEntry:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "message": self.message if self.message is not None else None,
-            "timestamp": self.timestamp if self.timestamp is not None else None,
-            "level": self.level.value if self.level is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        if self.message is not None:
+            o["message"] = self.message
+        if self.timestamp is not None:
+            o["timestamp"] = self.timestamp
+        if self.level is not None:
+            o["level"] = self.level.value
+        return o
 
 class v1LogLevel(enum.Enum):
     LOG_LEVEL_UNSPECIFIED = "LOG_LEVEL_UNSPECIFIED"
@@ -4222,11 +4479,12 @@ class v1LoginRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "username": self.username,
-            "password": self.password,
-            "isHashed": self.isHashed if self.isHashed is not None else None,
-        }
+        o = {}
+        o["username"] = self.username
+        o["password"] = self.password
+        if self.isHashed is not None:
+            o["isHashed"] = self.isHashed
+        return o
 
 class v1LoginResponse:
     def __init__(
@@ -4246,10 +4504,10 @@ class v1LoginResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "token": self.token,
-            "user": self.user.to_json(),
-        }
+        o = {}
+        o["token"] = self.token
+        o["user"] = self.user.to_json()
+        return o
 
 class v1MarkAllocationResourcesDaemonRequest:
     def __init__(
@@ -4269,10 +4527,11 @@ class v1MarkAllocationResourcesDaemonRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId,
-            "resourcesId": self.resourcesId if self.resourcesId is not None else None,
-        }
+        o = {}
+        o["allocationId"] = self.allocationId
+        if self.resourcesId is not None:
+            o["resourcesId"] = self.resourcesId
+        return o
 
 class v1MasterLogsResponse:
     def __init__(
@@ -4289,9 +4548,10 @@ class v1MasterLogsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "logEntry": self.logEntry.to_json() if self.logEntry is not None else None,
-        }
+        o = {}
+        if self.logEntry is not None:
+            o["logEntry"] = self.logEntry.to_json()
+        return o
 
 class v1MetricBatchesResponse:
     def __init__(
@@ -4308,9 +4568,10 @@ class v1MetricBatchesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "batches": self.batches if self.batches is not None else None,
-        }
+        o = {}
+        if self.batches is not None:
+            o["batches"] = self.batches
+        return o
 
 class v1MetricNamesResponse:
     def __init__(
@@ -4333,11 +4594,14 @@ class v1MetricNamesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "searcherMetric": self.searcherMetric if self.searcherMetric is not None else None,
-            "trainingMetrics": self.trainingMetrics if self.trainingMetrics is not None else None,
-            "validationMetrics": self.validationMetrics if self.validationMetrics is not None else None,
-        }
+        o = {}
+        if self.searcherMetric is not None:
+            o["searcherMetric"] = self.searcherMetric
+        if self.trainingMetrics is not None:
+            o["trainingMetrics"] = self.trainingMetrics
+        if self.validationMetrics is not None:
+            o["validationMetrics"] = self.validationMetrics
+        return o
 
 class v1MetricType(enum.Enum):
     METRIC_TYPE_UNSPECIFIED = "METRIC_TYPE_UNSPECIFIED"
@@ -4362,10 +4626,11 @@ class v1Metrics:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "avgMetrics": self.avgMetrics,
-            "batchMetrics": self.batchMetrics if self.batchMetrics is not None else None,
-        }
+        o = {}
+        o["avgMetrics"] = self.avgMetrics
+        if self.batchMetrics is not None:
+            o["batchMetrics"] = self.batchMetrics
+        return o
 
 class v1MetricsWorkload:
     def __init__(
@@ -4394,13 +4659,14 @@ class v1MetricsWorkload:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "endTime": self.endTime if self.endTime is not None else None,
-            "state": self.state.value,
-            "metrics": self.metrics.to_json(),
-            "numInputs": self.numInputs,
-            "totalBatches": self.totalBatches,
-        }
+        o = {}
+        if self.endTime is not None:
+            o["endTime"] = self.endTime
+        o["state"] = self.state.value
+        o["metrics"] = self.metrics.to_json()
+        o["numInputs"] = self.numInputs
+        o["totalBatches"] = self.totalBatches
+        return o
 
 class v1Model:
     def __init__(
@@ -4450,20 +4716,23 @@ class v1Model:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "description": self.description if self.description is not None else None,
-            "metadata": self.metadata,
-            "creationTime": self.creationTime,
-            "lastUpdatedTime": self.lastUpdatedTime,
-            "id": self.id,
-            "numVersions": self.numVersions,
-            "labels": self.labels if self.labels is not None else None,
-            "username": self.username,
-            "userId": self.userId,
-            "archived": self.archived,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        o["name"] = self.name
+        if self.description is not None:
+            o["description"] = self.description
+        o["metadata"] = self.metadata
+        o["creationTime"] = self.creationTime
+        o["lastUpdatedTime"] = self.lastUpdatedTime
+        o["id"] = self.id
+        o["numVersions"] = self.numVersions
+        if self.labels is not None:
+            o["labels"] = self.labels
+        o["username"] = self.username
+        o["userId"] = self.userId
+        o["archived"] = self.archived
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1ModelVersion:
     def __init__(
@@ -4516,21 +4785,28 @@ class v1ModelVersion:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "model": self.model.to_json(),
-            "checkpoint": self.checkpoint.to_json(),
-            "version": self.version,
-            "creationTime": self.creationTime,
-            "id": self.id,
-            "name": self.name if self.name is not None else None,
-            "metadata": self.metadata if self.metadata is not None else None,
-            "lastUpdatedTime": self.lastUpdatedTime,
-            "comment": self.comment if self.comment is not None else None,
-            "username": self.username if self.username is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        o["model"] = self.model.to_json()
+        o["checkpoint"] = self.checkpoint.to_json()
+        o["version"] = self.version
+        o["creationTime"] = self.creationTime
+        o["id"] = self.id
+        if self.name is not None:
+            o["name"] = self.name
+        if self.metadata is not None:
+            o["metadata"] = self.metadata
+        o["lastUpdatedTime"] = self.lastUpdatedTime
+        if self.comment is not None:
+            o["comment"] = self.comment
+        if self.username is not None:
+            o["username"] = self.username
+        if self.userId is not None:
+            o["userId"] = self.userId
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1MoveExperimentRequest:
     def __init__(
@@ -4550,10 +4826,10 @@ class v1MoveExperimentRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experimentId": self.experimentId,
-            "destinationProjectId": self.destinationProjectId,
-        }
+        o = {}
+        o["experimentId"] = self.experimentId
+        o["destinationProjectId"] = self.destinationProjectId
+        return o
 
 class v1MoveProjectRequest:
     def __init__(
@@ -4573,10 +4849,10 @@ class v1MoveProjectRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "projectId": self.projectId,
-            "destinationWorkspaceId": self.destinationWorkspaceId,
-        }
+        o = {}
+        o["projectId"] = self.projectId
+        o["destinationWorkspaceId"] = self.destinationWorkspaceId
+        return o
 
 class v1Note:
     def __init__(
@@ -4596,10 +4872,10 @@ class v1Note:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "contents": self.contents,
-        }
+        o = {}
+        o["name"] = self.name
+        o["contents"] = self.contents
+        return o
 
 class v1Notebook:
     def __init__(
@@ -4649,20 +4925,25 @@ class v1Notebook:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "description": self.description,
-            "state": self.state.value,
-            "startTime": self.startTime,
-            "container": self.container.to_json() if self.container is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "username": self.username,
-            "serviceAddress": self.serviceAddress if self.serviceAddress is not None else None,
-            "resourcePool": self.resourcePool,
-            "exitStatus": self.exitStatus if self.exitStatus is not None else None,
-            "jobId": self.jobId,
-        }
+        o = {}
+        o["id"] = self.id
+        o["description"] = self.description
+        o["state"] = self.state.value
+        o["startTime"] = self.startTime
+        if self.container is not None:
+            o["container"] = self.container.to_json()
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.userId is not None:
+            o["userId"] = self.userId
+        o["username"] = self.username
+        if self.serviceAddress is not None:
+            o["serviceAddress"] = self.serviceAddress
+        o["resourcePool"] = self.resourcePool
+        if self.exitStatus is not None:
+            o["exitStatus"] = self.exitStatus
+        o["jobId"] = self.jobId
+        return o
 
 class v1OrderBy(enum.Enum):
     ORDER_BY_UNSPECIFIED = "ORDER_BY_UNSPECIFIED"
@@ -4696,13 +4977,18 @@ class v1Pagination:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "offset": self.offset if self.offset is not None else None,
-            "limit": self.limit if self.limit is not None else None,
-            "startIndex": self.startIndex if self.startIndex is not None else None,
-            "endIndex": self.endIndex if self.endIndex is not None else None,
-            "total": self.total if self.total is not None else None,
-        }
+        o = {}
+        if self.offset is not None:
+            o["offset"] = self.offset
+        if self.limit is not None:
+            o["limit"] = self.limit
+        if self.startIndex is not None:
+            o["startIndex"] = self.startIndex
+        if self.endIndex is not None:
+            o["endIndex"] = self.endIndex
+        if self.total is not None:
+            o["total"] = self.total
+        return o
 
 class v1PatchExperiment:
     def __init__(
@@ -4731,13 +5017,17 @@ class v1PatchExperiment:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "description": self.description if self.description is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "name": self.name if self.name is not None else None,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        if self.description is not None:
+            o["description"] = self.description
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.name is not None:
+            o["name"] = self.name
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1PatchExperimentResponse:
     def __init__(
@@ -4754,9 +5044,10 @@ class v1PatchExperimentResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experiment": self.experiment.to_json() if self.experiment is not None else None,
-        }
+        o = {}
+        if self.experiment is not None:
+            o["experiment"] = self.experiment.to_json()
+        return o
 
 class v1PatchModel:
     def __init__(
@@ -4785,13 +5076,18 @@ class v1PatchModel:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name if self.name is not None else None,
-            "description": self.description if self.description is not None else None,
-            "metadata": self.metadata if self.metadata is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        if self.name is not None:
+            o["name"] = self.name
+        if self.description is not None:
+            o["description"] = self.description
+        if self.metadata is not None:
+            o["metadata"] = self.metadata
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1PatchModelResponse:
     def __init__(
@@ -4808,9 +5104,9 @@ class v1PatchModelResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "model": self.model.to_json(),
-        }
+        o = {}
+        o["model"] = self.model.to_json()
+        return o
 
 class v1PatchModelVersion:
     def __init__(
@@ -4842,14 +5138,20 @@ class v1PatchModelVersion:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpoint": self.checkpoint.to_json() if self.checkpoint is not None else None,
-            "name": self.name if self.name is not None else None,
-            "metadata": self.metadata if self.metadata is not None else None,
-            "comment": self.comment if self.comment is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        if self.checkpoint is not None:
+            o["checkpoint"] = self.checkpoint.to_json()
+        if self.name is not None:
+            o["name"] = self.name
+        if self.metadata is not None:
+            o["metadata"] = self.metadata
+        if self.comment is not None:
+            o["comment"] = self.comment
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1PatchModelVersionResponse:
     def __init__(
@@ -4866,9 +5168,9 @@ class v1PatchModelVersionResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "modelVersion": self.modelVersion.to_json(),
-        }
+        o = {}
+        o["modelVersion"] = self.modelVersion.to_json()
+        return o
 
 class v1PatchProject:
     def __init__(
@@ -4888,10 +5190,12 @@ class v1PatchProject:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name if self.name is not None else None,
-            "description": self.description if self.description is not None else None,
-        }
+        o = {}
+        if self.name is not None:
+            o["name"] = self.name
+        if self.description is not None:
+            o["description"] = self.description
+        return o
 
 class v1PatchProjectResponse:
     def __init__(
@@ -4908,9 +5212,9 @@ class v1PatchProjectResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "project": self.project.to_json(),
-        }
+        o = {}
+        o["project"] = self.project.to_json()
+        return o
 
 class v1PatchTrialsCollectionRequest:
     def __init__(
@@ -4936,12 +5240,15 @@ class v1PatchTrialsCollectionRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "name": self.name if self.name is not None else None,
-            "filters": self.filters.to_json() if self.filters is not None else None,
-            "sorter": self.sorter.to_json() if self.sorter is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        if self.name is not None:
+            o["name"] = self.name
+        if self.filters is not None:
+            o["filters"] = self.filters.to_json()
+        if self.sorter is not None:
+            o["sorter"] = self.sorter.to_json()
+        return o
 
 class v1PatchTrialsCollectionResponse:
     def __init__(
@@ -4958,9 +5265,10 @@ class v1PatchTrialsCollectionResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "collection": self.collection.to_json() if self.collection is not None else None,
-        }
+        o = {}
+        if self.collection is not None:
+            o["collection"] = self.collection.to_json()
+        return o
 
 class v1PatchUser:
     def __init__(
@@ -4986,12 +5294,16 @@ class v1PatchUser:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "admin": self.admin if self.admin is not None else None,
-            "active": self.active if self.active is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-        }
+        o = {}
+        if self.admin is not None:
+            o["admin"] = self.admin
+        if self.active is not None:
+            o["active"] = self.active
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.agentUserGroup is not None:
+            o["agentUserGroup"] = self.agentUserGroup.to_json()
+        return o
 
 class v1PatchUserResponse:
     def __init__(
@@ -5008,9 +5320,9 @@ class v1PatchUserResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "user": self.user.to_json(),
-        }
+        o = {}
+        o["user"] = self.user.to_json()
+        return o
 
 class v1PatchWorkspace:
     def __init__(
@@ -5033,11 +5345,14 @@ class v1PatchWorkspace:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name if self.name is not None else None,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "checkpointStorageConfig": self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None,
-        }
+        o = {}
+        if self.name is not None:
+            o["name"] = self.name
+        if self.agentUserGroup is not None:
+            o["agentUserGroup"] = self.agentUserGroup.to_json()
+        if self.checkpointStorageConfig is not None:
+            o["checkpointStorageConfig"] = self.checkpointStorageConfig
+        return o
 
 class v1PatchWorkspaceResponse:
     def __init__(
@@ -5054,9 +5369,9 @@ class v1PatchWorkspaceResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "workspace": self.workspace.to_json(),
-        }
+        o = {}
+        o["workspace"] = self.workspace.to_json()
+        return o
 
 class v1Permission:
     def __init__(
@@ -5079,11 +5394,13 @@ class v1Permission:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id.value,
-            "name": self.name if self.name is not None else None,
-            "isGlobal": self.isGlobal if self.isGlobal is not None else None,
-        }
+        o = {}
+        o["id"] = self.id.value
+        if self.name is not None:
+            o["name"] = self.name
+        if self.isGlobal is not None:
+            o["isGlobal"] = self.isGlobal
+        return o
 
 class v1PermissionType(enum.Enum):
     PERMISSION_TYPE_UNSPECIFIED = "PERMISSION_TYPE_UNSPECIFIED"
@@ -5126,10 +5443,12 @@ class v1PostAllocationProxyAddressRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationId": self.allocationId if self.allocationId is not None else None,
-            "proxyAddress": self.proxyAddress if self.proxyAddress is not None else None,
-        }
+        o = {}
+        if self.allocationId is not None:
+            o["allocationId"] = self.allocationId
+        if self.proxyAddress is not None:
+            o["proxyAddress"] = self.proxyAddress
+        return o
 
 class v1PostCheckpointMetadataRequest:
     def __init__(
@@ -5146,9 +5465,10 @@ class v1PostCheckpointMetadataRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpoint": self.checkpoint.to_json() if self.checkpoint is not None else None,
-        }
+        o = {}
+        if self.checkpoint is not None:
+            o["checkpoint"] = self.checkpoint.to_json()
+        return o
 
 class v1PostCheckpointMetadataResponse:
     def __init__(
@@ -5165,9 +5485,10 @@ class v1PostCheckpointMetadataResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "checkpoint": self.checkpoint.to_json() if self.checkpoint is not None else None,
-        }
+        o = {}
+        if self.checkpoint is not None:
+            o["checkpoint"] = self.checkpoint.to_json()
+        return o
 
 class v1PostModelRequest:
     def __init__(
@@ -5196,13 +5517,17 @@ class v1PostModelRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "description": self.description if self.description is not None else None,
-            "metadata": self.metadata if self.metadata is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        o["name"] = self.name
+        if self.description is not None:
+            o["description"] = self.description
+        if self.metadata is not None:
+            o["metadata"] = self.metadata
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1PostModelResponse:
     def __init__(
@@ -5219,9 +5544,9 @@ class v1PostModelResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "model": self.model.to_json(),
-        }
+        o = {}
+        o["model"] = self.model.to_json()
+        return o
 
 class v1PostModelVersionRequest:
     def __init__(
@@ -5256,15 +5581,20 @@ class v1PostModelVersionRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "modelName": self.modelName,
-            "checkpointUuid": self.checkpointUuid,
-            "name": self.name if self.name is not None else None,
-            "comment": self.comment if self.comment is not None else None,
-            "metadata": self.metadata if self.metadata is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "notes": self.notes if self.notes is not None else None,
-        }
+        o = {}
+        o["modelName"] = self.modelName
+        o["checkpointUuid"] = self.checkpointUuid
+        if self.name is not None:
+            o["name"] = self.name
+        if self.comment is not None:
+            o["comment"] = self.comment
+        if self.metadata is not None:
+            o["metadata"] = self.metadata
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.notes is not None:
+            o["notes"] = self.notes
+        return o
 
 class v1PostModelVersionResponse:
     def __init__(
@@ -5281,9 +5611,9 @@ class v1PostModelVersionResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "modelVersion": self.modelVersion.to_json(),
-        }
+        o = {}
+        o["modelVersion"] = self.modelVersion.to_json()
+        return o
 
 class v1PostProjectRequest:
     def __init__(
@@ -5306,11 +5636,12 @@ class v1PostProjectRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "description": self.description if self.description is not None else None,
-            "workspaceId": self.workspaceId,
-        }
+        o = {}
+        o["name"] = self.name
+        if self.description is not None:
+            o["description"] = self.description
+        o["workspaceId"] = self.workspaceId
+        return o
 
 class v1PostProjectResponse:
     def __init__(
@@ -5327,9 +5658,9 @@ class v1PostProjectResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "project": self.project.to_json(),
-        }
+        o = {}
+        o["project"] = self.project.to_json()
+        return o
 
 class v1PostSearcherOperationsRequest:
     def __init__(
@@ -5352,11 +5683,14 @@ class v1PostSearcherOperationsRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experimentId": self.experimentId if self.experimentId is not None else None,
-            "searcherOperations": [x.to_json() for x in self.searcherOperations] if self.searcherOperations is not None else None,
-            "triggeredByEvent": self.triggeredByEvent.to_json() if self.triggeredByEvent is not None else None,
-        }
+        o = {}
+        if self.experimentId is not None:
+            o["experimentId"] = self.experimentId
+        if self.searcherOperations is not None:
+            o["searcherOperations"] = [x.to_json() for x in self.searcherOperations]
+        if self.triggeredByEvent is not None:
+            o["triggeredByEvent"] = self.triggeredByEvent.to_json()
+        return o
 
 class v1PostTrialProfilerMetricsBatchRequest:
     def __init__(
@@ -5373,9 +5707,10 @@ class v1PostTrialProfilerMetricsBatchRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "batches": [x.to_json() for x in self.batches] if self.batches is not None else None,
-        }
+        o = {}
+        if self.batches is not None:
+            o["batches"] = [x.to_json() for x in self.batches]
+        return o
 
 class v1PostUserRequest:
     def __init__(
@@ -5395,10 +5730,12 @@ class v1PostUserRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "user": self.user.to_json() if self.user is not None else None,
-            "password": self.password if self.password is not None else None,
-        }
+        o = {}
+        if self.user is not None:
+            o["user"] = self.user.to_json()
+        if self.password is not None:
+            o["password"] = self.password
+        return o
 
 class v1PostUserResponse:
     def __init__(
@@ -5415,9 +5752,10 @@ class v1PostUserResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "user": self.user.to_json() if self.user is not None else None,
-        }
+        o = {}
+        if self.user is not None:
+            o["user"] = self.user.to_json()
+        return o
 
 class v1PostUserSettingRequest:
     def __init__(
@@ -5437,10 +5775,10 @@ class v1PostUserSettingRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "storagePath": self.storagePath,
-            "setting": self.setting.to_json(),
-        }
+        o = {}
+        o["storagePath"] = self.storagePath
+        o["setting"] = self.setting.to_json()
+        return o
 
 class v1PostWebhookResponse:
     def __init__(
@@ -5457,9 +5795,9 @@ class v1PostWebhookResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "webhook": self.webhook.to_json(),
-        }
+        o = {}
+        o["webhook"] = self.webhook.to_json()
+        return o
 
 class v1PostWorkspaceRequest:
     def __init__(
@@ -5482,11 +5820,13 @@ class v1PostWorkspaceRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "checkpointStorageConfig": self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None,
-        }
+        o = {}
+        o["name"] = self.name
+        if self.agentUserGroup is not None:
+            o["agentUserGroup"] = self.agentUserGroup.to_json()
+        if self.checkpointStorageConfig is not None:
+            o["checkpointStorageConfig"] = self.checkpointStorageConfig
+        return o
 
 class v1PostWorkspaceResponse:
     def __init__(
@@ -5503,9 +5843,9 @@ class v1PostWorkspaceResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "workspace": self.workspace.to_json(),
-        }
+        o = {}
+        o["workspace"] = self.workspace.to_json()
+        return o
 
 class v1PreviewHPSearchRequest:
     def __init__(
@@ -5525,10 +5865,12 @@ class v1PreviewHPSearchRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "config": self.config if self.config is not None else None,
-            "seed": self.seed if self.seed is not None else None,
-        }
+        o = {}
+        if self.config is not None:
+            o["config"] = self.config
+        if self.seed is not None:
+            o["seed"] = self.seed
+        return o
 
 class v1PreviewHPSearchResponse:
     def __init__(
@@ -5545,9 +5887,10 @@ class v1PreviewHPSearchResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "simulation": self.simulation.to_json() if self.simulation is not None else None,
-        }
+        o = {}
+        if self.simulation is not None:
+            o["simulation"] = self.simulation.to_json()
+        return o
 
 class v1Project:
     def __init__(
@@ -5606,23 +5949,26 @@ class v1Project:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "workspaceId": self.workspaceId,
-            "description": self.description if self.description is not None else None,
-            "lastExperimentStartedAt": self.lastExperimentStartedAt if self.lastExperimentStartedAt is not None else None,
-            "notes": [x.to_json() for x in self.notes],
-            "numExperiments": self.numExperiments,
-            "numActiveExperiments": self.numActiveExperiments,
-            "archived": self.archived,
-            "username": self.username,
-            "immutable": self.immutable,
-            "userId": self.userId,
-            "workspaceName": self.workspaceName if self.workspaceName is not None else None,
-            "state": self.state.value,
-            "errorMessage": self.errorMessage,
-        }
+        o = {}
+        o["id"] = self.id
+        o["name"] = self.name
+        o["workspaceId"] = self.workspaceId
+        if self.description is not None:
+            o["description"] = self.description
+        if self.lastExperimentStartedAt is not None:
+            o["lastExperimentStartedAt"] = self.lastExperimentStartedAt
+        o["notes"] = [x.to_json() for x in self.notes]
+        o["numExperiments"] = self.numExperiments
+        o["numActiveExperiments"] = self.numActiveExperiments
+        o["archived"] = self.archived
+        o["username"] = self.username
+        o["immutable"] = self.immutable
+        o["userId"] = self.userId
+        if self.workspaceName is not None:
+            o["workspaceName"] = self.workspaceName
+        o["state"] = self.state.value
+        o["errorMessage"] = self.errorMessage
+        return o
 
 class v1PutProjectNotesRequest:
     def __init__(
@@ -5642,10 +5988,10 @@ class v1PutProjectNotesRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notes": [x.to_json() for x in self.notes],
-            "projectId": self.projectId,
-        }
+        o = {}
+        o["notes"] = [x.to_json() for x in self.notes]
+        o["projectId"] = self.projectId
+        return o
 
 class v1PutProjectNotesResponse:
     def __init__(
@@ -5662,9 +6008,9 @@ class v1PutProjectNotesResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notes": [x.to_json() for x in self.notes],
-        }
+        o = {}
+        o["notes"] = [x.to_json() for x in self.notes]
+        return o
 
 class v1PutTemplateResponse:
     def __init__(
@@ -5681,9 +6027,10 @@ class v1PutTemplateResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "template": self.template.to_json() if self.template is not None else None,
-        }
+        o = {}
+        if self.template is not None:
+            o["template"] = self.template.to_json()
+        return o
 
 class v1QueryTrialsRequest:
     def __init__(
@@ -5709,12 +6056,15 @@ class v1QueryTrialsRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "filters": self.filters.to_json(),
-            "sorter": self.sorter.to_json() if self.sorter is not None else None,
-            "offset": self.offset if self.offset is not None else None,
-            "limit": self.limit if self.limit is not None else None,
-        }
+        o = {}
+        o["filters"] = self.filters.to_json()
+        if self.sorter is not None:
+            o["sorter"] = self.sorter.to_json()
+        if self.offset is not None:
+            o["offset"] = self.offset
+        if self.limit is not None:
+            o["limit"] = self.limit
+        return o
 
 class v1QueryTrialsResponse:
     def __init__(
@@ -5731,9 +6081,9 @@ class v1QueryTrialsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trials": [x.to_json() for x in self.trials],
-        }
+        o = {}
+        o["trials"] = [x.to_json() for x in self.trials]
+        return o
 
 class v1QueueControl:
     def __init__(
@@ -5765,14 +6115,19 @@ class v1QueueControl:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "jobId": self.jobId,
-            "aheadOf": self.aheadOf if self.aheadOf is not None else None,
-            "behindOf": self.behindOf if self.behindOf is not None else None,
-            "resourcePool": self.resourcePool if self.resourcePool is not None else None,
-            "priority": self.priority if self.priority is not None else None,
-            "weight": dump_float(self.weight) if self.weight is not None else None,
-        }
+        o = {}
+        o["jobId"] = self.jobId
+        if self.aheadOf is not None:
+            o["aheadOf"] = self.aheadOf
+        if self.behindOf is not None:
+            o["behindOf"] = self.behindOf
+        if self.resourcePool is not None:
+            o["resourcePool"] = self.resourcePool
+        if self.priority is not None:
+            o["priority"] = self.priority
+        if self.weight is not None:
+            o["weight"] = dump_float(self.weight)
+        return o
 
 class v1QueueStats:
     def __init__(
@@ -5792,10 +6147,10 @@ class v1QueueStats:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "queuedCount": self.queuedCount,
-            "scheduledCount": self.scheduledCount,
-        }
+        o = {}
+        o["queuedCount"] = self.queuedCount
+        o["scheduledCount"] = self.scheduledCount
+        return o
 
 class v1RPQueueStat:
     def __init__(
@@ -5818,11 +6173,12 @@ class v1RPQueueStat:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "stats": self.stats.to_json(),
-            "resourcePool": self.resourcePool,
-            "aggregates": [x.to_json() for x in self.aggregates] if self.aggregates is not None else None,
-        }
+        o = {}
+        o["stats"] = self.stats.to_json()
+        o["resourcePool"] = self.resourcePool
+        if self.aggregates is not None:
+            o["aggregates"] = [x.to_json() for x in self.aggregates]
+        return o
 
 class v1RemoveAssignmentsRequest:
     def __init__(
@@ -5842,10 +6198,12 @@ class v1RemoveAssignmentsRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groupRoleAssignments": [x.to_json() for x in self.groupRoleAssignments] if self.groupRoleAssignments is not None else None,
-            "userRoleAssignments": [x.to_json() for x in self.userRoleAssignments] if self.userRoleAssignments is not None else None,
-        }
+        o = {}
+        if self.groupRoleAssignments is not None:
+            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments]
+        if self.userRoleAssignments is not None:
+            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments]
+        return o
 
 class v1RendezvousInfo:
     def __init__(
@@ -5865,10 +6223,10 @@ class v1RendezvousInfo:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "addresses": self.addresses,
-            "rank": self.rank,
-        }
+        o = {}
+        o["addresses"] = self.addresses
+        o["rank"] = self.rank
+        return o
 
 class v1ResourceAllocationAggregatedEntry:
     def __init__(
@@ -5903,15 +6261,15 @@ class v1ResourceAllocationAggregatedEntry:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "periodStart": self.periodStart,
-            "period": self.period.value,
-            "seconds": dump_float(self.seconds),
-            "byUsername": {k: dump_float(v) for k, v in self.byUsername.items()},
-            "byExperimentLabel": {k: dump_float(v) for k, v in self.byExperimentLabel.items()},
-            "byResourcePool": {k: dump_float(v) for k, v in self.byResourcePool.items()},
-            "byAgentLabel": {k: dump_float(v) for k, v in self.byAgentLabel.items()},
-        }
+        o = {}
+        o["periodStart"] = self.periodStart
+        o["period"] = self.period.value
+        o["seconds"] = dump_float(self.seconds)
+        o["byUsername"] = {k: dump_float(v) for k, v in self.byUsername.items()}
+        o["byExperimentLabel"] = {k: dump_float(v) for k, v in self.byExperimentLabel.items()}
+        o["byResourcePool"] = {k: dump_float(v) for k, v in self.byResourcePool.items()}
+        o["byAgentLabel"] = {k: dump_float(v) for k, v in self.byAgentLabel.items()}
+        return o
 
 class v1ResourceAllocationAggregatedResponse:
     def __init__(
@@ -5928,9 +6286,9 @@ class v1ResourceAllocationAggregatedResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "resourceEntries": [x.to_json() for x in self.resourceEntries],
-        }
+        o = {}
+        o["resourceEntries"] = [x.to_json() for x in self.resourceEntries]
+        return o
 
 class v1ResourceAllocationAggregationPeriod(enum.Enum):
     RESOURCE_ALLOCATION_AGGREGATION_PERIOD_UNSPECIFIED = "RESOURCE_ALLOCATION_AGGREGATION_PERIOD_UNSPECIFIED"
@@ -5976,17 +6334,26 @@ class v1ResourceAllocationRawEntry:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "kind": self.kind if self.kind is not None else None,
-            "startTime": self.startTime if self.startTime is not None else None,
-            "endTime": self.endTime if self.endTime is not None else None,
-            "experimentId": self.experimentId if self.experimentId is not None else None,
-            "username": self.username if self.username is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "labels": self.labels if self.labels is not None else None,
-            "seconds": dump_float(self.seconds) if self.seconds is not None else None,
-            "slots": self.slots if self.slots is not None else None,
-        }
+        o = {}
+        if self.kind is not None:
+            o["kind"] = self.kind
+        if self.startTime is not None:
+            o["startTime"] = self.startTime
+        if self.endTime is not None:
+            o["endTime"] = self.endTime
+        if self.experimentId is not None:
+            o["experimentId"] = self.experimentId
+        if self.username is not None:
+            o["username"] = self.username
+        if self.userId is not None:
+            o["userId"] = self.userId
+        if self.labels is not None:
+            o["labels"] = self.labels
+        if self.seconds is not None:
+            o["seconds"] = dump_float(self.seconds)
+        if self.slots is not None:
+            o["slots"] = self.slots
+        return o
 
 class v1ResourceAllocationRawResponse:
     def __init__(
@@ -6003,9 +6370,10 @@ class v1ResourceAllocationRawResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "resourceEntries": [x.to_json() for x in self.resourceEntries] if self.resourceEntries is not None else None,
-        }
+        o = {}
+        if self.resourceEntries is not None:
+            o["resourceEntries"] = [x.to_json() for x in self.resourceEntries]
+        return o
 
 class v1ResourcePool:
     def __init__(
@@ -6121,42 +6489,45 @@ class v1ResourcePool:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "description": self.description,
-            "type": self.type.value,
-            "numAgents": self.numAgents,
-            "slotsAvailable": self.slotsAvailable,
-            "slotsUsed": self.slotsUsed,
-            "slotType": self.slotType.value,
-            "auxContainerCapacity": self.auxContainerCapacity,
-            "auxContainersRunning": self.auxContainersRunning,
-            "defaultComputePool": self.defaultComputePool,
-            "defaultAuxPool": self.defaultAuxPool,
-            "preemptible": self.preemptible,
-            "minAgents": self.minAgents,
-            "maxAgents": self.maxAgents,
-            "slotsPerAgent": self.slotsPerAgent if self.slotsPerAgent is not None else None,
-            "auxContainerCapacityPerAgent": self.auxContainerCapacityPerAgent,
-            "schedulerType": self.schedulerType.value,
-            "schedulerFittingPolicy": self.schedulerFittingPolicy.value,
-            "location": self.location,
-            "imageId": self.imageId,
-            "instanceType": self.instanceType,
-            "masterUrl": self.masterUrl,
-            "masterCertName": self.masterCertName,
-            "startupScript": self.startupScript,
-            "containerStartupScript": self.containerStartupScript,
-            "agentDockerNetwork": self.agentDockerNetwork,
-            "agentDockerRuntime": self.agentDockerRuntime,
-            "agentDockerImage": self.agentDockerImage,
-            "agentFluentImage": self.agentFluentImage,
-            "maxIdleAgentPeriod": dump_float(self.maxIdleAgentPeriod),
-            "maxAgentStartingPeriod": dump_float(self.maxAgentStartingPeriod),
-            "details": self.details.to_json(),
-            "accelerator": self.accelerator if self.accelerator is not None else None,
-            "stats": self.stats.to_json() if self.stats is not None else None,
-        }
+        o = {}
+        o["name"] = self.name
+        o["description"] = self.description
+        o["type"] = self.type.value
+        o["numAgents"] = self.numAgents
+        o["slotsAvailable"] = self.slotsAvailable
+        o["slotsUsed"] = self.slotsUsed
+        o["slotType"] = self.slotType.value
+        o["auxContainerCapacity"] = self.auxContainerCapacity
+        o["auxContainersRunning"] = self.auxContainersRunning
+        o["defaultComputePool"] = self.defaultComputePool
+        o["defaultAuxPool"] = self.defaultAuxPool
+        o["preemptible"] = self.preemptible
+        o["minAgents"] = self.minAgents
+        o["maxAgents"] = self.maxAgents
+        if self.slotsPerAgent is not None:
+            o["slotsPerAgent"] = self.slotsPerAgent
+        o["auxContainerCapacityPerAgent"] = self.auxContainerCapacityPerAgent
+        o["schedulerType"] = self.schedulerType.value
+        o["schedulerFittingPolicy"] = self.schedulerFittingPolicy.value
+        o["location"] = self.location
+        o["imageId"] = self.imageId
+        o["instanceType"] = self.instanceType
+        o["masterUrl"] = self.masterUrl
+        o["masterCertName"] = self.masterCertName
+        o["startupScript"] = self.startupScript
+        o["containerStartupScript"] = self.containerStartupScript
+        o["agentDockerNetwork"] = self.agentDockerNetwork
+        o["agentDockerRuntime"] = self.agentDockerRuntime
+        o["agentDockerImage"] = self.agentDockerImage
+        o["agentFluentImage"] = self.agentFluentImage
+        o["maxIdleAgentPeriod"] = dump_float(self.maxIdleAgentPeriod)
+        o["maxAgentStartingPeriod"] = dump_float(self.maxAgentStartingPeriod)
+        o["details"] = self.details.to_json()
+        if self.accelerator is not None:
+            o["accelerator"] = self.accelerator
+        if self.stats is not None:
+            o["stats"] = self.stats.to_json()
+        return o
 
 class v1ResourcePoolAwsDetail:
     def __init__(
@@ -6221,25 +6592,31 @@ class v1ResourcePoolAwsDetail:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "region": self.region,
-            "rootVolumeSize": self.rootVolumeSize,
-            "imageId": self.imageId,
-            "tagKey": self.tagKey,
-            "tagValue": self.tagValue,
-            "instanceName": self.instanceName,
-            "sshKeyName": self.sshKeyName,
-            "publicIp": self.publicIp,
-            "subnetId": self.subnetId if self.subnetId is not None else None,
-            "securityGroupId": self.securityGroupId,
-            "iamInstanceProfileArn": self.iamInstanceProfileArn,
-            "instanceType": self.instanceType if self.instanceType is not None else None,
-            "logGroup": self.logGroup if self.logGroup is not None else None,
-            "logStream": self.logStream if self.logStream is not None else None,
-            "spotEnabled": self.spotEnabled,
-            "spotMaxPrice": self.spotMaxPrice if self.spotMaxPrice is not None else None,
-            "customTags": [x.to_json() for x in self.customTags] if self.customTags is not None else None,
-        }
+        o = {}
+        o["region"] = self.region
+        o["rootVolumeSize"] = self.rootVolumeSize
+        o["imageId"] = self.imageId
+        o["tagKey"] = self.tagKey
+        o["tagValue"] = self.tagValue
+        o["instanceName"] = self.instanceName
+        o["sshKeyName"] = self.sshKeyName
+        o["publicIp"] = self.publicIp
+        if self.subnetId is not None:
+            o["subnetId"] = self.subnetId
+        o["securityGroupId"] = self.securityGroupId
+        o["iamInstanceProfileArn"] = self.iamInstanceProfileArn
+        if self.instanceType is not None:
+            o["instanceType"] = self.instanceType
+        if self.logGroup is not None:
+            o["logGroup"] = self.logGroup
+        if self.logStream is not None:
+            o["logStream"] = self.logStream
+        o["spotEnabled"] = self.spotEnabled
+        if self.spotMaxPrice is not None:
+            o["spotMaxPrice"] = self.spotMaxPrice
+        if self.customTags is not None:
+            o["customTags"] = [x.to_json() for x in self.customTags]
+        return o
 
 class v1ResourcePoolDetail:
     def __init__(
@@ -6262,11 +6639,14 @@ class v1ResourcePoolDetail:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "aws": self.aws.to_json() if self.aws is not None else None,
-            "gcp": self.gcp.to_json() if self.gcp is not None else None,
-            "priorityScheduler": self.priorityScheduler.to_json() if self.priorityScheduler is not None else None,
-        }
+        o = {}
+        if self.aws is not None:
+            o["aws"] = self.aws.to_json()
+        if self.gcp is not None:
+            o["gcp"] = self.gcp.to_json()
+        if self.priorityScheduler is not None:
+            o["priorityScheduler"] = self.priorityScheduler.to_json()
+        return o
 
 class v1ResourcePoolGcpDetail:
     def __init__(
@@ -6334,26 +6714,28 @@ class v1ResourcePoolGcpDetail:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "project": self.project,
-            "zone": self.zone,
-            "bootDiskSize": self.bootDiskSize,
-            "bootDiskSourceImage": self.bootDiskSourceImage,
-            "labelKey": self.labelKey,
-            "labelValue": self.labelValue,
-            "namePrefix": self.namePrefix,
-            "network": self.network,
-            "subnetwork": self.subnetwork if self.subnetwork is not None else None,
-            "externalIp": self.externalIp,
-            "networkTags": self.networkTags if self.networkTags is not None else None,
-            "serviceAccountEmail": self.serviceAccountEmail,
-            "serviceAccountScopes": self.serviceAccountScopes,
-            "machineType": self.machineType,
-            "gpuType": self.gpuType,
-            "gpuNum": self.gpuNum,
-            "preemptible": self.preemptible,
-            "operationTimeoutPeriod": dump_float(self.operationTimeoutPeriod),
-        }
+        o = {}
+        o["project"] = self.project
+        o["zone"] = self.zone
+        o["bootDiskSize"] = self.bootDiskSize
+        o["bootDiskSourceImage"] = self.bootDiskSourceImage
+        o["labelKey"] = self.labelKey
+        o["labelValue"] = self.labelValue
+        o["namePrefix"] = self.namePrefix
+        o["network"] = self.network
+        if self.subnetwork is not None:
+            o["subnetwork"] = self.subnetwork
+        o["externalIp"] = self.externalIp
+        if self.networkTags is not None:
+            o["networkTags"] = self.networkTags
+        o["serviceAccountEmail"] = self.serviceAccountEmail
+        o["serviceAccountScopes"] = self.serviceAccountScopes
+        o["machineType"] = self.machineType
+        o["gpuType"] = self.gpuType
+        o["gpuNum"] = self.gpuNum
+        o["preemptible"] = self.preemptible
+        o["operationTimeoutPeriod"] = dump_float(self.operationTimeoutPeriod)
+        return o
 
 class v1ResourcePoolPrioritySchedulerDetail:
     def __init__(
@@ -6376,11 +6758,12 @@ class v1ResourcePoolPrioritySchedulerDetail:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "preemption": self.preemption,
-            "defaultPriority": self.defaultPriority,
-            "k8Priorities": [x.to_json() for x in self.k8Priorities] if self.k8Priorities is not None else None,
-        }
+        o = {}
+        o["preemption"] = self.preemption
+        o["defaultPriority"] = self.defaultPriority
+        if self.k8Priorities is not None:
+            o["k8Priorities"] = [x.to_json() for x in self.k8Priorities]
+        return o
 
 class v1ResourcePoolType(enum.Enum):
     RESOURCE_POOL_TYPE_UNSPECIFIED = "RESOURCE_POOL_TYPE_UNSPECIFIED"
@@ -6410,11 +6793,13 @@ class v1Role:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roleId": self.roleId,
-            "name": self.name if self.name is not None else None,
-            "permissions": [x.to_json() for x in self.permissions] if self.permissions is not None else None,
-        }
+        o = {}
+        o["roleId"] = self.roleId
+        if self.name is not None:
+            o["name"] = self.name
+        if self.permissions is not None:
+            o["permissions"] = [x.to_json() for x in self.permissions]
+        return o
 
 class v1RoleAssignment:
     def __init__(
@@ -6434,10 +6819,11 @@ class v1RoleAssignment:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "role": self.role.to_json(),
-            "scopeWorkspaceId": self.scopeWorkspaceId if self.scopeWorkspaceId is not None else None,
-        }
+        o = {}
+        o["role"] = self.role.to_json()
+        if self.scopeWorkspaceId is not None:
+            o["scopeWorkspaceId"] = self.scopeWorkspaceId
+        return o
 
 class v1RoleAssignmentSummary:
     def __init__(
@@ -6460,11 +6846,13 @@ class v1RoleAssignmentSummary:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "roleId": self.roleId,
-            "scopeWorkspaceIds": self.scopeWorkspaceIds if self.scopeWorkspaceIds is not None else None,
-            "isGlobal": self.isGlobal if self.isGlobal is not None else None,
-        }
+        o = {}
+        o["roleId"] = self.roleId
+        if self.scopeWorkspaceIds is not None:
+            o["scopeWorkspaceIds"] = self.scopeWorkspaceIds
+        if self.isGlobal is not None:
+            o["isGlobal"] = self.isGlobal
+        return o
 
 class v1RoleWithAssignments:
     def __init__(
@@ -6487,11 +6875,14 @@ class v1RoleWithAssignments:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "role": self.role.to_json() if self.role is not None else None,
-            "groupRoleAssignments": [x.to_json() for x in self.groupRoleAssignments] if self.groupRoleAssignments is not None else None,
-            "userRoleAssignments": [x.to_json() for x in self.userRoleAssignments] if self.userRoleAssignments is not None else None,
-        }
+        o = {}
+        if self.role is not None:
+            o["role"] = self.role.to_json()
+        if self.groupRoleAssignments is not None:
+            o["groupRoleAssignments"] = [x.to_json() for x in self.groupRoleAssignments]
+        if self.userRoleAssignments is not None:
+            o["userRoleAssignments"] = [x.to_json() for x in self.userRoleAssignments]
+        return o
 
 class v1RunnableOperation:
     def __init__(
@@ -6511,10 +6902,12 @@ class v1RunnableOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "type": self.type.value if self.type is not None else None,
-            "length": self.length if self.length is not None else None,
-        }
+        o = {}
+        if self.type is not None:
+            o["type"] = self.type.value
+        if self.length is not None:
+            o["length"] = self.length
+        return o
 
 class v1RunnableType(enum.Enum):
     RUNNABLE_TYPE_UNSPECIFIED = "RUNNABLE_TYPE_UNSPECIFIED"
@@ -6539,10 +6932,10 @@ class v1SSOProvider:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "ssoUrl": self.ssoUrl,
-        }
+        o = {}
+        o["name"] = self.name
+        o["ssoUrl"] = self.ssoUrl
+        return o
 
 class v1Scale(enum.Enum):
     SCALE_UNSPECIFIED = "SCALE_UNSPECIFIED"
@@ -6579,11 +6972,13 @@ class v1SearchRolesAssignableToScopeRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "limit": self.limit,
-            "offset": self.offset if self.offset is not None else None,
-            "workspaceId": self.workspaceId if self.workspaceId is not None else None,
-        }
+        o = {}
+        o["limit"] = self.limit
+        if self.offset is not None:
+            o["offset"] = self.offset
+        if self.workspaceId is not None:
+            o["workspaceId"] = self.workspaceId
+        return o
 
 class v1SearchRolesAssignableToScopeResponse:
     def __init__(
@@ -6603,10 +6998,12 @@ class v1SearchRolesAssignableToScopeResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "pagination": self.pagination.to_json() if self.pagination is not None else None,
-            "roles": [x.to_json() for x in self.roles] if self.roles is not None else None,
-        }
+        o = {}
+        if self.pagination is not None:
+            o["pagination"] = self.pagination.to_json()
+        if self.roles is not None:
+            o["roles"] = [x.to_json() for x in self.roles]
+        return o
 
 class v1SearcherEvent:
     def __init__(
@@ -6644,16 +7041,23 @@ class v1SearcherEvent:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "initialOperations": self.initialOperations.to_json() if self.initialOperations is not None else None,
-            "trialCreated": self.trialCreated.to_json() if self.trialCreated is not None else None,
-            "validationCompleted": self.validationCompleted.to_json() if self.validationCompleted is not None else None,
-            "trialClosed": self.trialClosed.to_json() if self.trialClosed is not None else None,
-            "trialExitedEarly": self.trialExitedEarly.to_json() if self.trialExitedEarly is not None else None,
-            "trialProgress": self.trialProgress.to_json() if self.trialProgress is not None else None,
-            "experimentInactive": self.experimentInactive.to_json() if self.experimentInactive is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        if self.initialOperations is not None:
+            o["initialOperations"] = self.initialOperations.to_json()
+        if self.trialCreated is not None:
+            o["trialCreated"] = self.trialCreated.to_json()
+        if self.validationCompleted is not None:
+            o["validationCompleted"] = self.validationCompleted.to_json()
+        if self.trialClosed is not None:
+            o["trialClosed"] = self.trialClosed.to_json()
+        if self.trialExitedEarly is not None:
+            o["trialExitedEarly"] = self.trialExitedEarly.to_json()
+        if self.trialProgress is not None:
+            o["trialProgress"] = self.trialProgress.to_json()
+        if self.experimentInactive is not None:
+            o["experimentInactive"] = self.experimentInactive.to_json()
+        return o
 
 class v1SearcherOperation:
     def __init__(
@@ -6682,13 +7086,18 @@ class v1SearcherOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialOperation": self.trialOperation.to_json() if self.trialOperation is not None else None,
-            "createTrial": self.createTrial.to_json() if self.createTrial is not None else None,
-            "closeTrial": self.closeTrial.to_json() if self.closeTrial is not None else None,
-            "shutDown": self.shutDown.to_json() if self.shutDown is not None else None,
-            "setSearcherProgress": self.setSearcherProgress.to_json() if self.setSearcherProgress is not None else None,
-        }
+        o = {}
+        if self.trialOperation is not None:
+            o["trialOperation"] = self.trialOperation.to_json()
+        if self.createTrial is not None:
+            o["createTrial"] = self.createTrial.to_json()
+        if self.closeTrial is not None:
+            o["closeTrial"] = self.closeTrial.to_json()
+        if self.shutDown is not None:
+            o["shutDown"] = self.shutDown.to_json()
+        if self.setSearcherProgress is not None:
+            o["setSearcherProgress"] = self.setSearcherProgress.to_json()
+        return o
 
 class v1SetCommandPriorityRequest:
     def __init__(
@@ -6708,10 +7117,12 @@ class v1SetCommandPriorityRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "commandId": self.commandId if self.commandId is not None else None,
-            "priority": self.priority if self.priority is not None else None,
-        }
+        o = {}
+        if self.commandId is not None:
+            o["commandId"] = self.commandId
+        if self.priority is not None:
+            o["priority"] = self.priority
+        return o
 
 class v1SetCommandPriorityResponse:
     def __init__(
@@ -6728,9 +7139,10 @@ class v1SetCommandPriorityResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "command": self.command.to_json() if self.command is not None else None,
-        }
+        o = {}
+        if self.command is not None:
+            o["command"] = self.command.to_json()
+        return o
 
 class v1SetNotebookPriorityRequest:
     def __init__(
@@ -6750,10 +7162,12 @@ class v1SetNotebookPriorityRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebookId": self.notebookId if self.notebookId is not None else None,
-            "priority": self.priority if self.priority is not None else None,
-        }
+        o = {}
+        if self.notebookId is not None:
+            o["notebookId"] = self.notebookId
+        if self.priority is not None:
+            o["priority"] = self.priority
+        return o
 
 class v1SetNotebookPriorityResponse:
     def __init__(
@@ -6770,9 +7184,10 @@ class v1SetNotebookPriorityResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "notebook": self.notebook.to_json() if self.notebook is not None else None,
-        }
+        o = {}
+        if self.notebook is not None:
+            o["notebook"] = self.notebook.to_json()
+        return o
 
 class v1SetSearcherProgressOperation:
     def __init__(
@@ -6789,9 +7204,10 @@ class v1SetSearcherProgressOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "progress": dump_float(self.progress) if self.progress is not None else None,
-        }
+        o = {}
+        if self.progress is not None:
+            o["progress"] = dump_float(self.progress)
+        return o
 
 class v1SetShellPriorityRequest:
     def __init__(
@@ -6811,10 +7227,12 @@ class v1SetShellPriorityRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "shellId": self.shellId if self.shellId is not None else None,
-            "priority": self.priority if self.priority is not None else None,
-        }
+        o = {}
+        if self.shellId is not None:
+            o["shellId"] = self.shellId
+        if self.priority is not None:
+            o["priority"] = self.priority
+        return o
 
 class v1SetShellPriorityResponse:
     def __init__(
@@ -6831,9 +7249,10 @@ class v1SetShellPriorityResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "shell": self.shell.to_json() if self.shell is not None else None,
-        }
+        o = {}
+        if self.shell is not None:
+            o["shell"] = self.shell.to_json()
+        return o
 
 class v1SetTensorboardPriorityRequest:
     def __init__(
@@ -6853,10 +7272,12 @@ class v1SetTensorboardPriorityRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "tensorboardId": self.tensorboardId if self.tensorboardId is not None else None,
-            "priority": self.priority if self.priority is not None else None,
-        }
+        o = {}
+        if self.tensorboardId is not None:
+            o["tensorboardId"] = self.tensorboardId
+        if self.priority is not None:
+            o["priority"] = self.priority
+        return o
 
 class v1SetTensorboardPriorityResponse:
     def __init__(
@@ -6873,9 +7294,10 @@ class v1SetTensorboardPriorityResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "tensorboard": self.tensorboard.to_json() if self.tensorboard is not None else None,
-        }
+        o = {}
+        if self.tensorboard is not None:
+            o["tensorboard"] = self.tensorboard.to_json()
+        return o
 
 class v1SetUserPasswordResponse:
     def __init__(
@@ -6892,9 +7314,10 @@ class v1SetUserPasswordResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "user": self.user.to_json() if self.user is not None else None,
-        }
+        o = {}
+        if self.user is not None:
+            o["user"] = self.user.to_json()
+        return o
 
 class v1Shell:
     def __init__(
@@ -6953,23 +7376,31 @@ class v1Shell:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "description": self.description,
-            "state": self.state.value,
-            "startTime": self.startTime,
-            "container": self.container.to_json() if self.container is not None else None,
-            "privateKey": self.privateKey if self.privateKey is not None else None,
-            "publicKey": self.publicKey if self.publicKey is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "username": self.username,
-            "resourcePool": self.resourcePool,
-            "exitStatus": self.exitStatus if self.exitStatus is not None else None,
-            "addresses": self.addresses if self.addresses is not None else None,
-            "agentUserGroup": self.agentUserGroup if self.agentUserGroup is not None else None,
-            "jobId": self.jobId,
-        }
+        o = {}
+        o["id"] = self.id
+        o["description"] = self.description
+        o["state"] = self.state.value
+        o["startTime"] = self.startTime
+        if self.container is not None:
+            o["container"] = self.container.to_json()
+        if self.privateKey is not None:
+            o["privateKey"] = self.privateKey
+        if self.publicKey is not None:
+            o["publicKey"] = self.publicKey
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.userId is not None:
+            o["userId"] = self.userId
+        o["username"] = self.username
+        o["resourcePool"] = self.resourcePool
+        if self.exitStatus is not None:
+            o["exitStatus"] = self.exitStatus
+        if self.addresses is not None:
+            o["addresses"] = self.addresses
+        if self.agentUserGroup is not None:
+            o["agentUserGroup"] = self.agentUserGroup
+        o["jobId"] = self.jobId
+        return o
 
 class v1ShutDownOperation:
     def __init__(
@@ -6986,9 +7417,10 @@ class v1ShutDownOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "placeholder": self.placeholder if self.placeholder is not None else None,
-        }
+        o = {}
+        if self.placeholder is not None:
+            o["placeholder"] = self.placeholder
+        return o
 
 class v1Slot:
     def __init__(
@@ -7017,13 +7449,18 @@ class v1Slot:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id if self.id is not None else None,
-            "device": self.device.to_json() if self.device is not None else None,
-            "enabled": self.enabled if self.enabled is not None else None,
-            "container": self.container.to_json() if self.container is not None else None,
-            "draining": self.draining if self.draining is not None else None,
-        }
+        o = {}
+        if self.id is not None:
+            o["id"] = self.id
+        if self.device is not None:
+            o["device"] = self.device.to_json()
+        if self.enabled is not None:
+            o["enabled"] = self.enabled
+        if self.container is not None:
+            o["container"] = self.container.to_json()
+        if self.draining is not None:
+            o["draining"] = self.draining
+        return o
 
 class v1SummarizeTrialResponse:
     def __init__(
@@ -7043,10 +7480,10 @@ class v1SummarizeTrialResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trial": self.trial.to_json(),
-            "metrics": [x.to_json() for x in self.metrics],
-        }
+        o = {}
+        o["trial"] = self.trial.to_json()
+        o["metrics"] = [x.to_json() for x in self.metrics]
+        return o
 
 class v1SummarizedMetric:
     def __init__(
@@ -7069,11 +7506,11 @@ class v1SummarizedMetric:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "data": [x.to_json() for x in self.data],
-            "type": self.type.value,
-        }
+        o = {}
+        o["name"] = self.name
+        o["data"] = [x.to_json() for x in self.data]
+        o["type"] = self.type.value
+        return o
 
 class v1Task:
     def __init__(
@@ -7096,11 +7533,14 @@ class v1Task:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "taskId": self.taskId if self.taskId is not None else None,
-            "taskType": self.taskType if self.taskType is not None else None,
-            "allocations": [x.to_json() for x in self.allocations] if self.allocations is not None else None,
-        }
+        o = {}
+        if self.taskId is not None:
+            o["taskId"] = self.taskId
+        if self.taskType is not None:
+            o["taskType"] = self.taskType
+        if self.allocations is not None:
+            o["allocations"] = [x.to_json() for x in self.allocations]
+        return o
 
 class v1TaskLogsFieldsResponse:
     def __init__(
@@ -7132,14 +7572,20 @@ class v1TaskLogsFieldsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "allocationIds": self.allocationIds if self.allocationIds is not None else None,
-            "agentIds": self.agentIds if self.agentIds is not None else None,
-            "containerIds": self.containerIds if self.containerIds is not None else None,
-            "rankIds": self.rankIds if self.rankIds is not None else None,
-            "stdtypes": self.stdtypes if self.stdtypes is not None else None,
-            "sources": self.sources if self.sources is not None else None,
-        }
+        o = {}
+        if self.allocationIds is not None:
+            o["allocationIds"] = self.allocationIds
+        if self.agentIds is not None:
+            o["agentIds"] = self.agentIds
+        if self.containerIds is not None:
+            o["containerIds"] = self.containerIds
+        if self.rankIds is not None:
+            o["rankIds"] = self.rankIds
+        if self.stdtypes is not None:
+            o["stdtypes"] = self.stdtypes
+        if self.sources is not None:
+            o["sources"] = self.sources
+        return o
 
 class v1TaskLogsResponse:
     def __init__(
@@ -7165,12 +7611,12 @@ class v1TaskLogsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "timestamp": self.timestamp,
-            "message": self.message,
-            "level": self.level.value,
-        }
+        o = {}
+        o["id"] = self.id
+        o["timestamp"] = self.timestamp
+        o["message"] = self.message
+        o["level"] = self.level.value
+        return o
 
 class v1Template:
     def __init__(
@@ -7190,10 +7636,10 @@ class v1Template:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "name": self.name,
-            "config": self.config,
-        }
+        o = {}
+        o["name"] = self.name
+        o["config"] = self.config
+        return o
 
 class v1Tensorboard:
     def __init__(
@@ -7249,22 +7695,29 @@ class v1Tensorboard:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "description": self.description,
-            "state": self.state.value,
-            "startTime": self.startTime,
-            "container": self.container.to_json() if self.container is not None else None,
-            "experimentIds": self.experimentIds if self.experimentIds is not None else None,
-            "trialIds": self.trialIds if self.trialIds is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "userId": self.userId if self.userId is not None else None,
-            "username": self.username,
-            "serviceAddress": self.serviceAddress if self.serviceAddress is not None else None,
-            "resourcePool": self.resourcePool,
-            "exitStatus": self.exitStatus if self.exitStatus is not None else None,
-            "jobId": self.jobId,
-        }
+        o = {}
+        o["id"] = self.id
+        o["description"] = self.description
+        o["state"] = self.state.value
+        o["startTime"] = self.startTime
+        if self.container is not None:
+            o["container"] = self.container.to_json()
+        if self.experimentIds is not None:
+            o["experimentIds"] = self.experimentIds
+        if self.trialIds is not None:
+            o["trialIds"] = self.trialIds
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.userId is not None:
+            o["userId"] = self.userId
+        o["username"] = self.username
+        if self.serviceAddress is not None:
+            o["serviceAddress"] = self.serviceAddress
+        o["resourcePool"] = self.resourcePool
+        if self.exitStatus is not None:
+            o["exitStatus"] = self.exitStatus
+        o["jobId"] = self.jobId
+        return o
 
 class v1TestWebhookResponse:
     def __init__(
@@ -7281,9 +7734,9 @@ class v1TestWebhookResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "completed": self.completed,
-        }
+        o = {}
+        o["completed"] = self.completed
+        return o
 
 class v1TimestampFieldFilter:
     def __init__(
@@ -7309,12 +7762,16 @@ class v1TimestampFieldFilter:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "lt": self.lt if self.lt is not None else None,
-            "lte": self.lte if self.lte is not None else None,
-            "gt": self.gt if self.gt is not None else None,
-            "gte": self.gte if self.gte is not None else None,
-        }
+        o = {}
+        if self.lt is not None:
+            o["lt"] = self.lt
+        if self.lte is not None:
+            o["lte"] = self.lte
+        if self.gt is not None:
+            o["gt"] = self.gt
+        if self.gte is not None:
+            o["gte"] = self.gte
+        return o
 
 class v1TrialClosed:
     def __init__(
@@ -7331,9 +7788,9 @@ class v1TrialClosed:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId,
-        }
+        o = {}
+        o["requestId"] = self.requestId
+        return o
 
 class v1TrialCreated:
     def __init__(
@@ -7350,9 +7807,9 @@ class v1TrialCreated:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId,
-        }
+        o = {}
+        o["requestId"] = self.requestId
+        return o
 
 class v1TrialEarlyExit:
     def __init__(
@@ -7369,9 +7826,9 @@ class v1TrialEarlyExit:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "reason": self.reason.value,
-        }
+        o = {}
+        o["reason"] = self.reason.value
+        return o
 
 class v1TrialEarlyExitExitedReason(enum.Enum):
     EXITED_REASON_UNSPECIFIED = "EXITED_REASON_UNSPECIFIED"
@@ -7396,10 +7853,10 @@ class v1TrialExitedEarly:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId,
-            "exitedReason": self.exitedReason.value,
-        }
+        o = {}
+        o["requestId"] = self.requestId
+        o["exitedReason"] = self.exitedReason.value
+        return o
 
 class v1TrialExitedEarlyExitedReason(enum.Enum):
     EXITED_REASON_UNSPECIFIED = "EXITED_REASON_UNSPECIFIED"
@@ -7466,24 +7923,40 @@ class v1TrialFilters:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "experimentIds": self.experimentIds if self.experimentIds is not None else None,
-            "projectIds": self.projectIds if self.projectIds is not None else None,
-            "workspaceIds": self.workspaceIds if self.workspaceIds is not None else None,
-            "validationMetrics": [x.to_json() for x in self.validationMetrics] if self.validationMetrics is not None else None,
-            "trainingMetrics": [x.to_json() for x in self.trainingMetrics] if self.trainingMetrics is not None else None,
-            "hparams": [x.to_json() for x in self.hparams] if self.hparams is not None else None,
-            "userIds": self.userIds if self.userIds is not None else None,
-            "searcher": self.searcher if self.searcher is not None else None,
-            "tags": [x.to_json() for x in self.tags] if self.tags is not None else None,
-            "rankWithinExp": self.rankWithinExp.to_json() if self.rankWithinExp is not None else None,
-            "startTime": self.startTime.to_json() if self.startTime is not None else None,
-            "endTime": self.endTime.to_json() if self.endTime is not None else None,
-            "states": [x.value for x in self.states] if self.states is not None else None,
-            "searcherMetric": self.searcherMetric if self.searcherMetric is not None else None,
-            "searcherMetricValue": self.searcherMetricValue.to_json() if self.searcherMetricValue is not None else None,
-            "trialIds": self.trialIds if self.trialIds is not None else None,
-        }
+        o = {}
+        if self.experimentIds is not None:
+            o["experimentIds"] = self.experimentIds
+        if self.projectIds is not None:
+            o["projectIds"] = self.projectIds
+        if self.workspaceIds is not None:
+            o["workspaceIds"] = self.workspaceIds
+        if self.validationMetrics is not None:
+            o["validationMetrics"] = [x.to_json() for x in self.validationMetrics]
+        if self.trainingMetrics is not None:
+            o["trainingMetrics"] = [x.to_json() for x in self.trainingMetrics]
+        if self.hparams is not None:
+            o["hparams"] = [x.to_json() for x in self.hparams]
+        if self.userIds is not None:
+            o["userIds"] = self.userIds
+        if self.searcher is not None:
+            o["searcher"] = self.searcher
+        if self.tags is not None:
+            o["tags"] = [x.to_json() for x in self.tags]
+        if self.rankWithinExp is not None:
+            o["rankWithinExp"] = self.rankWithinExp.to_json()
+        if self.startTime is not None:
+            o["startTime"] = self.startTime.to_json()
+        if self.endTime is not None:
+            o["endTime"] = self.endTime.to_json()
+        if self.states is not None:
+            o["states"] = [x.value for x in self.states]
+        if self.searcherMetric is not None:
+            o["searcherMetric"] = self.searcherMetric
+        if self.searcherMetricValue is not None:
+            o["searcherMetricValue"] = self.searcherMetricValue.to_json()
+        if self.trialIds is not None:
+            o["trialIds"] = self.trialIds
+        return o
 
 class v1TrialLogsFieldsResponse:
     def __init__(
@@ -7512,13 +7985,18 @@ class v1TrialLogsFieldsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "agentIds": self.agentIds if self.agentIds is not None else None,
-            "containerIds": self.containerIds if self.containerIds is not None else None,
-            "rankIds": self.rankIds if self.rankIds is not None else None,
-            "stdtypes": self.stdtypes if self.stdtypes is not None else None,
-            "sources": self.sources if self.sources is not None else None,
-        }
+        o = {}
+        if self.agentIds is not None:
+            o["agentIds"] = self.agentIds
+        if self.containerIds is not None:
+            o["containerIds"] = self.containerIds
+        if self.rankIds is not None:
+            o["rankIds"] = self.rankIds
+        if self.stdtypes is not None:
+            o["stdtypes"] = self.stdtypes
+        if self.sources is not None:
+            o["sources"] = self.sources
+        return o
 
 class v1TrialLogsResponse:
     def __init__(
@@ -7544,12 +8022,12 @@ class v1TrialLogsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "timestamp": self.timestamp,
-            "message": self.message,
-            "level": self.level.value,
-        }
+        o = {}
+        o["id"] = self.id
+        o["timestamp"] = self.timestamp
+        o["message"] = self.message
+        o["level"] = self.level.value
+        return o
 
 class v1TrialMetrics:
     def __init__(
@@ -7575,12 +8053,12 @@ class v1TrialMetrics:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "trialRunId": self.trialRunId,
-            "stepsCompleted": self.stepsCompleted,
-            "metrics": self.metrics.to_json(),
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["trialRunId"] = self.trialRunId
+        o["stepsCompleted"] = self.stepsCompleted
+        o["metrics"] = self.metrics.to_json()
+        return o
 
 class v1TrialOperation:
     def __init__(
@@ -7597,9 +8075,10 @@ class v1TrialOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "validateAfter": self.validateAfter.to_json() if self.validateAfter is not None else None,
-        }
+        o = {}
+        if self.validateAfter is not None:
+            o["validateAfter"] = self.validateAfter.to_json()
+        return o
 
 class v1TrialPatch:
     def __init__(
@@ -7619,10 +8098,12 @@ class v1TrialPatch:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "addTag": [x.to_json() for x in self.addTag] if self.addTag is not None else None,
-            "removeTag": [x.to_json() for x in self.removeTag] if self.removeTag is not None else None,
-        }
+        o = {}
+        if self.addTag is not None:
+            o["addTag"] = [x.to_json() for x in self.addTag]
+        if self.removeTag is not None:
+            o["removeTag"] = [x.to_json() for x in self.removeTag]
+        return o
 
 class v1TrialProfilerMetricLabels:
     def __init__(
@@ -7651,13 +8132,16 @@ class v1TrialProfilerMetricLabels:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "name": self.name,
-            "agentId": self.agentId if self.agentId is not None else None,
-            "gpuUuid": self.gpuUuid if self.gpuUuid is not None else None,
-            "metricType": self.metricType.value if self.metricType is not None else None,
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["name"] = self.name
+        if self.agentId is not None:
+            o["agentId"] = self.agentId
+        if self.gpuUuid is not None:
+            o["gpuUuid"] = self.gpuUuid
+        if self.metricType is not None:
+            o["metricType"] = self.metricType.value
+        return o
 
 class v1TrialProfilerMetricsBatch:
     def __init__(
@@ -7683,12 +8167,12 @@ class v1TrialProfilerMetricsBatch:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "values": [dump_float(x) for x in self.values],
-            "batches": self.batches,
-            "timestamps": self.timestamps,
-            "labels": self.labels.to_json(),
-        }
+        o = {}
+        o["values"] = [dump_float(x) for x in self.values]
+        o["batches"] = self.batches
+        o["timestamps"] = self.timestamps
+        o["labels"] = self.labels.to_json()
+        return o
 
 class v1TrialProgress:
     def __init__(
@@ -7708,10 +8192,10 @@ class v1TrialProgress:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId,
-            "partialUnits": dump_float(self.partialUnits),
-        }
+        o = {}
+        o["requestId"] = self.requestId
+        o["partialUnits"] = dump_float(self.partialUnits)
+        return o
 
 class v1TrialRunnerMetadata:
     def __init__(
@@ -7728,9 +8212,9 @@ class v1TrialRunnerMetadata:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "state": self.state,
-        }
+        o = {}
+        o["state"] = self.state
+        return o
 
 class v1TrialSimulation:
     def __init__(
@@ -7750,10 +8234,12 @@ class v1TrialSimulation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "operations": [x.to_json() for x in self.operations] if self.operations is not None else None,
-            "occurrences": self.occurrences if self.occurrences is not None else None,
-        }
+        o = {}
+        if self.operations is not None:
+            o["operations"] = [x.to_json() for x in self.operations]
+        if self.occurrences is not None:
+            o["occurrences"] = self.occurrences
+        return o
 
 class v1TrialSorter:
     def __init__(
@@ -7776,11 +8262,12 @@ class v1TrialSorter:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "namespace": self.namespace.value,
-            "field": self.field,
-            "orderBy": self.orderBy.value if self.orderBy is not None else None,
-        }
+        o = {}
+        o["namespace"] = self.namespace.value
+        o["field"] = self.field
+        if self.orderBy is not None:
+            o["orderBy"] = self.orderBy.value
+        return o
 
 class v1TrialTag:
     def __init__(
@@ -7797,9 +8284,9 @@ class v1TrialTag:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "key": self.key,
-        }
+        o = {}
+        o["key"] = self.key
+        return o
 
 class v1TrialsCollection:
     def __init__(
@@ -7831,14 +8318,14 @@ class v1TrialsCollection:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "userId": self.userId,
-            "projectId": self.projectId,
-            "name": self.name,
-            "filters": self.filters.to_json(),
-            "sorter": self.sorter.to_json(),
-        }
+        o = {}
+        o["id"] = self.id
+        o["userId"] = self.userId
+        o["projectId"] = self.projectId
+        o["name"] = self.name
+        o["filters"] = self.filters.to_json()
+        o["sorter"] = self.sorter.to_json()
+        return o
 
 class v1TrialsSampleResponse:
     def __init__(
@@ -7861,11 +8348,11 @@ class v1TrialsSampleResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trials": [x.to_json() for x in self.trials],
-            "promotedTrials": self.promotedTrials,
-            "demotedTrials": self.demotedTrials,
-        }
+        o = {}
+        o["trials"] = [x.to_json() for x in self.trials]
+        o["promotedTrials"] = self.promotedTrials
+        o["demotedTrials"] = self.demotedTrials
+        return o
 
 class v1TrialsSampleResponseTrial:
     def __init__(
@@ -7888,11 +8375,11 @@ class v1TrialsSampleResponseTrial:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "hparams": self.hparams,
-            "data": [x.to_json() for x in self.data],
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["hparams"] = self.hparams
+        o["data"] = [x.to_json() for x in self.data]
+        return o
 
 class v1TrialsSnapshotResponse:
     def __init__(
@@ -7909,9 +8396,9 @@ class v1TrialsSnapshotResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trials": [x.to_json() for x in self.trials],
-        }
+        o = {}
+        o["trials"] = [x.to_json() for x in self.trials]
+        return o
 
 class v1TrialsSnapshotResponseTrial:
     def __init__(
@@ -7937,12 +8424,12 @@ class v1TrialsSnapshotResponseTrial:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "hparams": self.hparams,
-            "metric": dump_float(self.metric),
-            "batchesProcessed": self.batchesProcessed,
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["hparams"] = self.hparams
+        o["metric"] = dump_float(self.metric)
+        o["batchesProcessed"] = self.batchesProcessed
+        return o
 
 class v1Trigger:
     def __init__(
@@ -7968,12 +8455,16 @@ class v1Trigger:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id if self.id is not None else None,
-            "triggerType": self.triggerType.value if self.triggerType is not None else None,
-            "condition": self.condition if self.condition is not None else None,
-            "webhookId": self.webhookId if self.webhookId is not None else None,
-        }
+        o = {}
+        if self.id is not None:
+            o["id"] = self.id
+        if self.triggerType is not None:
+            o["triggerType"] = self.triggerType.value
+        if self.condition is not None:
+            o["condition"] = self.condition
+        if self.webhookId is not None:
+            o["webhookId"] = self.webhookId
+        return o
 
 class v1TriggerType(enum.Enum):
     TRIGGER_TYPE_UNSPECIFIED = "TRIGGER_TYPE_UNSPECIFIED"
@@ -8004,12 +8495,15 @@ class v1UpdateGroupRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "groupId": self.groupId,
-            "name": self.name if self.name is not None else None,
-            "addUsers": self.addUsers if self.addUsers is not None else None,
-            "removeUsers": self.removeUsers if self.removeUsers is not None else None,
-        }
+        o = {}
+        o["groupId"] = self.groupId
+        if self.name is not None:
+            o["name"] = self.name
+        if self.addUsers is not None:
+            o["addUsers"] = self.addUsers
+        if self.removeUsers is not None:
+            o["removeUsers"] = self.removeUsers
+        return o
 
 class v1UpdateGroupResponse:
     def __init__(
@@ -8026,9 +8520,9 @@ class v1UpdateGroupResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "group": self.group.to_json(),
-        }
+        o = {}
+        o["group"] = self.group.to_json()
+        return o
 
 class v1UpdateJobQueueRequest:
     def __init__(
@@ -8045,9 +8539,9 @@ class v1UpdateJobQueueRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "updates": [x.to_json() for x in self.updates],
-        }
+        o = {}
+        o["updates"] = [x.to_json() for x in self.updates]
+        return o
 
 class v1UpdateTrialTagsRequest:
     def __init__(
@@ -8070,11 +8564,13 @@ class v1UpdateTrialTagsRequest:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "filters": self.filters.to_json() if self.filters is not None else None,
-            "trial": self.trial.to_json() if self.trial is not None else None,
-            "patch": self.patch.to_json(),
-        }
+        o = {}
+        if self.filters is not None:
+            o["filters"] = self.filters.to_json()
+        if self.trial is not None:
+            o["trial"] = self.trial.to_json()
+        o["patch"] = self.patch.to_json()
+        return o
 
 class v1UpdateTrialTagsResponse:
     def __init__(
@@ -8091,9 +8587,10 @@ class v1UpdateTrialTagsResponse:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "rowsAffected": self.rowsAffected if self.rowsAffected is not None else None,
-        }
+        o = {}
+        if self.rowsAffected is not None:
+            o["rowsAffected"] = self.rowsAffected
+        return o
 
 class v1User:
     def __init__(
@@ -8128,15 +8625,19 @@ class v1User:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id if self.id is not None else None,
-            "username": self.username,
-            "admin": self.admin,
-            "active": self.active,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "displayName": self.displayName if self.displayName is not None else None,
-            "modifiedAt": self.modifiedAt if self.modifiedAt is not None else None,
-        }
+        o = {}
+        if self.id is not None:
+            o["id"] = self.id
+        o["username"] = self.username
+        o["admin"] = self.admin
+        o["active"] = self.active
+        if self.agentUserGroup is not None:
+            o["agentUserGroup"] = self.agentUserGroup.to_json()
+        if self.displayName is not None:
+            o["displayName"] = self.displayName
+        if self.modifiedAt is not None:
+            o["modifiedAt"] = self.modifiedAt
+        return o
 
 class v1UserRoleAssignment:
     def __init__(
@@ -8156,10 +8657,10 @@ class v1UserRoleAssignment:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "userId": self.userId,
-            "roleAssignment": self.roleAssignment.to_json(),
-        }
+        o = {}
+        o["userId"] = self.userId
+        o["roleAssignment"] = self.roleAssignment.to_json()
+        return o
 
 class v1UserWebSetting:
     def __init__(
@@ -8182,11 +8683,13 @@ class v1UserWebSetting:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "key": self.key,
-            "storagePath": self.storagePath if self.storagePath is not None else None,
-            "value": self.value if self.value is not None else None,
-        }
+        o = {}
+        o["key"] = self.key
+        if self.storagePath is not None:
+            o["storagePath"] = self.storagePath
+        if self.value is not None:
+            o["value"] = self.value
+        return o
 
 class v1ValidateAfterOperation:
     def __init__(
@@ -8206,10 +8709,12 @@ class v1ValidateAfterOperation:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId if self.requestId is not None else None,
-            "length": self.length if self.length is not None else None,
-        }
+        o = {}
+        if self.requestId is not None:
+            o["requestId"] = self.requestId
+        if self.length is not None:
+            o["length"] = self.length
+        return o
 
 class v1ValidationCompleted:
     def __init__(
@@ -8232,11 +8737,11 @@ class v1ValidationCompleted:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "requestId": self.requestId,
-            "metric": dump_float(self.metric),
-            "validateAfterLength": self.validateAfterLength,
-        }
+        o = {}
+        o["requestId"] = self.requestId
+        o["metric"] = dump_float(self.metric)
+        o["validateAfterLength"] = self.validateAfterLength
+        return o
 
 class v1ValidationHistoryEntry:
     def __init__(
@@ -8259,11 +8764,11 @@ class v1ValidationHistoryEntry:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "trialId": self.trialId,
-            "endTime": self.endTime,
-            "searcherMetric": dump_float(self.searcherMetric),
-        }
+        o = {}
+        o["trialId"] = self.trialId
+        o["endTime"] = self.endTime
+        o["searcherMetric"] = dump_float(self.searcherMetric)
+        return o
 
 class v1Webhook:
     def __init__(
@@ -8289,12 +8794,14 @@ class v1Webhook:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id if self.id is not None else None,
-            "url": self.url,
-            "triggers": [x.to_json() for x in self.triggers] if self.triggers is not None else None,
-            "webhookType": self.webhookType.value,
-        }
+        o = {}
+        if self.id is not None:
+            o["id"] = self.id
+        o["url"] = self.url
+        if self.triggers is not None:
+            o["triggers"] = [x.to_json() for x in self.triggers]
+        o["webhookType"] = self.webhookType.value
+        return o
 
 class v1WebhookType(enum.Enum):
     WEBHOOK_TYPE_UNSPECIFIED = "WEBHOOK_TYPE_UNSPECIFIED"
@@ -8322,11 +8829,14 @@ class v1WorkloadContainer:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "training": self.training.to_json() if self.training is not None else None,
-            "validation": self.validation.to_json() if self.validation is not None else None,
-            "checkpoint": self.checkpoint.to_json() if self.checkpoint is not None else None,
-        }
+        o = {}
+        if self.training is not None:
+            o["training"] = self.training.to_json()
+        if self.validation is not None:
+            o["validation"] = self.validation.to_json()
+        if self.checkpoint is not None:
+            o["checkpoint"] = self.checkpoint.to_json()
+        return o
 
 class v1Workspace:
     def __init__(
@@ -8379,21 +8889,23 @@ class v1Workspace:
         )
 
     def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "archived": self.archived,
-            "username": self.username,
-            "immutable": self.immutable,
-            "numProjects": self.numProjects,
-            "pinned": self.pinned,
-            "userId": self.userId,
-            "numExperiments": self.numExperiments,
-            "state": self.state.value,
-            "errorMessage": self.errorMessage,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "checkpointStorageConfig": self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None,
-        }
+        o = {}
+        o["id"] = self.id
+        o["name"] = self.name
+        o["archived"] = self.archived
+        o["username"] = self.username
+        o["immutable"] = self.immutable
+        o["numProjects"] = self.numProjects
+        o["pinned"] = self.pinned
+        o["userId"] = self.userId
+        o["numExperiments"] = self.numExperiments
+        o["state"] = self.state.value
+        o["errorMessage"] = self.errorMessage
+        if self.agentUserGroup is not None:
+            o["agentUserGroup"] = self.agentUserGroup.to_json()
+        if self.checkpointStorageConfig is not None:
+            o["checkpointStorageConfig"] = self.checkpointStorageConfig
+        return o
 
 class v1WorkspaceState(enum.Enum):
     WORKSPACE_STATE_UNSPECIFIED = "WORKSPACE_STATE_UNSPECIFIED"

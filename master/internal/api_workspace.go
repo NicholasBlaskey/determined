@@ -348,6 +348,9 @@ func (a *apiServer) PostWorkspace(
 func (a *apiServer) PatchWorkspace(
 	ctx context.Context, req *apiv1.PatchWorkspaceRequest,
 ) (*apiv1.PatchWorkspaceResponse, error) {
+	fmt.Println(req.UpdateMask)
+	fmt.Println(req.UpdateMask.Paths)
+
 	currWorkspace, currUser, err := a.getWorkspaceAndCheckCanDoActions(ctx, req.Id, true)
 	if err != nil {
 		return nil, err

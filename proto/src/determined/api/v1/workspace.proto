@@ -3,6 +3,7 @@ syntax = "proto3";
 package determined.api.v1;
 option go_package = "github.com/determined-ai/determined/proto/pkg/apiv1";
 
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/wrappers.proto";
 import "determined/api/v1/pagination.proto";
@@ -168,6 +169,8 @@ message PatchWorkspaceRequest {
   int32 id = 1;
   // The desired workspace fields and values to update.
   determined.workspace.v1.PatchWorkspace workspace = 2;
+  // The paths to update.
+  google.protobuf.FieldMask update_mask = 3;
 }
 
 // Response to PatchWorkspaceRequest.

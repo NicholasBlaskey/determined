@@ -319,17 +319,20 @@ class Class(TypeDef):
         out += ["        )"]
         out += [""]
         out += ["    def to_json(self) -> typing.Any:"]
-        out += ["        return {"]
+        out += ["        o = {}"]
         for k, v in self.params.items():
             if v.type.need_parse():
                 parsed = v.type.dump(f"self.{k}")
             else:
                 parsed = f"self.{k}"
-            if not v.required:
-                parsed = parsed + f" if self.{k} is not None else None"
-            out.append(f'            "{k}": {parsed},')
-        out += ["        }"]
-
+            
+            if v.required:
+                out.append(f'        o["{k}"] = {parsed}')
+            else:
+                out.append(f'        if self.{k} is not None:')
+                out.append(f'            o["{k}"] = {parsed}')                
+        out += ["        return o"]
+        
         return "\n".join(out)
 
 
