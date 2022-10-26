@@ -385,8 +385,10 @@ func TestAuthzWorkspaceGetThenActionRoutes(t *testing.T) {
 		}},
 		{"CanSetWorkspacesCheckpointStorageConfig", func(id int) error {
 			_, err := api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
-				Id:         int32(id),
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"checkpoint_storage_config"}},
+				Id: int32(id),
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{
+					"checkpoint_storage_config.type", "checkpoint_storage_config.bucket",
+				}},
 				Workspace: &workspacev1.PatchWorkspace{
 					CheckpointStorageConfig: newProtoStruct(t, map[string]any{
 						"type":   "s3",

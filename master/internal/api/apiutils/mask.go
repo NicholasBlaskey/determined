@@ -59,3 +59,17 @@ func (f *FieldMask) FieldInSet(field string) bool {
 
 	return false
 }
+
+// FieldOrChildInSet checks if any children are in set of parent.
+// Asking "parent" with a field set of ["parent.child"] will return true.
+func (f *FieldMask) FieldOrChildInSet(parent string) bool {
+	if f.FieldInSet(parent) {
+		return true
+	}
+	for f := range f.fieldSet {
+		if strings.HasPrefix(f, parent+".") {
+			return true
+		}
+	}
+	return false
+}

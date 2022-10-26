@@ -278,7 +278,8 @@ func (a *apiServer) PostWorkspace(
 		}
 	}
 	if req.CheckpointStorageConfig != nil {
-		err = workspace.AuthZProvider.Get().CanCreateWorkspaceWithCheckpointStorageConfig(*curUser)
+		err = workspace.AuthZProvider.Get().
+			CanCreateWorkspaceWithCheckpointStorageConfig(ctx, *curUser)
 		if err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
@@ -409,9 +410,9 @@ func (a *apiServer) PatchWorkspace(
 		}
 	}
 
-	if fieldMask.FieldInSet("checkpoint_storage_config.*") {
+	if fieldMask.FieldOrChildInSet("checkpoint_storage_config") {
 		if err = workspace.AuthZProvider.Get().
-			CanSetWorkspacesCheckpointStorageConfig(currUser, currWorkspace); err != nil {
+			CanSetWorkspacesCheckpointStorageConfig(ctx, currUser, currWorkspace); err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
 

@@ -1,4 +1,5 @@
 from typing import List
+import uuid
 
 import pytest
 
@@ -6,8 +7,8 @@ from determined.common import api
 from determined.common.api import authentication, bindings, errors
 from tests import config as conf
 from tests.cluster.test_users import ADMIN_CREDENTIALS
-from tests.experiment import run_basic_test, wait_for_experiment_state
-
+from tests.experiment import run_basic_test, wait_for_experiment_state, determined_test_session
+from .test_agent_user_group import _delete_workspace_and_check
 
 @pytest.mark.e2e_cpu
 def test_workspace_org() -> None:
@@ -356,3 +357,33 @@ def test_workspace_org() -> None:
         # Clean out workspaces and all dependencies.
         for w in test_workspaces:
             bindings.delete_DeleteWorkspace(sess, id=w.id)
+
+
+@pytest.mark.e2e_cpu
+def test_reset_workspace_checkpoint_storage_conf() -> None:
+    sess = determined_test_session(admin=True)
+
+    # Make project with checkpoint storage config.
+    resp_w = bindings.post_PostWorkspace(
+        sess,
+        body=bindings.v1PostWorkspaceRequest(
+            name=f"workspace_aug_{uuid.uuid4().hex[:8]}",
+            checkpointStorageConfig={"type":"shared_fs","host_path":"/tmp"},
+        ),
+    )
+    
+    try:
+        assert resp_w.workspace.checkpointStorageConfig["type"] == "shared_fs"
+        assert resp_w.workspace.checkpointStorageConfig["host_path"] == "/tmp"
+        
+        resp_patch = bindings.patch_PatchWorkspace(
+            sess,
+            body=bindings.v1PatchWorkspace(
+                checkpointStorageConfig=None,
+            ),
+            id=resp_w.workspace.id,
+        )
+        assert resp_patch.workspace.checkpointStorageConfig is None
+    finally:
+        _delete_workspace_and_check(sess, resp_w.workspace)
+            

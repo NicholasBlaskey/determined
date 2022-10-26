@@ -134,8 +134,6 @@ def test_workspace_patch_gid() -> None:
 
 @pytest.mark.e2e_cpu
 def test_workspace_partial_patch() -> None:
-    # TODO(ilia): Implement better partial patch with fieldmasks.
-    # This may need a changes to the way python bindings generate json payloads.
     sess = exp.determined_test_session(admin=True)
 
     # Make project with workspace.
@@ -149,18 +147,31 @@ def test_workspace_partial_patch() -> None:
 
     w = resp_w.workspace
     new_name = w.name + " but new"
-
+    user_id = 65
+    user = "sharedfsuser"
+    
     try:
         # Does not reset AUG.
         resp_patch = bindings.patch_PatchWorkspace(
             sess,
             body=bindings.v1PatchWorkspace(
                 name=new_name,
+                agentUserGroup=bindings.v1AgentUserGroup(agentUid=user_id, agentUser=user)
             ),
             id=w.id,
         )
         assert resp_patch.workspace.name == new_name
         assert resp_patch.workspace.agentUserGroup
         assert resp_patch.workspace.agentUserGroup.agentGid == GID
+        assert resp_patch.workspace.agentUserGroup.agentUid == user_id
+        assert resp_patch.workspace.agentUserGroup.agentUser == user
+
+        # Reset AUG.
+        resp_patch = bindings.patch_PatchWorkspace(
+            sess,
+            body=bindings.v1PatchWorkspace(agentUserGroup=None),
+            id=w.id,
+        )
+        assert resp_patch.workspace.agentUserGroup is None
     finally:
         _delete_workspace_and_check(sess, w)

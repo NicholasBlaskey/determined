@@ -1,6 +1,8 @@
 package workspace
 
 import (
+	"context"
+
 	"github.com/determined-ai/determined/master/internal/authz"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/projectv1"
@@ -27,13 +29,13 @@ type WorkspaceAuthZ interface {
 	// POST /api/v1/workspaces
 	CanCreateWorkspace(curUser model.User) error
 	CanCreateWorkspaceWithAgentUserGroup(curUser model.User) error
-	CanCreateWorkspaceWithCheckpointStorageConfig(curUser model.User) error
+	CanCreateWorkspaceWithCheckpointStorageConfig(ctx context.Context, curUser model.User) error
 
 	// PATCH /api/v1/workspaces/:workspace_id
 	CanSetWorkspacesName(curUser model.User, workspace *workspacev1.Workspace) error
 	CanSetWorkspacesAgentUserGroup(curUser model.User, workspace *workspacev1.Workspace) error
 	CanSetWorkspacesCheckpointStorageConfig(
-		curUser model.User, workspace *workspacev1.Workspace,
+		ctx context.Context, curUser model.User, workspace *workspacev1.Workspace,
 	) error
 
 	// DELETE /api/v1/workspaces/:workspace_id

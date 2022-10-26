@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -116,7 +117,7 @@ func (a *WorkspaceAuthZBasic) CanUnpinWorkspace(
 // CanSetWorkspacesCheckpointStorageConfig returns an error if the user is not an admin
 // or owner of the workspace.
 func (a *WorkspaceAuthZBasic) CanSetWorkspacesCheckpointStorageConfig(
-	curUser model.User, workspace *workspacev1.Workspace,
+	ctx context.Context, curUser model.User, workspace *workspacev1.Workspace,
 ) error {
 	if !curUser.Admin && curUser.ID != model.UserID(workspace.UserId) {
 		return fmt.Errorf("only admins may set checkpoint storage config on other user's workspaces")
@@ -126,7 +127,7 @@ func (a *WorkspaceAuthZBasic) CanSetWorkspacesCheckpointStorageConfig(
 
 // CanCreateWorkspaceWithCheckpointStorageConfig returns an nil error.
 func (a *WorkspaceAuthZBasic) CanCreateWorkspaceWithCheckpointStorageConfig(
-	curUser model.User,
+	ctx context.Context, curUser model.User,
 ) error {
 	return nil
 }

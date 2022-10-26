@@ -321,6 +321,30 @@ class protobufAny:
             out["value"] = self.value
         return out
 
+class protobufFieldMask:
+    def __init__(
+        self,
+        *,
+        paths: "typing.Union[typing.Sequence[str], None, Unset]" = _unset,
+    ):
+        self.paths = None if isinstance(paths, Unset) else paths
+        self._paths_is_set = not isinstance(paths, Unset)
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "protobufFieldMask":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+        }
+        if "paths" in obj:
+            kwargs["paths"] = obj["paths"]
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Any:
+        out: "typing.Dict[str, typing.Any]" = {
+        }
+        if not omit_unset or self._paths_is_set:
+            out["paths"] = self.paths
+        return out
+
 class protobufNullValue(enum.Enum):
     NULL_VALUE = "NULL_VALUE"
 
@@ -6255,34 +6279,14 @@ class v1PatchWorkspace:
     def __init__(
         self,
         *,
-<<<<<<< HEAD
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-        name: "typing.Optional[str]" = None,
-    ):
-        self.name = name
-        self.agentUserGroup = agentUserGroup
-        self.checkpointStorageConfig = checkpointStorageConfig
-
-    @classmethod
-    def from_json(cls, obj: Json) -> "v1PatchWorkspace":
-        return cls(
-            name=obj.get("name", None),
-            agentUserGroup=v1AgentUserGroup.from_json(obj["agentUserGroup"]) if obj.get("agentUserGroup", None) is not None else None,
-            checkpointStorageConfig=obj.get("checkpointStorageConfig", None),
-        )
-
-    def to_json(self) -> typing.Any:
-        return {
-            "name": self.name if self.name is not None else None,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "checkpointStorageConfig": self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None,
-=======
         agentUserGroup: "typing.Union[v1AgentUserGroup, None, Unset]" = _unset,
+        checkpointStorageConfig: "typing.Union[typing.Dict[str, typing.Any], None, Unset]" = _unset,
         name: "typing.Union[str, None, Unset]" = _unset,
     ):
         self.agentUserGroup = None if isinstance(agentUserGroup, Unset) else agentUserGroup
         self._agentUserGroup_is_set = not isinstance(agentUserGroup, Unset)
+        self.checkpointStorageConfig = None if isinstance(checkpointStorageConfig, Unset) else checkpointStorageConfig
+        self._checkpointStorageConfig_is_set = not isinstance(checkpointStorageConfig, Unset)
         self.name = None if isinstance(name, Unset) else name
         self._name_is_set = not isinstance(name, Unset)
 
@@ -6292,16 +6296,19 @@ class v1PatchWorkspace:
         }
         if "agentUserGroup" in obj:
             kwargs["agentUserGroup"] = v1AgentUserGroup.from_json(obj["agentUserGroup"]) if obj["agentUserGroup"] is not None else None
+        if "checkpointStorageConfig" in obj:
+            kwargs["checkpointStorageConfig"] = obj["checkpointStorageConfig"]
         if "name" in obj:
             kwargs["name"] = obj["name"]
         return cls(**kwargs)
 
     def to_json(self, omit_unset: bool = False) -> typing.Any:
         out: "typing.Dict[str, typing.Any]" = {
->>>>>>> 56446bd80... chore: generate PATCH-friendly bindings
         }
         if not omit_unset or self._agentUserGroup_is_set:
             out["agentUserGroup"] = None if self.agentUserGroup is None else self.agentUserGroup.to_json(omit_unset)
+        if not omit_unset or self._checkpointStorageConfig_is_set:
+            out["checkpointStorageConfig"] = self.checkpointStorageConfig
         if not omit_unset or self._name_is_set:
             out["name"] = self.name
         return out
@@ -6836,27 +6843,14 @@ class v1PostWorkspaceRequest:
         self,
         *,
         name: str,
-<<<<<<< HEAD
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-    ):
-        self.name = name
-        self.agentUserGroup = agentUserGroup
-        self.checkpointStorageConfig = checkpointStorageConfig
-
-    @classmethod
-    def from_json(cls, obj: Json) -> "v1PostWorkspaceRequest":
-        return cls(
-            name=obj["name"],
-            agentUserGroup=v1AgentUserGroup.from_json(obj["agentUserGroup"]) if obj.get("agentUserGroup", None) is not None else None,
-            checkpointStorageConfig=obj.get("checkpointStorageConfig", None),
-        )
-=======
         agentUserGroup: "typing.Union[v1AgentUserGroup, None, Unset]" = _unset,
+        checkpointStorageConfig: "typing.Union[typing.Dict[str, typing.Any], None, Unset]" = _unset,
     ):
         self.name = name
         self.agentUserGroup = None if isinstance(agentUserGroup, Unset) else agentUserGroup
         self._agentUserGroup_is_set = not isinstance(agentUserGroup, Unset)
+        self.checkpointStorageConfig = None if isinstance(checkpointStorageConfig, Unset) else checkpointStorageConfig
+        self._checkpointStorageConfig_is_set = not isinstance(checkpointStorageConfig, Unset)
 
     @classmethod
     def from_json(cls, obj: Json) -> "v1PostWorkspaceRequest":
@@ -6865,20 +6859,18 @@ class v1PostWorkspaceRequest:
         }
         if "agentUserGroup" in obj:
             kwargs["agentUserGroup"] = v1AgentUserGroup.from_json(obj["agentUserGroup"]) if obj["agentUserGroup"] is not None else None
+        if "checkpointStorageConfig" in obj:
+            kwargs["checkpointStorageConfig"] = obj["checkpointStorageConfig"]
         return cls(**kwargs)
->>>>>>> 56446bd80... chore: generate PATCH-friendly bindings
 
     def to_json(self, omit_unset: bool = False) -> typing.Any:
         out: "typing.Dict[str, typing.Any]" = {
             "name": self.name,
-<<<<<<< HEAD
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "checkpointStorageConfig": self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None,
-=======
->>>>>>> 56446bd80... chore: generate PATCH-friendly bindings
         }
         if not omit_unset or self._agentUserGroup_is_set:
             out["agentUserGroup"] = None if self.agentUserGroup is None else self.agentUserGroup.to_json(omit_unset)
+        if not omit_unset or self._checkpointStorageConfig_is_set:
+            out["checkpointStorageConfig"] = self.checkpointStorageConfig
         return out
 
 class v1PostWorkspaceResponse:
@@ -10428,12 +10420,8 @@ class v1Workspace:
         state: "v1WorkspaceState",
         userId: int,
         username: str,
-<<<<<<< HEAD
-        agentUserGroup: "typing.Optional[v1AgentUserGroup]" = None,
-        checkpointStorageConfig: "typing.Optional[typing.Dict[str, typing.Any]]" = None,
-=======
         agentUserGroup: "typing.Union[v1AgentUserGroup, None, Unset]" = _unset,
->>>>>>> 56446bd80... chore: generate PATCH-friendly bindings
+        checkpointStorageConfig: "typing.Union[typing.Dict[str, typing.Any], None, Unset]" = _unset,
     ):
         self.archived = archived
         self.errorMessage = errorMessage
@@ -10444,38 +10432,12 @@ class v1Workspace:
         self.numProjects = numProjects
         self.pinned = pinned
         self.state = state
-<<<<<<< HEAD
-        self.errorMessage = errorMessage
-        self.agentUserGroup = agentUserGroup
-        self.checkpointStorageConfig = checkpointStorageConfig
-
-    @classmethod
-    def from_json(cls, obj: Json) -> "v1Workspace":
-        return cls(
-            id=obj["id"],
-            name=obj["name"],
-            archived=obj["archived"],
-            username=obj["username"],
-            immutable=obj["immutable"],
-            numProjects=obj["numProjects"],
-            pinned=obj["pinned"],
-            userId=obj["userId"],
-            numExperiments=obj["numExperiments"],
-            state=v1WorkspaceState(obj["state"]),
-            errorMessage=obj["errorMessage"],
-            agentUserGroup=v1AgentUserGroup.from_json(obj["agentUserGroup"]) if obj.get("agentUserGroup", None) is not None else None,
-            checkpointStorageConfig=obj.get("checkpointStorageConfig", None),
-        )
-
-    def to_json(self) -> typing.Any:
-        return {
-            "id": self.id,
-            "name": self.name,
-=======
         self.userId = userId
         self.username = username
         self.agentUserGroup = None if isinstance(agentUserGroup, Unset) else agentUserGroup
         self._agentUserGroup_is_set = not isinstance(agentUserGroup, Unset)
+        self.checkpointStorageConfig = None if isinstance(checkpointStorageConfig, Unset) else checkpointStorageConfig
+        self._checkpointStorageConfig_is_set = not isinstance(checkpointStorageConfig, Unset)
 
     @classmethod
     def from_json(cls, obj: Json) -> "v1Workspace":
@@ -10494,11 +10456,12 @@ class v1Workspace:
         }
         if "agentUserGroup" in obj:
             kwargs["agentUserGroup"] = v1AgentUserGroup.from_json(obj["agentUserGroup"]) if obj["agentUserGroup"] is not None else None
+        if "checkpointStorageConfig" in obj:
+            kwargs["checkpointStorageConfig"] = obj["checkpointStorageConfig"]
         return cls(**kwargs)
 
     def to_json(self, omit_unset: bool = False) -> typing.Any:
         out: "typing.Dict[str, typing.Any]" = {
->>>>>>> 56446bd80... chore: generate PATCH-friendly bindings
             "archived": self.archived,
             "errorMessage": self.errorMessage,
             "id": self.id,
@@ -10508,17 +10471,13 @@ class v1Workspace:
             "numProjects": self.numProjects,
             "pinned": self.pinned,
             "state": self.state.value,
-<<<<<<< HEAD
-            "errorMessage": self.errorMessage,
-            "agentUserGroup": self.agentUserGroup.to_json() if self.agentUserGroup is not None else None,
-            "checkpointStorageConfig": self.checkpointStorageConfig if self.checkpointStorageConfig is not None else None,
-=======
             "userId": self.userId,
             "username": self.username,
->>>>>>> 56446bd80... chore: generate PATCH-friendly bindings
         }
         if not omit_unset or self._agentUserGroup_is_set:
             out["agentUserGroup"] = None if self.agentUserGroup is None else self.agentUserGroup.to_json(omit_unset)
+        if not omit_unset or self._checkpointStorageConfig_is_set:
+            out["checkpointStorageConfig"] = self.checkpointStorageConfig
         return out
 
 class v1WorkspaceState(enum.Enum):

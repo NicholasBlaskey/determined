@@ -115,7 +115,7 @@ def list_workspace_projects(args: Namespace) -> None:
 
 
 def _parse_agent_user_group_args(args: Namespace) -> Optional[bindings.v1AgentUserGroup]:
-    if not (args.agent_uid or args.agent_gid or args.agent_user or args.agent_group):
+    if args.agent_uid or args.agent_gid or args.agent_user or args.agent_group:
         return bindings.v1AgentUserGroup(
             agentUid=args.agent_uid,
             agentGid=args.agent_gid,
@@ -142,7 +142,7 @@ def _parse_checkpoint_storage_args(args: Namespace) -> Any:
 def create_workspace(args: Namespace) -> None:
     agent_user_group = _parse_agent_user_group_args(args)
     checkpoint_storage = _parse_checkpoint_storage_args(args)
-
+    
     content = bindings.v1PostWorkspaceRequest(
         name=args.name,
         agentUserGroup=agent_user_group,
@@ -233,7 +233,7 @@ def edit_workspace(args: Namespace) -> None:
             "can't provide --remove-agent-user-group with --agent-* options"
         )        
     if not args.remove_agent_user_group and agent_user_group is None:
-        checkpoint_storage = bindings.Unset()        
+        agent_user_group = bindings.Unset()        
 
     name = args.name
     if name is None:
