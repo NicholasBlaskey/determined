@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/determined-ai/determined/master/internal/api/apiutils"
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/workspace"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/projectv1"
+	"github.com/determined-ai/determined/proto/pkg/userv1"
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
@@ -353,10 +355,16 @@ func (a *apiServer) PatchWorkspace(
 		return nil, err
 	}
 
+	if req.Workspace == nil {
+		req.Workspace = &workspacev1.PatchWorkspace{}
+	}
+
+	fieldMask := apiutils.NewFieldMask(req.UpdateMask)
 	insertColumns := []string{}
 	updatedWorkspace := model.Workspace{}
 
-	if req.Workspace.Name != nil && req.Workspace.Name.Value != currWorkspace.Name {
+	if fieldMask.FieldInSet("name") &&
+		req.Workspace.Name != nil && req.Workspace.Name.Value != currWorkspace.Name {
 		if err = workspace.AuthZProvider.Get().
 			CanSetWorkspacesName(currUser, currWorkspace); err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
@@ -368,39 +376,59 @@ func (a *apiServer) PatchWorkspace(
 		updatedWorkspace.Name = req.Workspace.Name.Value
 	}
 
-	if req.Workspace.AgentUserGroup != nil {
+	updatedAgentUserGroup := false
+	updateAug := req.Workspace.AgentUserGroup
+	if updateAug == nil {
+		updateAug = &userv1.AgentUserGroup{}
+	}
+
+	if fieldMask.FieldInSet("agent_user_group.agentUid") {
+		updatedAgentUserGroup = true
+		updatedWorkspace.AgentUID = updateAug.AgentUid
+		insertColumns = append(insertColumns, "uid")
+	}
+	if fieldMask.FieldInSet("agent_user_group.agentGid") {
+		updatedAgentUserGroup = true
+		updatedWorkspace.AgentGID = updateAug.AgentGid
+		insertColumns = append(insertColumns, "gid")
+	}
+	if fieldMask.FieldInSet("agent_user_group.agentUser") {
+		updatedAgentUserGroup = true
+		updatedWorkspace.AgentUser = updateAug.AgentUser
+		insertColumns = append(insertColumns, "user_")
+	}
+	if fieldMask.FieldInSet("agent_user_group.agentGroup") {
+		updatedAgentUserGroup = true
+		updatedWorkspace.AgentGroup = updateAug.AgentGroup
+		insertColumns = append(insertColumns, "group_")
+	}
+	if updatedAgentUserGroup {
 		if err = workspace.AuthZProvider.Get().
 			CanSetWorkspacesAgentUserGroup(currUser, currWorkspace); err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
-
-		updateAug := req.Workspace.AgentUserGroup
-
-		updatedWorkspace.AgentUID = updateAug.AgentUid
-		updatedWorkspace.AgentGID = updateAug.AgentGid
-		updatedWorkspace.AgentUser = updateAug.AgentUser
-		updatedWorkspace.AgentGroup = updateAug.AgentGroup
-
-		insertColumns = append(insertColumns, "uid", "user_", "gid", "group_")
 	}
 
-	if req.Workspace.CheckpointStorageConfig != nil {
+	if fieldMask.FieldInSet("checkpoint_storage_config") {
 		if err = workspace.AuthZProvider.Get().
 			CanSetWorkspacesCheckpointStorageConfig(currUser, currWorkspace); err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
-		var bytes []byte
-		bytes, err = req.Workspace.CheckpointStorageConfig.MarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		var sc expconf.CheckpointStorageConfig
-		updatedWorkspace.CheckpointStorageConfig = &sc
-		if err = updatedWorkspace.CheckpointStorageConfig.UnmarshalJSON(bytes); err != nil {
-			return nil, err
-		}
-		if err = schemas.IsComplete(updatedWorkspace.CheckpointStorageConfig); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, err.Error())
+
+		if req.Workspace.CheckpointStorageConfig != nil {
+			var bytes []byte
+			bytes, err = req.Workspace.CheckpointStorageConfig.MarshalJSON()
+			if err != nil {
+				return nil, err
+			}
+			var sc expconf.CheckpointStorageConfig
+			updatedWorkspace.CheckpointStorageConfig = &sc
+			if err = updatedWorkspace.CheckpointStorageConfig.UnmarshalJSON(bytes); err != nil {
+				return nil, err
+			}
+			if err = schemas.IsComplete(updatedWorkspace.CheckpointStorageConfig); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, err.Error())
+			}
 		}
 
 		insertColumns = append(insertColumns, "checkpoint_storage_config")

@@ -15,14 +15,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/determined-ai/determined/master/internal/mocks"
 	"github.com/determined-ai/determined/master/internal/workspace"
 	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/projectv1"
+	"github.com/determined-ai/determined/proto/pkg/userv1"
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
@@ -176,6 +179,82 @@ func TestPatchWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	proto.Equal(expected, getWorkResp.Workspace.CheckpointStorageConfig)
 	require.Equal(t, expected, getWorkResp.Workspace.CheckpointStorageConfig)
+
+	// Delete checkpoint config.
+	patchResp, err = api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
+		Id:         workspaceID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"checkpoint_storage_config"}},
+	})
+	require.NoError(t, err)
+	require.Nil(t, patchResp.Workspace.CheckpointStorageConfig)
+
+	getWorkResp, err = api.GetWorkspace(ctx, &apiv1.GetWorkspaceRequest{Id: workspaceID})
+	require.NoError(t, err)
+	require.Nil(t, getWorkResp.Workspace.CheckpointStorageConfig)
+}
+
+func TestPatchWorkspaceAgentUserGroup(t *testing.T) {
+	api, _, ctx := setupAPITest(t)
+	resp, err := api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{Name: uuid.New().String()})
+	require.NoError(t, err)
+	workspaceID := resp.Workspace.Id
+
+	// Add just agent groups.
+	aug := &userv1.AgentUserGroup{
+		AgentUid:  ptrs.Ptr(int32(1)),
+		AgentUser: ptrs.Ptr("test"),
+	}
+
+	patchResp, err := api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
+		Id:         workspaceID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"agent_user_group"}},
+		Workspace: &workspacev1.PatchWorkspace{
+			AgentUserGroup: aug,
+		},
+	})
+	require.NoError(t, err)
+	proto.Equal(aug, patchResp.Workspace.AgentUserGroup)
+	require.Equal(t, aug, patchResp.Workspace.AgentUserGroup)
+
+	// Add just user groups.
+	aug.AgentGid = ptrs.Ptr(int32(2))
+	aug.AgentGroup = ptrs.Ptr("testGroup")
+	patchResp, err = api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
+		Id: workspaceID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{
+			"agent_user_group.agentGid", "agent_user_group.agentGroup",
+		}},
+		Workspace: &workspacev1.PatchWorkspace{
+			AgentUserGroup: &userv1.AgentUserGroup{
+				AgentGid:   aug.AgentGid,
+				AgentGroup: aug.AgentGroup,
+			},
+		},
+	})
+	require.NoError(t, err)
+	proto.Equal(aug, patchResp.Workspace.AgentUserGroup)
+	require.Equal(t, aug, patchResp.Workspace.AgentUserGroup)
+
+	// Clear out just agent users.
+	aug.AgentUid = nil
+	aug.AgentUser = nil
+	patchResp, err = api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
+		Id: workspaceID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{
+			"agent_user_group.agentUid", "agent_user_group.agentUser",
+		}},
+	})
+	require.NoError(t, err)
+	proto.Equal(aug, patchResp.Workspace.AgentUserGroup)
+	require.Equal(t, aug, patchResp.Workspace.AgentUserGroup)
+
+	// Remove it all.
+	patchResp, err = api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
+		Id:         workspaceID,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"agent_user_group"}},
+	})
+	require.NoError(t, err)
+	require.Nil(t, patchResp.Workspace.AgentUserGroup)
 }
 
 var wAuthZ *mocks.WorkspaceAuthZ
@@ -306,7 +385,8 @@ func TestAuthzWorkspaceGetThenActionRoutes(t *testing.T) {
 		}},
 		{"CanSetWorkspacesCheckpointStorageConfig", func(id int) error {
 			_, err := api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
-				Id: int32(id),
+				Id:         int32(id),
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"checkpoint_storage_config"}},
 				Workspace: &workspacev1.PatchWorkspace{
 					CheckpointStorageConfig: newProtoStruct(t, map[string]any{
 						"type":   "s3",

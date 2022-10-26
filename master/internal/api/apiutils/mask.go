@@ -14,8 +14,7 @@ type FieldMask struct {
 }
 
 // NewFieldMask initializes a FieldMask object from a protobuf FieldMask pointer. A passed-in nil
-// or a FieldMask with zero paths will result in an empty FieldMask, which is considered to contain
-// every field.
+// will result in an empty FieldMask, which is considered to contain every field.
 func NewFieldMask(m *field_mask.FieldMask) FieldMask {
 	if m == nil {
 		return FieldMask{}
@@ -38,7 +37,7 @@ func NewFieldMask(m *field_mask.FieldMask) FieldMask {
 // FieldInSet answers whether the passed-in field is in the FieldMask. FieldInSet respects the
 // FieldMask convention of treating empty FieldMasks as containing every field.
 func (f *FieldMask) FieldInSet(field string) bool {
-	if len(f.fieldSet) == 0 {
+	if f.m == nil {
 		return true
 	}
 
