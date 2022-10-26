@@ -115,7 +115,7 @@ def list_workspace_projects(args: Namespace) -> None:
 
 
 def _parse_agent_user_group_args(args: Namespace) -> Optional[bindings.v1AgentUserGroup]:
-    if args.agent_uid or args.agent_gid or args.agent_user or args.agent_group:
+    if not (args.agent_uid or args.agent_gid or args.agent_user or args.agent_group):
         return bindings.v1AgentUserGroup(
             agentUid=args.agent_uid,
             agentGid=args.agent_gid,
@@ -130,7 +130,7 @@ def _parse_checkpoint_storage_args(args: Namespace) -> Any:
         args.checkpoint_storage_config_file is not None
     ):
         raise api.errors.BadRequestException(
-            "can only provide --checkpoint_storage_config or --checkpoint_storage_config_file"
+            "can only provide --checkpoint-storage-config or --checkpoint-storage-config-file"
         )
     checkpoint_storage = args.checkpoint_storage_config_file
     if args.checkpoint_storage_config is not None:
@@ -219,13 +219,33 @@ def unarchive_workspace(args: Namespace) -> None:
 @authentication.required
 def edit_workspace(args: Namespace) -> None:
     checkpoint_storage = _parse_checkpoint_storage_args(args)
+    if checkpoint_storage is not None and args.remove_checkpoint_storage_config:
+        raise api.errors.BadRequestException(
+            "can only provide one of --checkpoint-storage-config or " +
+            "--checkpoint-storage-config-file or --remove-checkpoint-storage-config"
+        )
+    if not args.remove_checkpoint_storage_config and checkpoint_storage is None:
+        checkpoint_storage = bindings.Unset()
+        
+    agent_user_group = _parse_agent_user_group_args(args)
+    if agent_user_group is not None and args.remove_agent_user_group:
+        raise api.errors.BadRequestException(
+            "can't provide --remove-agent-user-group with --agent-* options"
+        )        
+    if not args.remove_agent_user_group and agent_user_group is None:
+        checkpoint_storage = bindings.Unset()        
+
+    name = args.name
+    if name is None:
+        name = bindings.Unset()
 
     sess = cli.setup_session(args)
     current = workspace_by_name(sess, args.workspace_name)
-    agent_user_group = _parse_agent_user_group_args(args)
     updated = bindings.v1PatchWorkspace(
         name=args.name, agentUserGroup=agent_user_group, checkpointStorageConfig=checkpoint_storage
     )
+    # debug
+    #print(updated.checkpointStorageConfig, updated.to_json())
     w = bindings.patch_PatchWorkspace(sess, body=updated, id=current.id).workspace
 
     if args.json:
@@ -255,6 +275,14 @@ pagination_args = [
         help="Number of items to skip before starting page of results",
     ),
 ]
+
+CHECKPOINT_STORAGE_WORKSPACE_ARGS = [
+    Arg("--checkpoint-storage-config", type=str, help="Storage config (JSON-formatted string)"),
+    Arg("--checkpoint-storage-config-file", type=json_file_arg,
+        help="Storage config (JSON-formatted file)"),
+]
+
+
 args_description = [
     Cmd(
         "w|orkspace",
@@ -316,16 +344,7 @@ args_description = [
                 [
                     Arg("name", type=str, help="unique name of the workspace"),
                     *AGENT_USER_GROUP_ARGS,
-                    Arg(
-                        "--checkpoint-storage-config",
-                        type=str,
-                        help="Storage config (JSON-formatted string)",
-                    ),
-                    Arg(
-                        "--checkpoint-storage-config-file",
-                        type=json_file_arg,
-                        help="Storage config (JSON-formatted file)",
-                    ),
+                    *CHECKPOINT_STORAGE_WORKSPACE_ARGS,
                     Arg("--json", action="store_true", help="print as JSON"),
                 ],
             ),
@@ -360,16 +379,11 @@ args_description = [
                     Arg("workspace_name", type=str, help="current name of the workspace"),
                     Arg("--name", type=str, help="new name of the workspace"),
                     *AGENT_USER_GROUP_ARGS,
-                    Arg(
-                        "--checkpoint-storage-config",
-                        type=str,
-                        help="Storage config (JSON-formatted string)",
-                    ),
-                    Arg(
-                        "--checkpoint-storage-config-file",
-                        type=json_file_arg,
-                        help="Storage config (JSON-formatted file)",
-                    ),
+                    *CHECKPOINT_STORAGE_WORKSPACE_ARGS,
+                    Arg("--remove-agent-user-group", action="store_true",
+                        help="deletes agent user / group config tied to workspace"),
+                    Arg("--remove-checkpoint-storage-config", action="store_true",
+                        help="deletes workspaces checkpoint storage config tied to workspace"),
                     Arg("--json", action="store_true", help="print as JSON"),
                 ],
             ),

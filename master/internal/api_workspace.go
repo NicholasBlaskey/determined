@@ -409,7 +409,7 @@ func (a *apiServer) PatchWorkspace(
 		}
 	}
 
-	if fieldMask.FieldInSet("checkpoint_storage_config") {
+	if fieldMask.FieldInSet("checkpoint_storage_config.*") {
 		if err = workspace.AuthZProvider.Get().
 			CanSetWorkspacesCheckpointStorageConfig(currUser, currWorkspace); err != nil {
 			return nil, status.Error(codes.PermissionDenied, err.Error())
