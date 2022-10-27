@@ -357,8 +357,8 @@ func TestAuthzPostWorkspace(t *testing.T) {
 	// Tried to create with checkpoint storage config.
 	expectedErr = status.Error(codes.PermissionDenied, "storageConfDeny")
 	workspaceAuthZ.On("CanCreateWorkspace", mock.Anything).Return(nil).Once()
-	workspaceAuthZ.On("CanCreateWorkspaceWithCheckpointStorageConfig", mock.Anything).Return(
-		fmt.Errorf("storageConfDeny"))
+	workspaceAuthZ.On("CanCreateWorkspaceWithCheckpointStorageConfig",
+		mock.Anything, mock.Anything).Return(fmt.Errorf("storageConfDeny"))
 	resp, err = api.PostWorkspace(ctx, &apiv1.PostWorkspaceRequest{
 		Name: uuid.New().String(),
 		CheckpointStorageConfig: newProtoStruct(t, map[string]any{
@@ -379,21 +379,6 @@ func TestAuthzWorkspaceGetThenActionRoutes(t *testing.T) {
 				Id: int32(id),
 				Workspace: &workspacev1.PatchWorkspace{
 					Name: wrapperspb.String(uuid.New().String()),
-				},
-			})
-			return err
-		}},
-		{"CanSetWorkspacesCheckpointStorageConfig", func(id int) error {
-			_, err := api.PatchWorkspace(ctx, &apiv1.PatchWorkspaceRequest{
-				Id: int32(id),
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{
-					"checkpoint_storage_config.type", "checkpoint_storage_config.bucket",
-				}},
-				Workspace: &workspacev1.PatchWorkspace{
-					CheckpointStorageConfig: newProtoStruct(t, map[string]any{
-						"type":   "s3",
-						"bucket": "bucketbucket",
-					}),
 				},
 			})
 			return err

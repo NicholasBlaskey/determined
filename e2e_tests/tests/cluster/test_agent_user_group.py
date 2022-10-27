@@ -149,14 +149,14 @@ def test_workspace_partial_patch() -> None:
     new_name = w.name + " but new"
     user_id = 65
     user = "sharedfsuser"
-    
+
     try:
         # Does not reset AUG.
         resp_patch = bindings.patch_PatchWorkspace(
             sess,
             body=bindings.v1PatchWorkspace(
                 name=new_name,
-                agentUserGroup=bindings.v1AgentUserGroup(agentUid=user_id, agentUser=user)
+                agentUserGroup=bindings.v1AgentUserGroup(agentUid=user_id, agentUser=user),
             ),
             id=w.id,
         )

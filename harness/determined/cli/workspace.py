@@ -1,7 +1,7 @@
 import json
 from argparse import Namespace
 from time import sleep
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Union
 
 from determined import cli
 from determined.cli.user import AGENT_USER_GROUP_ARGS
@@ -142,7 +142,7 @@ def _parse_checkpoint_storage_args(args: Namespace) -> Any:
 def create_workspace(args: Namespace) -> None:
     agent_user_group = _parse_agent_user_group_args(args)
     checkpoint_storage = _parse_checkpoint_storage_args(args)
-    
+
     content = bindings.v1PostWorkspaceRequest(
         name=args.name,
         agentUserGroup=agent_user_group,
@@ -221,19 +221,21 @@ def edit_workspace(args: Namespace) -> None:
     checkpoint_storage = _parse_checkpoint_storage_args(args)
     if checkpoint_storage is not None and args.remove_checkpoint_storage_config:
         raise api.errors.BadRequestException(
-            "can only provide one of --checkpoint-storage-config or " +
-            "--checkpoint-storage-config-file or --remove-checkpoint-storage-config"
+            "can only provide one of --checkpoint-storage-config or "
+            + "--checkpoint-storage-config-file or --remove-checkpoint-storage-config"
         )
     if not args.remove_checkpoint_storage_config and checkpoint_storage is None:
         checkpoint_storage = bindings.Unset()
-        
-    agent_user_group = _parse_agent_user_group_args(args)
+
+    agent_user_group: Union[
+        None, bindings.v1AgentUserGroup, bindings.Unset
+    ] = _parse_agent_user_group_args(args)
     if agent_user_group is not None and args.remove_agent_user_group:
         raise api.errors.BadRequestException(
             "can't provide --remove-agent-user-group with --agent-* options"
-        )        
+        )
     if not args.remove_agent_user_group and agent_user_group is None:
-        agent_user_group = bindings.Unset()        
+        agent_user_group = bindings.Unset()
 
     name = args.name
     if name is None:
@@ -245,7 +247,7 @@ def edit_workspace(args: Namespace) -> None:
         name=args.name, agentUserGroup=agent_user_group, checkpointStorageConfig=checkpoint_storage
     )
     # debug
-    #print(updated.checkpointStorageConfig, updated.to_json())
+    # print(updated.checkpointStorageConfig, updated.to_json())
     w = bindings.patch_PatchWorkspace(sess, body=updated, id=current.id).workspace
 
     if args.json:
@@ -278,8 +280,11 @@ pagination_args = [
 
 CHECKPOINT_STORAGE_WORKSPACE_ARGS = [
     Arg("--checkpoint-storage-config", type=str, help="Storage config (JSON-formatted string)"),
-    Arg("--checkpoint-storage-config-file", type=json_file_arg,
-        help="Storage config (JSON-formatted file)"),
+    Arg(
+        "--checkpoint-storage-config-file",
+        type=json_file_arg,
+        help="Storage config (JSON-formatted file)",
+    ),
 ]
 
 
@@ -380,10 +385,16 @@ args_description = [
                     Arg("--name", type=str, help="new name of the workspace"),
                     *AGENT_USER_GROUP_ARGS,
                     *CHECKPOINT_STORAGE_WORKSPACE_ARGS,
-                    Arg("--remove-agent-user-group", action="store_true",
-                        help="deletes agent user / group config tied to workspace"),
-                    Arg("--remove-checkpoint-storage-config", action="store_true",
-                        help="deletes workspaces checkpoint storage config tied to workspace"),
+                    Arg(
+                        "--remove-agent-user-group",
+                        action="store_true",
+                        help="deletes agent user / group config tied to workspace",
+                    ),
+                    Arg(
+                        "--remove-checkpoint-storage-config",
+                        action="store_true",
+                        help="deletes workspaces checkpoint storage config tied to workspace",
+                    ),
                     Arg("--json", action="store_true", help="print as JSON"),
                 ],
             ),
