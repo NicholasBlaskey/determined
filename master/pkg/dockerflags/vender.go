@@ -1,4 +1,5 @@
 // vendered from https://github.com/docker/cli/blob/79dca7a38e9969f9d0694d85adbaf13394d893ac/cli/command/container/opts.go#L1
+// nolint
 package dockerflags
 
 import (
@@ -560,7 +561,6 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 		}
 	}
 
-	fmt.Println("OOOM is true?", copts.oomKillDisable)
 	resources := container.Resources{
 		CgroupParent:         copts.cgroupParent,
 		Memory:               copts.memory.Value(),

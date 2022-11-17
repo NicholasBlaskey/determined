@@ -6,11 +6,9 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
-	//"github.com/determined-ai/determined/master/pkg/cproto"
-	//"github.com/determined-ai/determined/master/pkg/schemas"
 )
 
-// ParseDockerFlags runs same parsing as "docker run" to get Docker SDK structs.
+// Parse runs same parsing as "docker run" to get Docker SDK structs.
 func Parse(
 	args []string,
 ) (*container.Config, *container.HostConfig, *network.NetworkingConfig, error) {
