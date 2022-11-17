@@ -230,7 +230,6 @@ func (t *TaskSpec) ToDockerSpec() (cproto.Spec, error) {
 		})
 	}
 
-	fmt.Println(env.DockerFlags())
 	conf, hostConf, networkConf, err := dockerflags.Parse(env.DockerFlags())
 	if err != nil {
 		return cproto.Spec{}, errors.Wrap(err, "error adding docker flags to Docker config")

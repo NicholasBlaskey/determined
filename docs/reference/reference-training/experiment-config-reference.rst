@@ -1108,6 +1108,10 @@ workloads for this experiment. For more information on customizing the trial env
    Just like ``add_capabilities`` but corresponding to the ``--cap-drop`` argument of ``docker run``
    rather than ``--cap-add``.
 
+``docker_flags``
+   Allows specify flags and arguments that ``docker run`` accepts. The following arguments are not supported due to Determined specifying them or providing a different method of setting them.
+   ``--user``, ``--expose``, #TODO list all!
+
 .. _exp-environment-slurm:
 
 ***************
