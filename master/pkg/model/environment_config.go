@@ -38,6 +38,7 @@ type Environment struct {
 
 	AddCapabilities  []string `json:"add_capabilities"`
 	DropCapabilities []string `json:"drop_capabilities"`
+	DockerFlags      []string `json:"docker_flags"`
 }
 
 // RuntimeItem configures the runtime image.
@@ -152,6 +153,8 @@ func (r *RuntimeItems) For(deviceType device.Type) []string {
 func (e Environment) Validate() []error {
 	return validatePodSpec(e.PodSpec)
 }
+
+// TODO validate docker flags
 
 func validatePodSpec(podSpec *k8sV1.Pod) []error {
 	if podSpec != nil {
