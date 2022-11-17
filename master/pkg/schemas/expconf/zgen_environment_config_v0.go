@@ -82,6 +82,14 @@ func (e *EnvironmentConfigV0) SetDropCapabilities(val []string) {
 	e.RawDropCapabilities = val
 }
 
+func (e EnvironmentConfigV0) DockerFlags() []string {
+	return e.RawDockerFlags
+}
+
+func (e *EnvironmentConfigV0) SetDockerFlags(val []string) {
+	e.RawDockerFlags = val
+}
+
 func (e EnvironmentConfigV0) ParsedSchema() interface{} {
 	return schemas.ParsedEnvironmentConfigV0()
 }

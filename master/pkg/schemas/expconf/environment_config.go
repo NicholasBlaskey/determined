@@ -53,6 +53,7 @@ type EnvironmentConfigV0 struct {
 
 	RawAddCapabilities  []string `json:"add_capabilities"`
 	RawDropCapabilities []string `json:"drop_capabilities"`
+	RawDockerFlags      []string `json:"docker_flags"`
 }
 
 //go:generate ../gen.sh
