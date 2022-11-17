@@ -151,7 +151,8 @@ func merge(obj reflect.Value, src reflect.Value, name string) reflect.Value {
 		return cpy(obj)
 
 	// Assert that none of the "complex" kinds are present.
-	case reflect.Chan,
+	case reflect.Array,
+		reflect.Chan,
 		reflect.Func,
 		reflect.UnsafePointer,
 		// We already handled Ptr and Interface.
