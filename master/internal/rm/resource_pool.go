@@ -821,6 +821,12 @@ func (c containerResources) Start(
 	spec.Devices = c.devices
 	// Write the real DET_UNIQUE_PORT_OFFSET value now that we know which devices to use.
 	spec.ExtraEnvVars["DET_UNIQUE_PORT_OFFSET"] = strconv.Itoa(tasks.UniquePortOffset(spec.Devices))
+
+	dockerSpec, err := spec.ToDockerSpec()
+	if err != nil {
+		return errors.Wrap(err, "error creating docker spec")
+	}
+
 	return ctx.Ask(handler, sproto.StartTaskContainer{
 		TaskActor: c.req.AllocationRef,
 		StartContainer: aproto.StartContainer{
@@ -830,7 +836,7 @@ func (c containerResources) Start(
 				State:   cproto.Assigned,
 				Devices: c.devices,
 			},
-			Spec: spec.ToDockerSpec(),
+			Spec: dockerSpec,
 		},
 		LogContext: logCtx,
 	}).Error()

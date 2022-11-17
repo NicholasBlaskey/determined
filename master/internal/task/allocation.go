@@ -920,6 +920,8 @@ func (a *Allocation) terminated(ctx *actor.Context, reason string) {
 		// This is true because searcher and preemption exits both ack preemption.
 		exit.UserRequestedStop = true
 		exitReason = fmt.Sprintf("allocation stopped early after %s", reason)
+		fmt.Println("REASON REASON REASON", reason)
+		fmt.Println("LEN LEN LEN", len(a.resources.exited()))
 		ctx.Log().Info(exitReason)
 		return
 	case a.exitErr != nil:
