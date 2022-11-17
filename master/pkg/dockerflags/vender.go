@@ -560,6 +560,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions, serverOS string) (*con
 		}
 	}
 
+	fmt.Println("OOOM is true?", copts.oomKillDisable)
 	resources := container.Resources{
 		CgroupParent:         copts.cgroupParent,
 		Memory:               copts.memory.Value(),

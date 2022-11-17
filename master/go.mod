@@ -101,7 +101,6 @@ require (
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -159,7 +158,6 @@ require (
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gotest.tools/v3 v3.0.3 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
@@ -169,6 +167,7 @@ require (
 )
 
 require (
+	github.com/docker/cli v20.10.21+incompatible
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/uptrace/bun v1.1.8
 	github.com/uptrace/bun/dialect/pgdialect v1.1.8
@@ -178,7 +177,6 @@ require (
 
 require (
 	github.com/containerd/containerd v1.6.10 // indirect
-	github.com/docker/cli v20.10.21+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
