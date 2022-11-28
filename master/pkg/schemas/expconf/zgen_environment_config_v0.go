@@ -82,11 +82,11 @@ func (e *EnvironmentConfigV0) SetDropCapabilities(val []string) {
 	e.RawDropCapabilities = val
 }
 
-func (e EnvironmentConfigV0) DockerFlags() []string {
+func (e EnvironmentConfigV0) DockerFlags() DockerFlags {
 	return e.RawDockerFlags
 }
 
-func (e *EnvironmentConfigV0) SetDockerFlags(val []string) {
+func (e *EnvironmentConfigV0) SetDockerFlags(val DockerFlags) {
 	e.RawDockerFlags = val
 }
 
