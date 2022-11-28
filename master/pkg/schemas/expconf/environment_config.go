@@ -67,7 +67,7 @@ func (d *DockerFlags) UnmarshalJSON(b []byte) error {
 		return errors.Wrap(err, "unable to parse docker flags")
 	}
 
-	_, _, _, err := dockerflags.Parse(flags)
+	_, _, _, err := dockerflags.Parse(flags) // nolint: dogsled
 	if err != nil {
 		return errors.Wrap(err, "invalid docker flags")
 	}

@@ -242,6 +242,8 @@ func (t *TaskSpec) ToDockerSpec() (cproto.Spec, error) {
 	conf.Image = env.Image().For(deviceType)
 	conf.WorkingDir = t.WorkDir
 
+	hostConf.Privileged = false // Users setting privileged could be bad from a security standpoint.
+
 	hostConf.NetworkMode = network
 	hostConf.Mounts = t.Mounts
 	hostConf.PublishAllPorts = true

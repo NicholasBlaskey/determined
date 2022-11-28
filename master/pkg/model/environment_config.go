@@ -153,7 +153,7 @@ func (r *RuntimeItems) For(deviceType device.Type) []string {
 // Validate implements the check.Validatable interface.
 func (e Environment) Validate() []error {
 	var errs []error
-	_, _, _, err := dockerflags.Parse(e.DockerFlags)
+	_, _, _, err := dockerflags.Parse(e.DockerFlags) // nolint: dogsled
 	if err != nil {
 		errs = append(errs, err)
 	}

@@ -1109,8 +1109,24 @@ workloads for this experiment. For more information on customizing the trial env
    rather than ``--cap-add``.
 
 ``docker_flags``
-   Allows specify flags and arguments that ``docker run`` accepts. The following arguments are not supported due to Determined specifying them or providing a different method of setting them.
-   ``--user``, ``--expose``, #TODO list all!
+   A list of flags and arguments that ``docker run`` accepts. This is honored by resource managers
+   of type ``agent`` but ignored by others. The following arguments that ``docker run`` accepts are
+   not supported and will be ignored due to Determined specifying them or providing a different
+   method of setting them.
+
+   -  ``--user``
+   -  ``--expose``
+   -  ``--env``
+   -  ``--env-file``
+   -  ``--entrypoint``
+   -  ``--workdir``
+   -  ``--privileged``
+   -  ``--network``
+   -  ``--volume``
+   -  ``--shm-size``
+   -  ``--cap-add``
+   -  ``--cap-drop``
+   -  ``--device``
 
 .. _exp-environment-slurm:
 

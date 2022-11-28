@@ -278,6 +278,8 @@ def test_shm_size_command(
             "config.yaml": f"""
 resources:
   shm_size: {actual}
+environment:
+  docker_flags: ["--shm-size", "90000"] # Ignores docker flags since we specify shm_size.
 """
         },
     ) as tree:
