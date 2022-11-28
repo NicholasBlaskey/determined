@@ -248,9 +248,7 @@ func (t *TaskSpec) ToDockerSpec() (cproto.Spec, error) {
 	hostConf.ShmSize = shmSize
 	hostConf.CapAdd = env.AddCapabilities()
 	hostConf.CapDrop = env.DropCapabilities()
-	hostConf.Resources = docker.Resources{
-		Devices: devices,
-	}
+	hostConf.Resources.Devices = devices
 
 	runArchives, rootArchives := t.Archives()
 	spec := cproto.Spec{
