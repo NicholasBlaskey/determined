@@ -4,11 +4,16 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/ghodss/yaml"
+	"github.com/mitchellh/mapstructure"
+	"github.com/stretchr/testify/require"
 	"gotest.tools/assert"
 
 	"github.com/determined-ai/determined/master/internal/config/provconfig"
@@ -488,5 +493,52 @@ resource_manager:
 		t.Run(tc.name, func(t *testing.T) {
 			test(t, tc.configRaw, tc.rpName, tc.preemptionEnabled)
 		})
+	}
+}
+
+func TestHelmChartUpToDate(t *testing.T) {
+	chartPath := "../../../helm/charts/determined/templates/master-config.yaml"
+	b, err := os.ReadFile(chartPath)
+	require.NoError(t, err)
+
+	conf := strings.Split(string(b), "master.yaml: |")[1]
+	conf = regexp.MustCompile(`: {{.*?}}`).ReplaceAllString(conf, ": value")
+	conf = regexp.MustCompile(`{{.*?}}`).ReplaceAllString(conf, "")
+	conf = strings.ReplaceAll(conf, "|", "value")
+
+	conf = strings.ReplaceAll(conf, "\n    ", "\n") // Unident yaml.
+	fmt.Println(conf)
+
+	helmParsed := make(map[string]any)
+	require.NoError(t, yaml.Unmarshal([]byte(conf), &helmParsed))
+	fmt.Println(helmParsed)
+
+	masterParsed := make(map[string]any)
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		TagName: "json",
+		Result:  &masterParsed,
+	})
+	require.NoError(t, err)
+	require.NoError(t, decoder.Decode(Config{}))
+	fmt.Println(masterParsed)
+
+	mapEqual(t, masterParsed, helmParsed, "")
+
+	require.NotNil(t, nil)
+}
+
+func mapEqual(t *testing.T, master, helm map[string]any, path string) {
+	for k := range master {
+		if _, ok := helm[k]; !ok {
+			t.Logf("master had key %s.%s but missing from helm chart", path, k)
+		}
+
+		if masterChild, ok := master[k].(map[string]any); ok {
+			if helmChild, ok := helm[k].(map[string]any); ok {
+				mapEqual(t, masterChild, helmChild, path+"."+k)
+			} else {
+				t.Logf("helm chart %s.%s should be a dictonary not a value", path, k)
+			}
+		}
 	}
 }
