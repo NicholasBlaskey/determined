@@ -201,6 +201,37 @@ func (p *pods) Receive(ctx *actor.Context) error {
 	case SummarizeResources:
 		p.receiveResourceSummarize(ctx, msg)
 
+	case restorePodsHealthCheck:
+		// TODO can we optimize to get?
+		// Like I don't know if we can.
+		// So we have the determinedLabel ?!
+
+		// TODO move this whole to a different function.
+
+		pods, err := p.podInterface.List(context.TODO(), metaV1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
+		})
+		if err != nil {
+			fmt.Println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", err)
+			ctx.Respond(errors.Wrap(err, "unable to list pods checking if they can be restored"))
+			return nil
+		}
+
+		if len(pods.Items) != msg.numPods {
+			ctx.Respond(fmt.Errorf("not enough pods found for allocation")) // TODO to error
+			return nil
+		}
+
+		ctx.Respond(nil) // TODO check config maps too
+
+		// TODO clean up partial data. ?!? Maybe we also send number pods,
+		// TODO check config maps? and what else?
+		/*
+			listOptions := metaV1.ListOptions{LabelSelector: determinedLabel + "="}
+			configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
+			pods, err := p.podInterface.List(context.TODO(), listOptions)
+		*/
+
 	case resourceDeletionFailed:
 		if msg.err != nil {
 			ctx.Log().WithError(msg.err).Error("error deleting leftover kubernetes resource")
@@ -335,6 +366,9 @@ func (p *pods) getSystemResourceRequests(ctx *actor.Context) error {
 }
 
 func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
+	// TODO don't...
+	return nil
+
 	listOptions := metaV1.ListOptions{LabelSelector: determinedLabel}
 
 	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)

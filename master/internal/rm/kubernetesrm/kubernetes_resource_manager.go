@@ -165,6 +165,10 @@ func (k ResourceManager) NotifyContainerRunning(
 		"the NotifyContainerRunning message is unsupported for KubernetesResourceManager")
 }
 
+func (a ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
+	return true // POC... what will happen?
+}
+
 // kubernetesResourceProvider manages the lifecycle of k8s resources.
 type kubernetesResourceManager struct {
 	config *config.KubernetesResourceManagerConfig
@@ -419,6 +423,7 @@ func (k *kubernetesResourceManager) receiveRequestMsg(ctx *actor.Context) error 
 }
 
 func (k *kubernetesResourceManager) addTask(ctx *actor.Context, msg sproto.AllocateRequest) {
+	// TODO here? So on stop we say resources are released...
 	actors.NotifyOnStop(ctx, msg.AllocationRef, sproto.ResourcesReleased{
 		AllocationRef: msg.AllocationRef,
 	})
@@ -429,16 +434,16 @@ func (k *kubernetesResourceManager) addTask(ctx *actor.Context, msg sproto.Alloc
 	if msg.Group == nil {
 		msg.Group = msg.AllocationRef
 	}
-	k.getOrCreateGroup(ctx, msg.Group)
+	k.getOrCreateGroup(ctx, msg.Group) // What is this group?
 	if len(msg.Name) == 0 {
 		msg.Name = "Unnamed-k8-Task"
 	}
 
-	ctx.Log().Infof(
+	ctx.Log().Infof( // This is that log!
 		"resources are requested by %s (Allocation ID: %s)",
 		msg.AllocationRef.Address(), msg.AllocationID,
 	)
-	if msg.IsUserVisible {
+	if msg.IsUserVisible { // Yep is user visable! Think it goes in job queue.
 		if _, ok := k.queuePositions[msg.JobID]; !ok {
 			k.queuePositions[msg.JobID] = tasklist.InitializeQueuePosition(
 				msg.JobSubmissionTime,
@@ -630,6 +635,11 @@ func (k *kubernetesResourceManager) receiveSetAllocationName(
 	}
 }
 
+type restorePodsHealthCheck struct {
+	numPods      int
+	allocationID model.AllocationID
+}
+
 func (k *kubernetesResourceManager) assignResources(
 	ctx *actor.Context, req *sproto.AllocateRequest,
 ) {
@@ -666,7 +676,7 @@ func (k *kubernetesResourceManager) assignResources(
 		rs := &k8sPodResources{
 			req:             req,
 			podsActor:       k.podsActor,
-			containerID:     containerID,
+			containerID:     containerID, // This is a wrench in our plan? Possibly?
 			slots:           slotsPerPod,
 			group:           k.groups[req.Group],
 			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]],
@@ -680,10 +690,44 @@ func (k *kubernetesResourceManager) assignResources(
 	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
 	req.AllocationRef.System().Tell(req.AllocationRef, assigned.Clone())
 
+	if !req.Restore {
+		ctx.Log().
+			WithField("allocation-id", req.AllocationID).
+			WithField("task-handler", req.AllocationRef.Address()).
+			Infof("resources assigned with %d pods", numPods)
+		return
+	}
+
+	// Try to restore the allocation.
+	resp := ctx.Ask(k.podsActor, restorePodsHealthCheck{
+		allocationID: req.AllocationID,
+		numPods:      numPods,
+	})
+	if err := resp.Error(); err != nil {
+		ctx.Log().
+			WithField("allocation-id", req.AllocationID).
+			WithError(err).Error("unable to restore allocation")
+
+		unknownExit := sproto.ExitCode(-1)
+		failed := sproto.NewResourcesFailure(sproto.ResourcesAborted,
+			"Unable to restore pod on restart", &unknownExit)
+		stopped := sproto.ResourcesStopped{}
+		stopped.Failure = failed
+
+		for resourcesID := range allocations {
+			ctx.Tell(req.AllocationRef, sproto.ResourcesStateChanged{
+				ResourcesID:      resourcesID,
+				ResourcesState:   sproto.Terminated,
+				ResourcesStopped: &stopped,
+			})
+		}
+		return
+	}
+
 	ctx.Log().
 		WithField("allocation-id", req.AllocationID).
 		WithField("task-handler", req.AllocationRef.Address()).
-		Infof("resources assigned with %d pods", numPods)
+		Infof("resources restored with %d pods", numPods)
 }
 
 func (k *kubernetesResourceManager) resourcesReleased(
