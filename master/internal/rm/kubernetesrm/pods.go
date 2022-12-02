@@ -162,6 +162,8 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			return err
 		}
 		p.startResourceRequestQueue(ctx)
+
+		// TODO here. Actually restore pods? Then let the allocations get them?!???
 		if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 			return err
 		}
@@ -222,7 +224,28 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			return nil
 		}
 
-		ctx.Respond(nil) // TODO check config maps too
+		var containerIDs []string
+		for _, pod := range pods.Items {
+			found := false
+			for _, container := range pod.Spec.Containers {
+				for _, env := range container.Env {
+					if env.Name == "DET_CONTAINER_ID" {
+						containerIDs = append(containerIDs, env.Value)
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
+			}
+			if !found {
+				ctx.Respond(fmt.Errorf("pod didn't have containerID environment variable"))
+				return nil
+			}
+		}
+
+		ctx.Respond(containerIDs) // TODO check config maps too
 
 		// TODO clean up partial data. ?!? Maybe we also send number pods,
 		// TODO check config maps? and what else?

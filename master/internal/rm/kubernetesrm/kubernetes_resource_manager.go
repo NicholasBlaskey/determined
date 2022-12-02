@@ -635,7 +635,7 @@ func (k *kubernetesResourceManager) receiveSetAllocationName(
 	}
 }
 
-type restorePodsHealthCheck struct {
+type restorePodsHealthCheck struct { // TODO not a true health check?
 	numPods      int
 	allocationID model.AllocationID
 }
@@ -670,21 +670,53 @@ func (k *kubernetesResourceManager) assignResources(
 
 	k.slotsUsedPerGroup[k.groups[req.Group]] += req.SlotsNeeded
 
+	var containerIDs []string
+	if req.Restore {
+		resp := ctx.Ask(k.podsActor, restorePodsHealthCheck{
+			allocationID: req.AllocationID,
+			numPods:      numPods,
+		})
+		if err := resp.Error(); err != nil {
+			ctx.Log().
+				WithField("allocation-id", req.AllocationID).
+				WithError(err).Error("unable to restore allocation")
+
+			unknownExit := sproto.ExitCode(-1)
+			ctx.Tell(req.AllocationRef, sproto.ResourcesFailure{
+				FailureType: sproto.ResourcesMissing,
+				ErrMsg:      errors.Wrap(err, "unable to restore allocation").Error(),
+				ExitCode:    &unknownExit,
+			})
+			return
+		}
+		containerIDs = resp.Get().([]string)
+	}
+
 	allocations := sproto.ResourceList{}
 	for pod := 0; pod < numPods; pod++ {
-		containerID := cproto.NewID()
+		var containerID cproto.ID
+		if req.Restore {
+			fmt.Println("RESTORING", containerID)
+			containerID = cproto.ID(containerIDs[0])
+		} else {
+			containerID = cproto.NewID()
+		}
+		fmt.Println(containerID)
 		rs := &k8sPodResources{
 			req:             req,
 			podsActor:       k.podsActor,
-			containerID:     containerID, // This is a wrench in our plan? Possibly?
+			containerID:     containerID,
 			slots:           slotsPerPod,
-			group:           k.groups[req.Group],
-			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]],
+			group:           k.groups[req.Group],                                // TODO
+			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]], // TODO
 		}
 		allocations[rs.Summary().ResourcesID] = rs
 		k.addrToContainerID[req.AllocationRef] = containerID
 		k.containerIDtoAddr[containerID.String()] = req.AllocationRef
 	}
+
+	// We need to start the resources I think???
+	// Or something. we need to basically register the pod.
 
 	assigned := sproto.ResourcesAllocated{ID: req.AllocationID, Resources: allocations}
 	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
@@ -698,32 +730,7 @@ func (k *kubernetesResourceManager) assignResources(
 		return
 	}
 
-	// Try to restore the allocation.
-	resp := ctx.Ask(k.podsActor, restorePodsHealthCheck{
-		allocationID: req.AllocationID,
-		numPods:      numPods,
-	})
-	if err := resp.Error(); err != nil {
-		ctx.Log().
-			WithField("allocation-id", req.AllocationID).
-			WithError(err).Error("unable to restore allocation")
-
-		unknownExit := sproto.ExitCode(-1)
-		failed := sproto.NewResourcesFailure(sproto.ResourcesAborted,
-			"Unable to restore pod on restart", &unknownExit)
-		stopped := sproto.ResourcesStopped{}
-		stopped.Failure = failed
-
-		for resourcesID := range allocations {
-			ctx.Tell(req.AllocationRef, sproto.ResourcesStateChanged{
-				ResourcesID:      resourcesID,
-				ResourcesState:   sproto.Terminated,
-				ResourcesStopped: &stopped,
-			})
-		}
-		return
-	}
-
+	// TODO refactor if.
 	ctx.Log().
 		WithField("allocation-id", req.AllocationID).
 		WithField("task-handler", req.AllocationRef.Address()).
