@@ -423,7 +423,6 @@ func (k *kubernetesResourceManager) receiveRequestMsg(ctx *actor.Context) error 
 }
 
 func (k *kubernetesResourceManager) addTask(ctx *actor.Context, msg sproto.AllocateRequest) {
-	// TODO here? So on stop we say resources are released...
 	actors.NotifyOnStop(ctx, msg.AllocationRef, sproto.ResourcesReleased{
 		AllocationRef: msg.AllocationRef,
 	})
@@ -434,16 +433,16 @@ func (k *kubernetesResourceManager) addTask(ctx *actor.Context, msg sproto.Alloc
 	if msg.Group == nil {
 		msg.Group = msg.AllocationRef
 	}
-	k.getOrCreateGroup(ctx, msg.Group) // What is this group?
+	k.getOrCreateGroup(ctx, msg.Group)
 	if len(msg.Name) == 0 {
 		msg.Name = "Unnamed-k8-Task"
 	}
 
-	ctx.Log().Infof( // This is that log!
+	ctx.Log().Infof(
 		"resources are requested by %s (Allocation ID: %s)",
 		msg.AllocationRef.Address(), msg.AllocationID,
 	)
-	if msg.IsUserVisible { // Yep is user visable! Think it goes in job queue.
+	if msg.IsUserVisible {
 		if _, ok := k.queuePositions[msg.JobID]; !ok {
 			k.queuePositions[msg.JobID] = tasklist.InitializeQueuePosition(
 				msg.JobSubmissionTime,
@@ -698,12 +697,10 @@ func (k *kubernetesResourceManager) assignResources(
 	for pod := 0; pod < numPods; pod++ {
 		var containerID cproto.ID
 		if req.Restore {
-			fmt.Println("RESTORING", containerID)
 			containerID = cproto.ID(containerIDs[0])
 		} else {
 			containerID = cproto.NewID()
 		}
-		fmt.Println(containerID)
 		rs := &k8sPodResources{
 			req:             req,
 			podsActor:       k.podsActor,
@@ -717,9 +714,6 @@ func (k *kubernetesResourceManager) assignResources(
 		k.containerIDtoAddr[containerID.String()] = req.AllocationRef
 	}
 
-	// We need to start the resources I think???
-	// Or something. we need to basically register the pod.
-
 	assigned := sproto.ResourcesAllocated{ID: req.AllocationID, Resources: allocations}
 	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
 	req.AllocationRef.System().Tell(req.AllocationRef, assigned.Clone())
@@ -732,7 +726,6 @@ func (k *kubernetesResourceManager) assignResources(
 		return
 	}
 
-	// TODO refactor if.
 	ctx.Log().
 		WithField("allocation-id", req.AllocationID).
 		WithField("task-handler", req.AllocationRef.Address()).

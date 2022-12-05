@@ -150,8 +150,7 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
 		ctx.AddLabels(p.logCtx)
-
-		if !p.restore { // TODO?
+		if !p.restore {
 			if err := p.createPodSpecAndSubmit(ctx); err != nil {
 				return err
 			}
