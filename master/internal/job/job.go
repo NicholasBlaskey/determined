@@ -65,10 +65,13 @@ func (j *Jobs) getJobs(
 	desc bool,
 	states []jobv1.State,
 ) ([]*jobv1.Job, error) {
+	fmt.Println("GET JOBS?!")
 	jobQ, err := j.jobQSnapshot(ctx, resourcePool)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("LEN JOB Q", len(jobQ), jobQ)
 
 	// Get jobs from the job actors.
 	jobRefs := make([]*actor.Ref, 0, len(jobQ))
@@ -82,6 +85,13 @@ func (j *Jobs) getJobs(
 	if err != nil {
 		ctx.Log().WithError(err).Error("parsing responses from job actors")
 		return nil, err
+	}
+
+	for _, jobQueue := range jobQ {
+		fmt.Printf("JOB QUEUE %+v\n", jobQueue)
+	}
+	for _, j := range jobs {
+		fmt.Printf("JOBS %+v\n", j)
 	}
 
 	// Merge the results.
@@ -98,6 +108,10 @@ func (j *Jobs) getJobs(
 				jobsInRM = append(jobsInRM, v1Job)
 			}
 		}
+	}
+
+	for _, j := range jobsInRM {
+		fmt.Printf("JOBS IN RM %+v\n", j)
 	}
 
 	// order by jobsAhead first and JobId second.

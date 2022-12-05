@@ -231,11 +231,13 @@ func (p *pods) Receive(ctx *actor.Context) error {
 
 		var containerIDs []string
 		var podName string
+		var k8sPod *k8sV1.Pod
 		for _, pod := range pods.Items {
 			found := false
 			for _, container := range pod.Spec.Containers {
 				for _, env := range container.Env {
 					if env.Name == "DET_CONTAINER_ID" {
+						k8sPod = &pod
 						podName = pod.Name
 						containerIDs = append(containerIDs, env.Value)
 						found = true
@@ -252,10 +254,7 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			}
 		}
 
-		fmt.Println("POD NAME", podName)
-
-		if err := p.restorePod(ctx, msg.taskActor, containerIDs[0], podName); err != nil {
-			fmt.Println("ERRRRR", err)
+		if err := p.restorePod(ctx, msg.taskActor, containerIDs[0], podName, k8sPod); err != nil {
 			return nil
 		}
 
@@ -406,8 +405,13 @@ func (p *pods) restoreExistingKubernetesResources(ctx *actor.Context) error {
 	return nil
 }
 
+// TODO remove params
 func (p *pods) restorePod(
-	ctx *actor.Context, taskActor *actor.Ref, containerID string, podName string,
+	ctx *actor.Context,
+	taskActor *actor.Ref,
+	containerID string,
+	podName string,
+	pod *k8sV1.Pod,
 ) error {
 	// We need parent address?
 	startMsg := StartTaskPod{
@@ -446,6 +450,7 @@ func (p *pods) restorePod(
 	newPodHandler.podName = podName
 	newPodHandler.configMapName = podName
 	newPodHandler.container.State = cproto.Running
+	newPodHandler.pod = pod
 
 	ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
 	if !ok {

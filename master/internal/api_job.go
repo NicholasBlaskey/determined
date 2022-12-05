@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,6 +16,8 @@ import (
 func (a *apiServer) GetJobs(
 	_ context.Context, req *apiv1.GetJobsRequest,
 ) (resp *apiv1.GetJobsResponse, err error) {
+	fmt.Println("API JOBS")
+
 	actorResp := a.m.system.AskAt(sproto.JobsActorAddr, req)
 	if err := actorResp.Error(); err != nil {
 		return nil, err

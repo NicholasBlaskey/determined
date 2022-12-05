@@ -619,6 +619,7 @@ func (k *kubernetesResourceManager) moveJob(
 }
 
 func (k *kubernetesResourceManager) jobQInfo() map[model.JobID]*sproto.RMJobInfo {
+	// HMMM task list?
 	reqs := tasklist.SortTasksWithPosition(k.reqList, k.groups, k.queuePositions, true)
 	jobQinfo := tasklist.ReduceToJobQInfo(reqs)
 
@@ -701,13 +702,18 @@ func (k *kubernetesResourceManager) assignResources(
 		} else {
 			containerID = cproto.NewID()
 		}
+
+		fmt.Println("Initial position")
+		fmt.Println("alloc ref", req.AllocationRef)
+		fmt.Println("job id", k.addrToJobID[req.AllocationRef])
+		fmt.Println("queue pos", k.queuePositions[k.addrToJobID[req.AllocationRef]])
 		rs := &k8sPodResources{
 			req:             req,
 			podsActor:       k.podsActor,
 			containerID:     containerID,
 			slots:           slotsPerPod,
-			group:           k.groups[req.Group],                                // TODO
-			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]], // TODO
+			group:           k.groups[req.Group],                                // TODO dist train
+			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]], // HMM?
 		}
 		allocations[rs.Summary().ResourcesID] = rs
 		k.addrToContainerID[req.AllocationRef] = containerID

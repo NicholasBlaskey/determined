@@ -151,9 +151,15 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	case actor.PreStart:
 		ctx.AddLabels(p.logCtx)
 		if !p.restore {
-			if err := p.createPodSpecAndSubmit(ctx); err != nil {
-				return err
+			if err := p.createPodSpec(ctx, p.scheduler); err != nil {
+				return errors.Wrap(err, "error creating pod spec")
 			}
+
+			ctx.Tell(p.resourceRequestQueue, createKubernetesResources{
+				handler:       ctx.Self(),
+				podSpec:       p.pod,
+				configMapSpec: p.configMap,
+			})
 		}
 	case resourceCreationFailed:
 		p.receiveResourceCreationFailed(ctx, msg)
@@ -211,19 +217,6 @@ func (p *pod) Receive(ctx *actor.Context) error {
 		return actor.ErrUnexpectedMessage(ctx)
 	}
 
-	return nil
-}
-
-func (p *pod) createPodSpecAndSubmit(ctx *actor.Context) error {
-	if err := p.createPodSpec(ctx, p.scheduler); err != nil {
-		return err
-	}
-
-	ctx.Tell(p.resourceRequestQueue, createKubernetesResources{
-		handler:       ctx.Self(),
-		podSpec:       p.pod,
-		configMapSpec: p.configMap,
-	})
 	return nil
 }
 
