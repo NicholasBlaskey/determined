@@ -638,6 +638,7 @@ func (k *kubernetesResourceManager) receiveSetAllocationName(
 type restorePodsHealthCheck struct { // TODO not a true health check?
 	numPods      int
 	allocationID model.AllocationID
+	taskActor    *actor.Ref
 }
 
 func (k *kubernetesResourceManager) assignResources(
@@ -675,6 +676,7 @@ func (k *kubernetesResourceManager) assignResources(
 		resp := ctx.Ask(k.podsActor, restorePodsHealthCheck{
 			allocationID: req.AllocationID,
 			numPods:      numPods,
+			taskActor:    req.AllocationRef,
 		})
 		if err := resp.Error(); err != nil {
 			ctx.Log().

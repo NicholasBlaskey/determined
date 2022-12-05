@@ -71,6 +71,8 @@ type pod struct {
 	containerNames   map[string]bool
 
 	logCtx logger.Context
+
+	restore bool
 }
 
 type getPodNodeInfo struct{}
@@ -148,10 +150,12 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
 		ctx.AddLabels(p.logCtx)
-		if err := p.createPodSpecAndSubmit(ctx); err != nil {
-			return err
-		}
 
+		if !p.restore { // TODO?
+			if err := p.createPodSpecAndSubmit(ctx); err != nil {
+				return err
+			}
+		}
 	case resourceCreationFailed:
 		p.receiveResourceCreationFailed(ctx, msg)
 

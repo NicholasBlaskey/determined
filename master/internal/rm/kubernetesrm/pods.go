@@ -25,6 +25,8 @@ import (
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 
+	"github.com/determined-ai/determined/master/pkg/tasks"
+
 	k8sV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -164,6 +166,9 @@ func (p *pods) Receive(ctx *actor.Context) error {
 		p.startResourceRequestQueue(ctx)
 
 		// TODO here. Actually restore pods? Then let the allocations get them?!???
+		if err := p.restoreExistingKubernetesResources(ctx); err != nil {
+			return err
+		}
 		if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 			return err
 		}
@@ -225,11 +230,13 @@ func (p *pods) Receive(ctx *actor.Context) error {
 		}
 
 		var containerIDs []string
+		var podName string
 		for _, pod := range pods.Items {
 			found := false
 			for _, container := range pod.Spec.Containers {
 				for _, env := range container.Env {
 					if env.Name == "DET_CONTAINER_ID" {
+						podName = pod.Name
 						containerIDs = append(containerIDs, env.Value)
 						found = true
 						break
@@ -243,6 +250,13 @@ func (p *pods) Receive(ctx *actor.Context) error {
 				ctx.Respond(fmt.Errorf("pod didn't have containerID environment variable"))
 				return nil
 			}
+		}
+
+		fmt.Println("POD NAME", podName)
+
+		if err := p.restorePod(ctx, msg.taskActor, containerIDs[0], podName); err != nil {
+			fmt.Println("ERRRRR", err)
+			return nil
 		}
 
 		ctx.Respond(containerIDs) // TODO check config maps too
@@ -387,6 +401,159 @@ func (p *pods) getSystemResourceRequests(ctx *actor.Context) error {
 	}
 	return nil
 }
+
+func (p *pods) restoreExistingKubernetesResources(ctx *actor.Context) error {
+	return nil
+}
+
+func (p *pods) restorePod(
+	ctx *actor.Context, taskActor *actor.Ref, containerID string, podName string,
+) error {
+	// We need parent address?
+	startMsg := StartTaskPod{
+		TaskActor: taskActor, // TODO, //actor.Addr(""),
+		Spec: tasks.TaskSpec{
+			ContainerID: containerID,
+		}, // TODO
+		Slots: 1, // TODO figure out slots?
+		// Rank:      1, // Don't think we need rank.
+		// LogContext: logContext, // TODO
+	}
+
+	newPodHandler := newPod(
+		startMsg, // MSG !!!
+		p.cluster,
+		startMsg.Spec.ClusterID, // MSG !!!
+		p.clientSet,
+		p.namespace,
+		p.masterIP,
+		p.masterPort,
+		p.masterTLSConfig,
+		p.loggingTLSConfig,
+		p.loggingConfig,
+		p.podInterface,
+		p.configMapInterface,
+		p.resourceRequestQueue,
+		p.leaveKubernetesResources,
+		p.slotType,
+		p.slotResourceRequests,
+		p.scheduler,
+		p.fluentConfig,
+	)
+
+	newPodHandler.restore = true
+	newPodHandler.logCtx["pod"] = podName
+	newPodHandler.podName = podName
+	newPodHandler.configMapName = podName
+	newPodHandler.container.State = cproto.Running
+
+	ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
+	if !ok {
+		return errors.Errorf("pod actor %s already exists", ref.Address().String())
+	}
+
+	// name, ok := p.containerIDToPodName[string(msg.PodID)]
+	p.podNameToPodHandler[podName] = ref
+	p.containerIDToPodName[containerID] = podName
+	p.podNameToContainerID[podName] = containerID
+	p.containerIDToSchedulingState[containerID] = sproto.SchedulingStateScheduled
+	p.podHandlerToMetadata[ref] = podMetadata{
+		podName:     podName,
+		containerID: containerID,
+	}
+
+	return nil
+}
+
+// What happens to messages sent? Like on some level restoring the pod when the allocation
+// restores is easier from the pod perspective since we know we didn't miss any messages.
+// However we need the task actor which we can't get?
+
+/*
+
+	pods, err := p.podInterface.List(context.TODO(), metaV1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s", determinedLabel),
+	})
+	if err != nil {
+		return err // TODO
+	}
+
+	containerIDToName := make(map[string]string)
+	for _, pod := range pods.Items {
+		found := false
+		for _, container := range pod.Spec.Containers {
+			for _, env := range container.Env {
+				if env.Name == "DET_CONTAINER_ID" {
+					containerIDToName[env.Value] = pod.Name
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			ctx.Respond(fmt.Errorf("pod didn't have containerID environment variable"))
+			return nil
+		}
+	}
+
+	fmt.Println(containerIDToName)
+	for containerID, name := range containerIDToName {
+		// We need parent address?
+		startMsg := StartTaskPod{
+			TaskActor: nil,              // TODO, //actor.Addr(""),
+			Spec:      tasks.TaskSpec{}, // TODO
+			Slots:     1,                // TODO figure out slots?
+			// Rank:      1, // Don't think we need rank.
+			// LogContext: logContext, // TODO
+		}
+
+		newPodHandler := newPod(
+			startMsg, // MSG !!!
+			p.cluster,
+			startMsg.Spec.ClusterID, // MSG !!!
+			p.clientSet,
+			p.namespace,
+			p.masterIP,
+			p.masterPort,
+			p.masterTLSConfig,
+			p.loggingTLSConfig,
+			p.loggingConfig,
+			p.podInterface,
+			p.configMapInterface,
+			p.resourceRequestQueue,
+			p.leaveKubernetesResources,
+			p.slotType,
+			p.slotResourceRequests,
+			p.scheduler,
+			p.fluentConfig,
+		)
+
+		newPodHandler.restore = true
+		newPodHandler.logCtx["pod"] = name
+		newPodHandler.podName = name
+		newPodHandler.configMapName = name
+
+		ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
+		if !ok {
+			return errors.Errorf("pod actor %s already exists", ref.Address().String())
+		}
+
+		p.podNameToPodHandler[newPodHandler.podName] = ref
+		p.containerIDToPodName[containerID] = newPodHandler.podName
+		p.podNameToContainerID[newPodHandler.podName] = containerID
+		p.containerIDToSchedulingState[containerID] = sproto.SchedulingStateScheduled
+		p.podHandlerToMetadata[ref] = podMetadata{
+			podName:     newPodHandler.podName,
+			containerID: containerID,
+		}
+	}
+
+	return nil
+}
+*/
 
 func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
 	// TODO don't...
