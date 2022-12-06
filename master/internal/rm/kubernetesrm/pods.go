@@ -586,8 +586,6 @@ func (p *pods) receiveStartTaskPod(ctx *actor.Context, msg StartTaskPod) error {
 }
 
 func (p *pods) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) {
-	fmt.Println("GOT POD STATUS UPDATE!")
-
 	ref, ok := p.podNameToPodHandler[msg.updatedPod.Name]
 	if !ok {
 		ctx.Log().WithField("pod-name", msg.updatedPod.Name).Warn(
@@ -599,13 +597,10 @@ func (p *pods) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) {
 
 	if containerID, ok := p.podNameToContainerID[msg.updatedPod.Name]; ok {
 		if state, ok := p.containerIDToSchedulingState[containerID]; ok {
-			fmt.Println("currState", "new State")
-
 			currState := sproto.SchedulingStateQueued
 			if msg.updatedPod.Status.Phase == "Running" {
 				currState = sproto.SchedulingStateScheduled
 			}
-			fmt.Println("Compare", currState, state, "!", sproto.SchedulingStateScheduled)
 			if currState != state {
 				ctx.Tell(p.cluster, sproto.UpdatePodStatus{
 					ContainerID: containerID,

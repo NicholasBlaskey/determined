@@ -17,12 +17,9 @@ var invalidJobQPos = decimal.NewFromInt(0)
 
 // ReduceToJobQInfo takes a list of AllocateRequest and reduces it to a summary of the Job Queue.
 func ReduceToJobQInfo(reqs AllocReqs) map[model.JobID]*sproto.RMJobInfo {
-	fmt.Println("Reduce to job queue info")
 	isAdded := make(map[model.JobID]*sproto.RMJobInfo)
 	jobsAhead := 0
 	for _, req := range reqs {
-		fmt.Printf("REQ %+v\n", req)
-
 		if !req.IsUserVisible {
 			continue
 		}
@@ -49,13 +46,9 @@ func ReduceToJobQInfo(reqs AllocReqs) map[model.JobID]*sproto.RMJobInfo {
 
 // JobStats returns quick job-related stats about the TaskList.
 func JobStats(taskList *TaskList) *jobv1.QueueStats {
-	fmt.Println("JobStats in job.go")
 	reqs := make(AllocReqs, 0)
 	for it := taskList.Iterator(); it.Next(); {
 		req := it.Value()
-
-		fmt.Printf("ALLOCATE REQUEST? %+v\n", req)
-
 		if !req.IsUserVisible {
 			continue
 		}

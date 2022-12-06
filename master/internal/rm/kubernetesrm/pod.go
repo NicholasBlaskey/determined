@@ -154,12 +154,6 @@ func (p *pod) Receive(ctx *actor.Context) error {
 			if err := p.createPodSpec(ctx, p.scheduler); err != nil {
 				return errors.Wrap(err, "error creating pod spec")
 			}
-
-			ctx.Tell(p.resourceRequestQueue, createKubernetesResources{
-				handler:       ctx.Self(),
-				podSpec:       p.pod,
-				configMapSpec: p.configMap,
-			})
 		}
 	case resourceCreationFailed:
 		p.receiveResourceCreationFailed(ctx, msg)
@@ -220,6 +214,19 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	return nil
 }
 
+func (p *pod) createPodSpecAndSubmit(ctx *actor.Context) error {
+	if err := p.createPodSpec(ctx, p.scheduler); err != nil {
+		return err
+	}
+
+	ctx.Tell(p.resourceRequestQueue, createKubernetesResources{
+		handler:       ctx.Self(),
+		podSpec:       p.pod,
+		configMapSpec: p.configMap,
+	})
+	return nil
+}
+
 func (p *pod) receiveResourceCreationFailed(ctx *actor.Context, msg resourceCreationFailed) {
 	ctx.Log().WithError(msg.err).Error("pod actor notified that resource creation failed")
 	p.insertLog(ctx, time.Now().UTC(), msg.err.Error())
@@ -237,7 +244,6 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 		return err
 	}
 
-	fmt.Println("RETURN HERE in pod status update!", containerState, p.container.State)
 	if containerState == p.container.State {
 		return nil
 	}
@@ -264,7 +270,8 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 		// testLogStreamer is a testing flag only set in the pod_tests.
 		// This allows us to bypass the need for a log streamer or REST server.
 		if !p.testLogStreamer {
-			// We don't get this log streamer? Do we need to?
+			// TODO We don't get this log streamer on restore
+			// Do we need to? aka what breaks when we don't.
 			logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
 			if err != nil {
 				return err

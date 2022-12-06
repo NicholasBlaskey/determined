@@ -619,7 +619,6 @@ func (k *kubernetesResourceManager) moveJob(
 }
 
 func (k *kubernetesResourceManager) jobQInfo() map[model.JobID]*sproto.RMJobInfo {
-	// HMMM task list?
 	reqs := tasklist.SortTasksWithPosition(k.reqList, k.groups, k.queuePositions, true)
 	jobQinfo := tasklist.ReduceToJobQInfo(reqs)
 
@@ -703,10 +702,6 @@ func (k *kubernetesResourceManager) assignResources(
 			containerID = cproto.NewID()
 		}
 
-		fmt.Println("Initial position")
-		fmt.Println("alloc ref", req.AllocationRef)
-		fmt.Println("job id", k.addrToJobID[req.AllocationRef])
-		fmt.Println("queue pos", k.queuePositions[k.addrToJobID[req.AllocationRef]])
 		rs := &k8sPodResources{
 			req:             req,
 			podsActor:       k.podsActor,
@@ -721,9 +716,9 @@ func (k *kubernetesResourceManager) assignResources(
 	}
 
 	assigned := sproto.ResourcesAllocated{ID: req.AllocationID, Resources: allocations}
+	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
 	req.AllocationRef.System().Tell(req.AllocationRef, assigned.Clone())
 
-	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
 	if req.Restore {
 		// AddAllocation on restore, so job queue updates state. // This is incorrect
 		// k.reqList.AddAllocation(req.AllocationRef, &assigned)
