@@ -449,7 +449,7 @@ func (p *pods) restorePod(
 	newPodHandler.logCtx["pod"] = podName
 	newPodHandler.podName = podName
 	newPodHandler.configMapName = podName
-	newPodHandler.container.State = cproto.Running
+	newPodHandler.container.State = cproto.Running // TODO do we want this state?
 	newPodHandler.pod = pod
 
 	ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
@@ -461,11 +461,15 @@ func (p *pods) restorePod(
 	p.podNameToPodHandler[podName] = ref
 	p.containerIDToPodName[containerID] = podName
 	p.podNameToContainerID[podName] = containerID
-	p.containerIDToSchedulingState[containerID] = sproto.SchedulingStateScheduled
+	p.containerIDToSchedulingState[containerID] = sproto.SchedulingStateQueued
 	p.podHandlerToMetadata[ref] = podMetadata{
 		podName:     podName,
 		containerID: containerID,
 	}
+
+	// Update status of pod. If a pod is running and master goes down and still running
+	// this will update the job and pod state.
+	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: pod})
 
 	return nil
 }
@@ -582,6 +586,8 @@ func (p *pods) receiveStartTaskPod(ctx *actor.Context, msg StartTaskPod) error {
 }
 
 func (p *pods) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) {
+	fmt.Println("GOT POD STATUS UPDATE!")
+
 	ref, ok := p.podNameToPodHandler[msg.updatedPod.Name]
 	if !ok {
 		ctx.Log().WithField("pod-name", msg.updatedPod.Name).Warn(
@@ -593,10 +599,13 @@ func (p *pods) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) {
 
 	if containerID, ok := p.podNameToContainerID[msg.updatedPod.Name]; ok {
 		if state, ok := p.containerIDToSchedulingState[containerID]; ok {
+			fmt.Println("currState", "new State")
+
 			currState := sproto.SchedulingStateQueued
 			if msg.updatedPod.Status.Phase == "Running" {
 				currState = sproto.SchedulingStateScheduled
 			}
+			fmt.Println("Compare", currState, state, "!", sproto.SchedulingStateScheduled)
 			if currState != state {
 				ctx.Tell(p.cluster, sproto.UpdatePodStatus{
 					ContainerID: containerID,

@@ -237,6 +237,7 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 		return err
 	}
 
+	fmt.Println("RETURN HERE in pod status update!", containerState, p.container.State)
 	if containerState == p.container.State {
 		return nil
 	}
@@ -263,6 +264,7 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 		// testLogStreamer is a testing flag only set in the pod_tests.
 		// This allows us to bypass the need for a log streamer or REST server.
 		if !p.testLogStreamer {
+			// We don't get this log streamer? Do we need to?
 			logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
 			if err != nil {
 				return err

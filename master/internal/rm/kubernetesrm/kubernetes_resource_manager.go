@@ -712,8 +712,8 @@ func (k *kubernetesResourceManager) assignResources(
 			podsActor:       k.podsActor,
 			containerID:     containerID,
 			slots:           slotsPerPod,
-			group:           k.groups[req.Group],                                // TODO dist train
-			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]], // HMM?
+			group:           k.groups[req.Group], // TODO dist train
+			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]],
 		}
 		allocations[rs.Summary().ResourcesID] = rs
 		k.addrToContainerID[req.AllocationRef] = containerID
@@ -721,21 +721,22 @@ func (k *kubernetesResourceManager) assignResources(
 	}
 
 	assigned := sproto.ResourcesAllocated{ID: req.AllocationID, Resources: allocations}
-	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
 	req.AllocationRef.System().Tell(req.AllocationRef, assigned.Clone())
 
-	if !req.Restore {
+	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
+	if req.Restore {
+		// AddAllocation on restore, so job queue updates state. // This is incorrect
+		// k.reqList.AddAllocation(req.AllocationRef, &assigned)
+		ctx.Log().
+			WithField("allocation-id", req.AllocationID).
+			WithField("task-handler", req.AllocationRef.Address()).
+			Infof("resources restored with %d pods", numPods)
+	} else {
 		ctx.Log().
 			WithField("allocation-id", req.AllocationID).
 			WithField("task-handler", req.AllocationRef.Address()).
 			Infof("resources assigned with %d pods", numPods)
-		return
 	}
-
-	ctx.Log().
-		WithField("allocation-id", req.AllocationID).
-		WithField("task-handler", req.AllocationRef.Address()).
-		Infof("resources restored with %d pods", numPods)
 }
 
 func (k *kubernetesResourceManager) resourcesReleased(
