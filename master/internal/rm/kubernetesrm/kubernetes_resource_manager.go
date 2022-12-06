@@ -638,6 +638,7 @@ type restorePodsHealthCheck struct { // TODO not a true health check?
 	numPods      int
 	allocationID model.AllocationID
 	taskActor    *actor.Ref
+	proxyPort    *sproto.ProxyPortConfig
 }
 
 func (k *kubernetesResourceManager) assignResources(
@@ -676,6 +677,7 @@ func (k *kubernetesResourceManager) assignResources(
 			allocationID: req.AllocationID,
 			numPods:      numPods,
 			taskActor:    req.AllocationRef,
+			proxyPort:    req.ProxyPort,
 		})
 		if err := resp.Error(); err != nil {
 			ctx.Log().
@@ -820,7 +822,6 @@ func (p k8sPodResources) Summary() sproto.ResourcesSummary {
 			// TODO: Make it more obvious k8s can't be trusted.
 			aproto.ID(p.podsActor.Address().Local()): nil,
 		},
-
 		ContainerID: &p.containerID,
 	}
 }

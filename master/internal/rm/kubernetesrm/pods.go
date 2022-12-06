@@ -254,7 +254,10 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			}
 		}
 
-		if err := p.restorePod(ctx, msg.taskActor, containerIDs[0], podName, k8sPod); err != nil {
+		// The alternative is to look in the spec for ports? That might be technically more robust.
+		// I don't understand the multiple ports? Maybe in dtrain or something?!?!
+		if err := p.restorePod(ctx, msg.taskActor,
+			containerIDs[0], podName, k8sPod, msg.proxyPort); err != nil {
 			return nil
 		}
 
@@ -412,6 +415,7 @@ func (p *pods) restorePod(
 	containerID string,
 	podName string,
 	pod *k8sV1.Pod,
+	proxyPort *sproto.ProxyPortConfig,
 ) error {
 	// We need parent address?
 	startMsg := StartTaskPod{
@@ -449,7 +453,24 @@ func (p *pods) restorePod(
 	newPodHandler.logCtx["pod"] = podName
 	newPodHandler.podName = podName
 	newPodHandler.configMapName = podName
-	newPodHandler.container.State = cproto.Running // TODO do we want this state?
+
+	if proxyPort != nil {
+		// TODO in pod.go cproto.Running p.ports is an array.
+		// When do multiple ports exist? proxyPort only allows one.
+		newPodHandler.ports = []int{proxyPort.Port}
+	}
+
+	// TODO race here? What if pod becomes running while we are away. We never
+	// send the addresses? Also does our task need to be informed?
+	state, err := getPodState(ctx, pod, newPodHandler.containerNames)
+	if err != nil {
+		return errors.Wrap(err, "error finding pod state to restoring")
+	}
+	newPodHandler.container.State = state
+	if newPodHandler.container.State == cproto.Running {
+		newPodHandler.container.State = cproto.Starting // TODO this is to register proxies.
+	}
+
 	newPodHandler.pod = pod
 
 	ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
@@ -457,7 +478,6 @@ func (p *pods) restorePod(
 		return errors.Errorf("pod actor %s already exists", ref.Address().String())
 	}
 
-	// name, ok := p.containerIDToPodName[string(msg.PodID)]
 	p.podNameToPodHandler[podName] = ref
 	p.containerIDToPodName[containerID] = podName
 	p.podNameToContainerID[podName] = containerID
@@ -465,6 +485,14 @@ func (p *pods) restorePod(
 	p.podHandlerToMetadata[ref] = podMetadata{
 		podName:     podName,
 		containerID: containerID,
+	}
+
+	for _, c := range pod.Spec.Containers {
+		if c.Name == model.DeterminedK8ContainerName {
+			for _, env := range c.Env {
+				fmt.Println("ENVIRONMENT VARIABLE", env.Name, env.Value)
+			}
+		}
 	}
 
 	// Update status of pod. If a pod is running and master goes down and still running

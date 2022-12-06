@@ -378,11 +378,13 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		ctx, spec.Mounts, runArchives,
 	)
 
+	// TODO!? How do we get these ports?
 	env := spec.Environment
 
 	for _, port := range env.Ports() {
 		p.ports = append(p.ports, port)
 	}
+	// TODO?! How do we get these ports? We can't query them right?
 
 	envVars, err := p.configureEnvVars(spec.EnvVars(), env, deviceType)
 	if err != nil {

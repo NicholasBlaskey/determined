@@ -151,7 +151,7 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	case actor.PreStart:
 		ctx.AddLabels(p.logCtx)
 		if !p.restore {
-			if err := p.createPodSpec(ctx, p.scheduler); err != nil {
+			if err := p.createPodSpecAndSubmit(ctx); err != nil {
 				return errors.Wrap(err, "error creating pod spec")
 			}
 		}
@@ -281,6 +281,9 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 			}
 		}
 
+		// TODO just calculate addresses???
+		// If it is running we can just use this status.
+		// Feels decent. But okay. We want to also include this on resources perhaps?
 		addresses := []cproto.Address{}
 		for _, port := range p.ports {
 			addresses = append(addresses, cproto.Address{
