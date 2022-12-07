@@ -349,7 +349,7 @@ func (p *pods) restorePod(
 	podName string,
 	pod *k8sV1.Pod,
 	proxyPort *sproto.ProxyPortConfig,
-) (restoreContainerResponse, error) {
+) (reattachPodResponse, error) {
 	// We need parent address?
 	startMsg := StartTaskPod{
 		TaskActor: taskActor, // TODO, //actor.Addr(""),
@@ -397,7 +397,7 @@ func (p *pods) restorePod(
 	// send the addresses? Also does our task need to be informed?
 	state, err := getPodState(ctx, pod, newPodHandler.containerNames)
 	if err != nil {
-		return restoreContainerResponse{}, errors.Wrap(err, "error finding pod state to restoring")
+		return reattachPodResponse{}, errors.Wrap(err, "error finding pod state to restoring")
 	}
 	newPodHandler.container.State = state
 
@@ -410,7 +410,7 @@ func (p *pods) restorePod(
 
 	ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
 	if !ok {
-		return restoreContainerResponse{}, errors.Errorf(
+		return reattachPodResponse{}, errors.Errorf(
 			"pod actor %s already exists", ref.Address().String())
 	}
 
@@ -423,22 +423,14 @@ func (p *pods) restorePod(
 		containerID: containerID,
 	}
 
-	for _, c := range pod.Spec.Containers {
-		if c.Name == model.DeterminedK8ContainerName {
-			for _, env := range c.Env {
-				fmt.Println("ENVIRONMENT VARIABLE", env.Name, env.Value)
-			}
-		}
-	}
-
 	// Update status of pod. If a pod is running and master goes down and still running
 	// this will update the job and pod state.
 	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: pod})
 
-	return restoreContainerResponse{containerID: containerID, started: started}, nil
+	return reattachPodResponse{containerID: containerID, started: started}, nil
 }
 
-func reattachAllocationPods(ctx *actor.Ctx, msg reattachAllocationPods) {
+func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocationPods) {
 	pods, err := p.podInterface.List(context.TODO(), metaV1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
 	})
@@ -492,7 +484,7 @@ func reattachAllocationPods(ctx *actor.Ctx, msg reattachAllocationPods) {
 		if err != nil {
 			ctx.Respond(errors.Wrapf(err,
 				"error restoring pog with containerID %s", containerID))
-			return nil
+			return
 		}
 		restoreResponses = append(restoreResponses, resp)
 	}
