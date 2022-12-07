@@ -689,6 +689,20 @@ func (k *kubernetesResourceManager) assignResources(
 				WithField("allocation-id", req.AllocationID).
 				WithError(err).Error("unable to restore allocation")
 
+			// TODO how we would do it the way dispatcher does this.
+			// This is tough since we need the resource IDs.
+			/*
+				var unknownExit sproto.ExitCode = -1
+				failed := sproto.NewResourcesFailure(sproto.ResourcesAborted,
+					err.Error(), &unknownExit)
+				stopped := sproto.ResourcesStopped{}
+				stopped.Failure = failed
+				ctx.Tell(req.AllocationRef, sproto.ResourcesStateChanged{
+					ResourcesID:      rID,
+					ResourcesState:   sproto.Terminated,
+					ResourcesStopped: &stopped,
+				})
+			*/
 			unknownExit := sproto.ExitCode(-1)
 			ctx.Tell(req.AllocationRef, sproto.ResourcesFailure{
 				FailureType: sproto.ResourcesMissing,
