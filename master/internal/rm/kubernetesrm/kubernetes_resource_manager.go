@@ -634,14 +634,14 @@ func (k *kubernetesResourceManager) receiveSetAllocationName(
 	}
 }
 
-type restorePodsHealthCheck struct { // TODO not a true health check?
+type reattachAllocationPods struct {
 	numPods      int
 	allocationID model.AllocationID
 	taskActor    *actor.Ref
 	proxyPort    *sproto.ProxyPortConfig
 }
 
-type restoreContainerResponse struct {
+type reattachPodResponse struct {
 	containerID string
 	started     *sproto.ResourcesStarted
 }
@@ -676,9 +676,9 @@ func (k *kubernetesResourceManager) assignResources(
 
 	k.slotsUsedPerGroup[k.groups[req.Group]] += req.SlotsNeeded
 
-	var restoreResponse []restoreContainerResponse
+	var restoreResponse []reattachPodResponse
 	if req.Restore {
-		resp := ctx.Ask(k.podsActor, restorePodsHealthCheck{
+		resp := ctx.Ask(k.podsActor, reattachAllocationPods{
 			allocationID: req.AllocationID,
 			numPods:      numPods,
 			taskActor:    req.AllocationRef,
@@ -697,7 +697,7 @@ func (k *kubernetesResourceManager) assignResources(
 			})
 			return
 		}
-		restoreResponse = resp.Get().([]restoreContainerResponse)
+		restoreResponse = resp.Get().([]reattachPodResponse)
 	}
 
 	allocations := sproto.ResourceList{}
@@ -832,6 +832,7 @@ func (p k8sPodResources) Summary() sproto.ResourcesSummary {
 			// TODO: Make it more obvious k8s can't be trusted.
 			aproto.ID(p.podsActor.Address().Local()): nil,
 		},
+
 		ContainerID: &p.containerID,
 		Started:     p.started,
 	}

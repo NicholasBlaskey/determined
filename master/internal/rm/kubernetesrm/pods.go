@@ -166,10 +166,6 @@ func (p *pods) Receive(ctx *actor.Context) error {
 		}
 		p.startResourceRequestQueue(ctx)
 
-		// TODO here. Actually restore pods? Then let the allocations get them?!???
-		if err := p.restoreExistingKubernetesResources(ctx); err != nil {
-			return err
-		}
 		if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 			return err
 		}
@@ -209,73 +205,8 @@ func (p *pods) Receive(ctx *actor.Context) error {
 	case SummarizeResources:
 		p.receiveResourceSummarize(ctx, msg)
 
-	case restorePodsHealthCheck:
-		// TODO can we optimize to get?
-		// Like I don't know if we can.
-		// So we have the determinedLabel ?!
-
-		// TODO move this whole to a different function.
-
-		pods, err := p.podInterface.List(context.TODO(), metaV1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
-		})
-		if err != nil {
-			fmt.Println("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR", err)
-			ctx.Respond(errors.Wrap(err, "unable to list pods checking if they can be restored"))
-			return nil
-		}
-
-		if len(pods.Items) != msg.numPods {
-			ctx.Respond(fmt.Errorf("not enough pods found for allocation")) // TODO to error
-			return nil
-		}
-
-		var containerIDs []string
-		var podName string
-		var k8sPod *k8sV1.Pod
-		for _, pod := range pods.Items {
-			found := false
-			for _, container := range pod.Spec.Containers {
-				for _, env := range container.Env {
-					if env.Name == "DET_CONTAINER_ID" {
-						k8sPod = &pod
-						podName = pod.Name
-						containerIDs = append(containerIDs, env.Value)
-						found = true
-						break
-					}
-				}
-				if found {
-					break
-				}
-			}
-			if !found {
-				ctx.Respond(fmt.Errorf("pod didn't have containerID environment variable"))
-				return nil
-			}
-		}
-
-		// TODO check config maps too
-		// TODO clean up partial data. ?!? Maybe we also send number pods,
-		// TODO check config maps? and what else?
-		/*
-			listOptions := metaV1.ListOptions{LabelSelector: determinedLabel + "="}
-			configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
-			pods, err := p.podInterface.List(context.TODO(), listOptions)
-		*/
-
-		var restoreResponses []restoreContainerResponse
-		for _, containerID := range containerIDs {
-			resp, err := p.restorePod(ctx, msg.taskActor, containerIDs[0],
-				podName, k8sPod, msg.proxyPort)
-			if err != nil {
-				ctx.Respond(errors.Wrapf(err,
-					"error restoring pog with containerID %s", containerID))
-				return nil
-			}
-			restoreResponses = append(restoreResponses, resp)
-		}
-		ctx.Respond(restoreResponses)
+	case reattachAllocationPods:
+		p.reattachAllocationPods(ctx, msg)
 
 	case resourceDeletionFailed:
 		if msg.err != nil {
@@ -410,10 +341,6 @@ func (p *pods) getSystemResourceRequests(ctx *actor.Context) error {
 	return nil
 }
 
-func (p *pods) restoreExistingKubernetesResources(ctx *actor.Context) error {
-	return nil
-}
-
 // TODO remove params
 func (p *pods) restorePod(
 	ctx *actor.Context,
@@ -509,6 +436,67 @@ func (p *pods) restorePod(
 	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: pod})
 
 	return restoreContainerResponse{containerID: containerID, started: started}, nil
+}
+
+func reattachAllocationPods(ctx *actor.Ctx, msg reattachAllocationPods) {
+	pods, err := p.podInterface.List(context.TODO(), metaV1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
+	})
+	if err != nil {
+		ctx.Respond(errors.Wrap(err, "unable to list pods checking if they can be restored"))
+		return
+	}
+
+	if len(pods.Items) != msg.numPods {
+		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
+		return
+	}
+	// TODO check config maps too
+	// TODO clean up partial data. ?!? Maybe we also send number pods,
+	// TODO check config maps? and what else?
+	/*
+		listOptions := metaV1.ListOptions{LabelSelector: determinedLabel + "="}
+		configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
+		pods, err := p.podInterface.List(context.TODO(), listOptions)
+	*/
+
+	var containerIDs []string
+	var podName string
+	var k8sPod *k8sV1.Pod
+	for _, pod := range pods.Items {
+		found := false
+		for _, container := range pod.Spec.Containers {
+			for _, env := range container.Env {
+				if env.Name == "DET_CONTAINER_ID" {
+					k8sPod = &pod
+					podName = pod.Name
+					containerIDs = append(containerIDs, env.Value)
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			ctx.Respond(fmt.Errorf("pod didn't have containerID environment variable"))
+			return
+		}
+	}
+
+	var restoreResponses []reattachPodResponse
+	for _, containerID := range containerIDs {
+		resp, err := p.restorePod(ctx, msg.taskActor, containerIDs[0],
+			podName, k8sPod, msg.proxyPort)
+		if err != nil {
+			ctx.Respond(errors.Wrapf(err,
+				"error restoring pog with containerID %s", containerID))
+			return nil
+		}
+		restoreResponses = append(restoreResponses, resp)
+	}
+	ctx.Respond(restoreResponses)
 }
 
 func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {

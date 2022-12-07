@@ -471,12 +471,9 @@ func (a *Allocation) ResourcesAllocated(ctx *actor.Context, msg sproto.Resources
 			}
 		}
 	} else if a.getModelState() == model.AllocationStateRunning {
-		fmt.Println("alloc state running!!!", a.req.ProxyPort)
 		// Restore proxies.
 		for _, r := range a.resources {
-			fmt.Println("RESOURCES", r.Started)
 			if a.req.ProxyPort != nil && r.Started != nil && r.Started.Addresses != nil {
-				fmt.Println("RESTORE PROXY~!!!!")
 				a.registerProxies(ctx, r.Started.Addresses)
 			}
 		}
@@ -557,7 +554,6 @@ func (a *Allocation) ResourcesStateChanged(
 	case sproto.Starting:
 		a.setMostProgressedModelState(model.AllocationStateStarting)
 	case sproto.Running:
-		fmt.Println("SPROTO running!!!")
 		if a.resources[msg.ResourcesID].Started != nil {
 			// Only recognize the first start message for each resource, since the slurm resource
 			// manager is polling based instead and sends us a message that the resources are
@@ -573,13 +569,10 @@ func (a *Allocation) ResourcesStateChanged(
 			return
 		}
 
-		// TODO rendezvous might be an issue.. We don't actually want to run this again.
-		// So we will want to use resources started.
 		if a.rendezvous != nil && a.rendezvous.try() {
 			ctx.Log().
 				Info("all containers are connected successfully (task container state changed)")
 		}
-		fmt.Println(a.req.ProxyPort, msg.ResourcesStarted.Addresses)
 		if a.req.ProxyPort != nil && msg.ResourcesStarted.Addresses != nil {
 			a.registerProxies(ctx, msg.ResourcesStarted.Addresses)
 		}
@@ -813,7 +806,6 @@ func (a *Allocation) registerProxies(ctx *actor.Context, addresses []cproto.Addr
 		return
 	}
 
-	fmt.Println("REGISTER PROXIES!")
 	for _, address := range addresses {
 		// Only proxy the port we expect to proxy. If a dockerfile uses an EXPOSE command,
 		// additional addresses will appear her, but currently we only proxy one uuid to one
