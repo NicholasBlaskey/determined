@@ -165,8 +165,16 @@ func (k ResourceManager) NotifyContainerRunning(
 		"the NotifyContainerRunning message is unsupported for KubernetesResourceManager")
 }
 
+func (a ResourceManager) IsReattachableOnlyAfterStarted(ctx actor.Messenger) bool {
+	return false
+}
+
 func (a ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
-	return true // POC... what will happen?
+	return true
+}
+
+func (a ResourceManager) IsReattachEnabledForRP(ctx actor.Messenger, rp string) bool {
+	return true
 }
 
 // kubernetesResourceProvider manages the lifecycle of k8s resources.
