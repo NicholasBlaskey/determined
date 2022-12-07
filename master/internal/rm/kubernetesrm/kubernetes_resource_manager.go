@@ -641,6 +641,11 @@ type restorePodsHealthCheck struct { // TODO not a true health check?
 	proxyPort    *sproto.ProxyPortConfig
 }
 
+type restoreContainerResponse struct {
+	containerID string
+	started     *sproto.ResourcesStarted
+}
+
 func (k *kubernetesResourceManager) assignResources(
 	ctx *actor.Context, req *sproto.AllocateRequest,
 ) {
@@ -671,7 +676,7 @@ func (k *kubernetesResourceManager) assignResources(
 
 	k.slotsUsedPerGroup[k.groups[req.Group]] += req.SlotsNeeded
 
-	var containerIDs []string
+	var restoreResponse []restoreContainerResponse
 	if req.Restore {
 		resp := ctx.Ask(k.podsActor, restorePodsHealthCheck{
 			allocationID: req.AllocationID,
@@ -692,14 +697,16 @@ func (k *kubernetesResourceManager) assignResources(
 			})
 			return
 		}
-		containerIDs = resp.Get().([]string)
+		restoreResponse = resp.Get().([]restoreContainerResponse)
 	}
 
 	allocations := sproto.ResourceList{}
 	for pod := 0; pod < numPods; pod++ {
 		var containerID cproto.ID
+		var started *sproto.ResourcesStarted
 		if req.Restore {
-			containerID = cproto.ID(containerIDs[0])
+			containerID = cproto.ID(restoreResponse[pod].containerID)
+			started = restoreResponse[pod].started
 		} else {
 			containerID = cproto.NewID()
 		}
@@ -711,6 +718,7 @@ func (k *kubernetesResourceManager) assignResources(
 			slots:           slotsPerPod,
 			group:           k.groups[req.Group], // TODO dist train
 			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]],
+			started:         started,
 		}
 		allocations[rs.Summary().ResourcesID] = rs
 		k.addrToContainerID[req.AllocationRef] = containerID
@@ -810,6 +818,8 @@ type k8sPodResources struct {
 	containerID     cproto.ID
 	slots           int
 	initialPosition decimal.Decimal
+
+	started *sproto.ResourcesStarted
 }
 
 // Summary summarizes a container allocation.
@@ -823,6 +833,7 @@ func (p k8sPodResources) Summary() sproto.ResourcesSummary {
 			aproto.ID(p.podsActor.Address().Local()): nil,
 		},
 		ContainerID: &p.containerID,
+		Started:     p.started,
 	}
 }
 

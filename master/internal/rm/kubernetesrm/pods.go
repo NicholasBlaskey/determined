@@ -23,6 +23,7 @@ import (
 	"github.com/determined-ai/determined/master/pkg/check"
 	"github.com/determined-ai/determined/master/pkg/device"
 	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 
 	"github.com/determined-ai/determined/master/pkg/tasks"
@@ -254,15 +255,7 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			}
 		}
 
-		// The alternative is to look in the spec for ports? That might be technically more robust.
-		// I don't understand the multiple ports? Maybe in dtrain or something?!?!
-		if err := p.restorePod(ctx, msg.taskActor,
-			containerIDs[0], podName, k8sPod, msg.proxyPort); err != nil {
-			return nil
-		}
-
-		ctx.Respond(containerIDs) // TODO check config maps too
-
+		// TODO check config maps too
 		// TODO clean up partial data. ?!? Maybe we also send number pods,
 		// TODO check config maps? and what else?
 		/*
@@ -270,6 +263,19 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
 			pods, err := p.podInterface.List(context.TODO(), listOptions)
 		*/
+
+		var restoreResponses []restoreContainerResponse
+		for _, containerID := range containerIDs {
+			resp, err := p.restorePod(ctx, msg.taskActor, containerIDs[0],
+				podName, k8sPod, msg.proxyPort)
+			if err != nil {
+				ctx.Respond(errors.Wrapf(err,
+					"error restoring pog with containerID %s", containerID))
+				return nil
+			}
+			restoreResponses = append(restoreResponses, resp)
+		}
+		ctx.Respond(restoreResponses)
 
 	case resourceDeletionFailed:
 		if msg.err != nil {
@@ -416,7 +422,7 @@ func (p *pods) restorePod(
 	podName string,
 	pod *k8sV1.Pod,
 	proxyPort *sproto.ProxyPortConfig,
-) error {
+) (restoreContainerResponse, error) {
 	// We need parent address?
 	startMsg := StartTaskPod{
 		TaskActor: taskActor, // TODO, //actor.Addr(""),
@@ -464,18 +470,21 @@ func (p *pods) restorePod(
 	// send the addresses? Also does our task need to be informed?
 	state, err := getPodState(ctx, pod, newPodHandler.containerNames)
 	if err != nil {
-		return errors.Wrap(err, "error finding pod state to restoring")
+		return restoreContainerResponse{}, errors.Wrap(err, "error finding pod state to restoring")
 	}
 	newPodHandler.container.State = state
+
+	var started *sproto.ResourcesStarted
 	if newPodHandler.container.State == cproto.Running {
-		newPodHandler.container.State = cproto.Starting // TODO this is to register proxies.
+		started = ptrs.Ptr(getResourcesStartedForPod(pod, newPodHandler.ports))
 	}
 
 	newPodHandler.pod = pod
 
 	ref, ok := ctx.ActorOf(fmt.Sprintf("pod-%s", containerID), newPodHandler)
 	if !ok {
-		return errors.Errorf("pod actor %s already exists", ref.Address().String())
+		return restoreContainerResponse{}, errors.Errorf(
+			"pod actor %s already exists", ref.Address().String())
 	}
 
 	p.podNameToPodHandler[podName] = ref
@@ -499,7 +508,7 @@ func (p *pods) restorePod(
 	// this will update the job and pod state.
 	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: pod})
 
-	return nil
+	return restoreContainerResponse{containerID: containerID, started: started}, nil
 }
 
 func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
