@@ -133,6 +133,9 @@ func NewAllocation(
 	logCtx detLogger.Context, req sproto.AllocateRequest, db db.DB, rm rm.ResourceManager,
 	logger *Logger,
 ) actor.Actor {
+	req.LogContext = detLogger.MergeContexts(logCtx, detLogger.Context{
+		"allocation-id": req.AllocationID,
+	})
 	return &Allocation{
 		db:     db,
 		rm:     rm,
@@ -149,9 +152,7 @@ func NewAllocation(
 
 		resources: resourcesList{},
 
-		logCtx: detLogger.MergeContexts(logCtx, detLogger.Context{
-			"allocation-id": req.AllocationID,
-		}),
+		logCtx: req.LogContext,
 	}
 }
 
@@ -367,6 +368,7 @@ func (a *Allocation) RequestResources(ctx *actor.Context) error {
 	}
 
 	a.req.AllocationRef = ctx.Self()
+	// TODO race here.
 	if err := a.rm.Allocate(ctx, a.req); err != nil {
 		return errors.Wrap(err, "failed to request allocation")
 	}

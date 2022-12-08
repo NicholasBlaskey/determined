@@ -648,6 +648,7 @@ type reattachAllocationPods struct {
 	taskActor    *actor.Ref
 	proxyPort    *sproto.ProxyPortConfig
 	slots        int
+	logContext   logger.Context
 }
 
 type reattachPodResponse struct {
@@ -693,6 +694,7 @@ func (k *kubernetesResourceManager) assignResources(
 			taskActor:    req.AllocationRef,
 			proxyPort:    req.ProxyPort,
 			slots:        slotsPerPod,
+			logContext:   req.LogContext,
 		})
 		if err := resp.Error(); err != nil {
 			ctx.Log().

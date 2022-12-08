@@ -154,6 +154,17 @@ func (p *pod) Receive(ctx *actor.Context) error {
 			if err := p.createPodSpecAndSubmit(ctx); err != nil {
 				return errors.Wrap(err, "error creating pod spec")
 			}
+			return nil
+		}
+
+		if p.container.State == cproto.Running && !p.testLogStreamer {
+			logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
+			if err != nil {
+				return err
+			}
+			if _, ok := ctx.ActorOf(fmt.Sprintf("%s-logs", p.podName), logStreamer); !ok {
+				return errors.Errorf("log streamer already exists")
+			}
 		}
 	case resourceCreationFailed:
 		p.receiveResourceCreationFailed(ctx, msg)
@@ -270,8 +281,6 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 		// testLogStreamer is a testing flag only set in the pod_tests.
 		// This allows us to bypass the need for a log streamer or REST server.
 		if !p.testLogStreamer {
-			// TODO We don't get this log streamer on restore
-			// Do we need to? aka what breaks when we don't.
 			logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
 			if err != nil {
 				return err

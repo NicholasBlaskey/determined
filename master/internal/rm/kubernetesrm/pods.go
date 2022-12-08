@@ -22,6 +22,7 @@ import (
 	"github.com/determined-ai/determined/master/pkg/actor/api"
 	"github.com/determined-ai/determined/master/pkg/check"
 	"github.com/determined-ai/determined/master/pkg/device"
+	"github.com/determined-ai/determined/master/pkg/logger"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
@@ -350,6 +351,7 @@ func (p *pods) restorePod(
 	pod *k8sV1.Pod,
 	proxyPort *sproto.ProxyPortConfig,
 	slots int,
+	logContext logger.Context,
 ) (reattachPodResponse, error) {
 	// We need parent address?
 	startMsg := StartTaskPod{
@@ -357,8 +359,8 @@ func (p *pods) restorePod(
 		Spec: tasks.TaskSpec{
 			ContainerID: containerID,
 		},
-		Slots: slots,
-		// LogContext: logContext, // TODO
+		Slots:      slots,
+		LogContext: logContext,
 	}
 
 	newPodHandler := newPod(
@@ -436,10 +438,11 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 	})
 	if err != nil {
 		ctx.Respond(errors.Wrap(err, "unable to list pods checking if they can be restored"))
-		return
+		return // This error is bad, should we just crash pods actor?
 	}
 
 	if len(pods.Items) != msg.numPods {
+		// TODO kill pods
 		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
 		return
 	}
@@ -471,19 +474,23 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 				break
 			}
 		}
-		if !found {
-			ctx.Respond(fmt.Errorf("pod didn't have containerID environment variable"))
-			return
-		}
+	}
+
+	if len(containerIDs) != msg.numPods {
+		// TODO kill pods.
+
+		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
 	}
 
 	var restoreResponses []reattachPodResponse
 	for i, containerID := range containerIDs {
 		resp, err := p.restorePod(ctx, msg.taskActor, containerID,
-			podNames[i], k8sPods[i], msg.proxyPort, msg.slots)
+			podNames[i], k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
 		if err != nil {
+			// TODO Kill pods.
+
 			ctx.Respond(errors.Wrapf(err,
-				"error restoring pog with containerID %s", containerID))
+				"error restoring pod with containerID %s", containerID))
 			return
 		}
 		restoreResponses = append(restoreResponses, resp)
