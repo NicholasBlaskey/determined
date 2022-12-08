@@ -647,6 +647,7 @@ type reattachAllocationPods struct {
 	allocationID model.AllocationID
 	taskActor    *actor.Ref
 	proxyPort    *sproto.ProxyPortConfig
+	slots        int
 }
 
 type reattachPodResponse struct {
@@ -691,6 +692,7 @@ func (k *kubernetesResourceManager) assignResources(
 			numPods:      numPods,
 			taskActor:    req.AllocationRef,
 			proxyPort:    req.ProxyPort,
+			slots:        slotsPerPod,
 		})
 		if err := resp.Error(); err != nil {
 			ctx.Log().
@@ -738,7 +740,7 @@ func (k *kubernetesResourceManager) assignResources(
 			podsActor:       k.podsActor,
 			containerID:     containerID,
 			slots:           slotsPerPod,
-			group:           k.groups[req.Group], // TODO dist train
+			group:           k.groups[req.Group], // TODO dist train??????
 			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]],
 			started:         started,
 		}

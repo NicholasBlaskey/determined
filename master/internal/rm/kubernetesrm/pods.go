@@ -349,22 +349,22 @@ func (p *pods) restorePod(
 	podName string,
 	pod *k8sV1.Pod,
 	proxyPort *sproto.ProxyPortConfig,
+	slots int,
 ) (reattachPodResponse, error) {
 	// We need parent address?
 	startMsg := StartTaskPod{
-		TaskActor: taskActor, // TODO, //actor.Addr(""),
+		TaskActor: taskActor,
 		Spec: tasks.TaskSpec{
 			ContainerID: containerID,
-		}, // TODO
-		Slots: 1, // TODO figure out slots?
-		// Rank:      1, // Don't think we need rank.
+		},
+		Slots: slots,
 		// LogContext: logContext, // TODO
 	}
 
 	newPodHandler := newPod(
-		startMsg, // MSG !!!
+		startMsg,
 		p.cluster,
-		startMsg.Spec.ClusterID, // MSG !!!
+		startMsg.Spec.ClusterID,
 		p.clientSet,
 		p.namespace,
 		p.masterIP,
@@ -453,15 +453,15 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 	*/
 
 	var containerIDs []string
-	var podName string
-	var k8sPod *k8sV1.Pod
+	var podNames []string
+	var k8sPods []*k8sV1.Pod
 	for _, pod := range pods.Items {
 		found := false
 		for _, container := range pod.Spec.Containers {
 			for _, env := range container.Env {
 				if env.Name == "DET_CONTAINER_ID" {
-					k8sPod = &pod
-					podName = pod.Name
+					k8sPods = append(k8sPods, &pod)
+					podNames = append(podNames, pod.Name)
 					containerIDs = append(containerIDs, env.Value)
 					found = true
 					break
@@ -478,9 +478,9 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 	}
 
 	var restoreResponses []reattachPodResponse
-	for _, containerID := range containerIDs {
-		resp, err := p.restorePod(ctx, msg.taskActor, containerIDs[0],
-			podName, k8sPod, msg.proxyPort)
+	for i, containerID := range containerIDs {
+		resp, err := p.restorePod(ctx, msg.taskActor, containerID,
+			podNames[i], k8sPods[i], msg.proxyPort, msg.slots)
 		if err != nil {
 			ctx.Respond(errors.Wrapf(err,
 				"error restoring pog with containerID %s", containerID))
