@@ -150,22 +150,22 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
 		ctx.AddLabels(p.logCtx)
-		if !p.restore {
+		if p.restore {
+			if p.container.State == cproto.Running && !p.testLogStreamer {
+				logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
+				if err != nil {
+					return err
+				}
+				if _, ok := ctx.ActorOf(fmt.Sprintf("%s-logs", p.podName), logStreamer); !ok {
+					return errors.Errorf("log streamer already exists")
+				}
+			}
+		} else {
 			if err := p.createPodSpecAndSubmit(ctx); err != nil {
 				return errors.Wrap(err, "error creating pod spec")
 			}
-			return nil
 		}
 
-		if p.container.State == cproto.Running && !p.testLogStreamer {
-			logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
-			if err != nil {
-				return err
-			}
-			if _, ok := ctx.ActorOf(fmt.Sprintf("%s-logs", p.podName), logStreamer); !ok {
-				return errors.Errorf("log streamer already exists")
-			}
-		}
 	case resourceCreationFailed:
 		p.receiveResourceCreationFailed(ctx, msg)
 

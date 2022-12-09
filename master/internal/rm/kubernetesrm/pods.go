@@ -166,7 +166,6 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			return err
 		}
 		p.startResourceRequestQueue(ctx)
-
 		if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 			return err
 		}
