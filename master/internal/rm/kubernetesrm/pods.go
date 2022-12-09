@@ -395,8 +395,6 @@ func (p *pods) restorePod(
 		newPodHandler.ports = []int{proxyPort.Port}
 	}
 
-	// TODO race here? What if pod becomes running while we are away. We never
-	// send the addresses? Also does our task need to be informed?
 	state, err := getPodState(ctx, pod, newPodHandler.containerNames)
 	if err != nil {
 		return reattachPodResponse{}, errors.Wrap(err, "error finding pod state to restoring")
@@ -427,33 +425,35 @@ func (p *pods) restorePod(
 
 	// Update status of pod. If a pod is running and master goes down and still running
 	// this will update the job and pod state.
+	//
+	// TODO race here. If we somehow miss an update? Maybe we need to requery for the pod.
+	// Like we miss an update before querying and now. I guess we could double update.
+	// So maybe query here now again and we will be 100% okay?
+	// Also what about error state?
 	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: pod})
 
 	return reattachPodResponse{containerID: containerID, started: started}, nil
 }
 
 func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocationPods) {
-	pods, err := p.podInterface.List(context.TODO(), metaV1.ListOptions{
+	listOptions := metaV1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
-	})
+	}
+	pods, err := p.podInterface.List(context.TODO(), listOptions)
 	if err != nil {
 		ctx.Respond(errors.Wrap(err, "unable to list pods checking if they can be restored"))
-		return // This error is bad, should we just crash pods actor?
+		return // TODO this error is bad.
+	}
+	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		ctx.Respond(errors.Wrap(err, "unable to list config maps checking if they can be restored"))
+		return // TODO this error is bad.
 	}
 
-	if len(pods.Items) != msg.numPods {
-		// TODO kill pods
-		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
-		return
+	existingConfigMaps := make(map[string]bool)
+	for _, cm := range configMaps.Items {
+		existingConfigMaps[cm.Name] = true
 	}
-	// TODO check config maps too
-	// TODO clean up partial data. ?!? Maybe we also send number pods,
-	// TODO check config maps? and what else?
-	/*
-		listOptions := metaV1.ListOptions{LabelSelector: determinedLabel + "="}
-		configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
-		pods, err := p.podInterface.List(context.TODO(), listOptions)
-	*/
 
 	var containerIDs []string
 	var podNames []string
@@ -463,6 +463,12 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 		for _, container := range pod.Spec.Containers {
 			for _, env := range container.Env {
 				if env.Name == "DET_CONTAINER_ID" {
+					if !existingConfigMaps[pod.Name] {
+						p.deleteAllocationResources(ctx, pods, configMaps)
+						ctx.Respond(fmt.Errorf("pod missing config map %s", pod.Name))
+						return
+					}
+
 					k8sPods = append(k8sPods, &pod)
 					podNames = append(podNames, pod.Name)
 					containerIDs = append(containerIDs, env.Value)
@@ -477,9 +483,9 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 	}
 
 	if len(containerIDs) != msg.numPods {
-		// TODO kill pods.
-
+		p.deleteAllocationResources(ctx, pods, configMaps)
 		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
+		return
 	}
 
 	var restoreResponses []reattachPodResponse
@@ -487,8 +493,7 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 		resp, err := p.restorePod(ctx, msg.taskActor, containerID,
 			podNames[i], k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
 		if err != nil {
-			// TODO Kill pods.
-
+			p.deleteAllocationResources(ctx, pods, configMaps)
 			ctx.Respond(errors.Wrapf(err,
 				"error restoring pod with containerID %s", containerID))
 			return
@@ -496,6 +501,22 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 		restoreResponses = append(restoreResponses, resp)
 	}
 	ctx.Respond(restoreResponses)
+}
+
+func (p *pods) deleteAllocationResources(
+	ctx *actor.Context, pods *k8sV1.PodList, configMaps *k8sV1.ConfigMapList,
+) {
+	for _, pod := range pods.Items {
+		ctx.Tell(p.resourceRequestQueue, deleteKubernetesResources{
+			handler: ctx.Self(), podName: pod.Name,
+		})
+	}
+
+	for _, configMap := range configMaps.Items {
+		ctx.Tell(p.resourceRequestQueue, deleteKubernetesResources{
+			handler: ctx.Self(), configMapName: configMap.Name,
+		})
+	}
 }
 
 func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
