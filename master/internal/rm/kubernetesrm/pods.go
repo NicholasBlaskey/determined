@@ -99,6 +99,20 @@ type PodsInfo struct {
 // SummarizeResources summerize pods resource.
 type SummarizeResources struct{}
 
+type reattachAllocationPods struct {
+	numPods      int
+	allocationID model.AllocationID
+	taskActor    *actor.Ref
+	proxyPort    *sproto.ProxyPortConfig
+	slots        int
+	logContext   logger.Context
+}
+
+type reattachPodResponse struct {
+	containerID string
+	started     *sproto.ResourcesStarted
+}
+
 // Initialize creates a new global agent actor.
 func Initialize(
 	s *actor.System,
@@ -346,6 +360,74 @@ func (p *pods) getSystemResourceRequests(ctx *actor.Context) error {
 	return nil
 }
 
+func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocationPods) error {
+	listOptions := metaV1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
+	}
+
+	pods, err := p.podInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "error listing pods checking if they can be restored")
+	}
+
+	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "error listing config maps checking if they can be restored")
+	}
+	existingConfigMaps := make(map[string]bool)
+	for _, cm := range configMaps.Items {
+		existingConfigMaps[cm.Name] = true
+	}
+
+	var containerIDs []string
+	var k8sPods []*k8sV1.Pod
+	for _, pod := range pods.Items {
+		found := false
+		for _, container := range pod.Spec.Containers {
+			for _, env := range container.Env {
+				if env.Name == "DET_CONTAINER_ID" {
+					if !existingConfigMaps[pod.Name] {
+						p.deleteAllocationResources(ctx, pods, configMaps)
+						ctx.Respond(fmt.Errorf("pod missing config map %s", pod.Name))
+						return nil
+					}
+
+					p := pod
+					k8sPods = append(k8sPods, &p)
+					containerIDs = append(containerIDs, env.Value)
+
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+	}
+
+	if len(k8sPods) != msg.numPods {
+		p.deleteAllocationResources(ctx, pods, configMaps)
+		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
+		return nil
+	}
+
+	var restoreResponses []reattachPodResponse
+	for i, containerID := range containerIDs {
+		resp, err := p.reattachPod(ctx, msg.taskActor, containerID,
+			k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
+		if err != nil {
+			p.deleteAllocationResources(ctx, pods, configMaps)
+			ctx.Respond(errors.Wrapf(err,
+				"error restoring pod with containerID %s", containerID))
+			return nil
+		}
+		restoreResponses = append(restoreResponses, resp)
+	}
+	ctx.Respond(restoreResponses)
+	return nil
+}
+
 func (p *pods) reattachPod(
 	ctx *actor.Context,
 	taskActor *actor.Ref,
@@ -430,7 +512,7 @@ func (p *pods) reattachPod(
 	}
 
 	// Send a podStatusUpdate for any missed updates between master going up
-	// and the pod restored.
+	// and the pod being reattached.
 	updated, err := p.podInterface.Get(context.TODO(), pod.Name, metaV1.GetOptions{})
 	if err != nil {
 		return reattachPodResponse{}, errors.Wrap(err, "error getting pod status update in restore")
@@ -438,71 +520,6 @@ func (p *pods) reattachPod(
 	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: updated})
 
 	return reattachPodResponse{containerID: containerID, started: started}, nil
-}
-
-func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocationPods) error {
-	listOptions := metaV1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
-	}
-	pods, err := p.podInterface.List(context.TODO(), listOptions)
-	if err != nil {
-		return errors.Wrap(err, "unable to list pods checking if they can be restored")
-	}
-	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
-	if err != nil {
-		return errors.Wrap(err, "unable to list config maps checking if they can be restored")
-	}
-
-	existingConfigMaps := make(map[string]bool)
-	for _, cm := range configMaps.Items {
-		existingConfigMaps[cm.Name] = true
-	}
-
-	var containerIDs []string
-	var k8sPods []*k8sV1.Pod
-	for _, pod := range pods.Items {
-		found := false
-		for _, container := range pod.Spec.Containers {
-			for _, env := range container.Env {
-				if env.Name == "DET_CONTAINER_ID" {
-					if !existingConfigMaps[pod.Name] {
-						p.deleteAllocationResources(ctx, pods, configMaps)
-						ctx.Respond(fmt.Errorf("pod missing config map %s", pod.Name))
-						return nil
-					}
-
-					k8sPods = append(k8sPods, &pod)
-					containerIDs = append(containerIDs, env.Value)
-					found = true
-					break
-				}
-			}
-			if found {
-				break
-			}
-		}
-	}
-
-	if len(k8sPods) != msg.numPods {
-		p.deleteAllocationResources(ctx, pods, configMaps)
-		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
-		return nil
-	}
-
-	var restoreResponses []reattachPodResponse
-	for i, containerID := range containerIDs {
-		resp, err := p.reattachPod(ctx, msg.taskActor, containerID,
-			k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
-		if err != nil {
-			p.deleteAllocationResources(ctx, pods, configMaps)
-			ctx.Respond(errors.Wrapf(err,
-				"error restoring pod with containerID %s", containerID))
-			return nil
-		}
-		restoreResponses = append(restoreResponses, resp)
-	}
-	ctx.Respond(restoreResponses)
-	return nil
 }
 
 func (p *pods) deleteAllocationResources(

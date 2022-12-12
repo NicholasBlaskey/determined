@@ -165,16 +165,20 @@ func (k ResourceManager) NotifyContainerRunning(
 		"the NotifyContainerRunning message is unsupported for KubernetesResourceManager")
 }
 
-func (a ResourceManager) IsReattachableOnlyAfterStarted(ctx actor.Messenger) bool {
+// IsReattachableOnlyAfterStarted always returns false for the k8s resource manager.
+func (k ResourceManager) IsReattachableOnlyAfterStarted(ctx actor.Messenger) bool {
 	return false
 }
 
-func (a ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
+// IsReattachEnabled returns a boolean based on the k8s rm config _reattach_kubernetes_resources.
+func (k ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
 	return config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachKubernetesResources
 }
 
-func (a ResourceManager) IsReattachEnabledForRP(ctx actor.Messenger, rp string) bool {
-	return a.IsReattachEnabled(ctx)
+// IsReattachEnabledForRP returns a boolean
+// based on the k8s rm config _reattach_kubernetes_resources.
+func (k ResourceManager) IsReattachEnabledForRP(ctx actor.Messenger, rp string) bool {
+	return k.IsReattachEnabled(ctx)
 }
 
 // kubernetesResourceProvider manages the lifecycle of k8s resources.
@@ -640,20 +644,6 @@ func (k *kubernetesResourceManager) receiveSetAllocationName(
 	if task, found := k.reqList.TaskByHandler(msg.AllocationRef); found {
 		task.Name = msg.Name
 	}
-}
-
-type reattachAllocationPods struct {
-	numPods      int
-	allocationID model.AllocationID
-	taskActor    *actor.Ref
-	proxyPort    *sproto.ProxyPortConfig
-	slots        int
-	logContext   logger.Context
-}
-
-type reattachPodResponse struct {
-	containerID string
-	started     *sproto.ResourcesStarted
 }
 
 func (k *kubernetesResourceManager) assignResources(

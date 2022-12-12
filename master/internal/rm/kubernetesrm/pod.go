@@ -589,6 +589,7 @@ func getResourcesStartedForPod(pod *k8sV1.Pod, ports []int) sproto.ResourcesStar
 			HostPort:      port,
 		})
 	}
+
 	var taskContainerID string
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		if containerStatus.Name == model.DeterminedK8ContainerName {
