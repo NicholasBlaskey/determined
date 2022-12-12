@@ -165,6 +165,22 @@ func (k ResourceManager) NotifyContainerRunning(
 		"the NotifyContainerRunning message is unsupported for KubernetesResourceManager")
 }
 
+// IsReattachableOnlyAfterStarted always returns false for the k8s resource manager.
+func (k ResourceManager) IsReattachableOnlyAfterStarted(ctx actor.Messenger) bool {
+	return false
+}
+
+// IsReattachEnabled returns a boolean based on the k8s rm config _reattach_kubernetes_resources.
+func (k ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
+	return config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachKubernetesResources
+}
+
+// IsReattachEnabledForRP returns a boolean
+// based on the k8s rm config _reattach_kubernetes_resources.
+func (k ResourceManager) IsReattachEnabledForRP(ctx actor.Messenger, rp string) bool {
+	return k.IsReattachEnabled(ctx)
+}
+
 // kubernetesResourceProvider manages the lifecycle of k8s resources.
 type kubernetesResourceManager struct {
 	config    *config.KubernetesResourceManagerConfig
@@ -647,9 +663,43 @@ func (k *kubernetesResourcePool) assignResources(
 
 	k.slotsUsedPerGroup[k.groups[req.Group]] += req.SlotsNeeded
 
+	var restoreResponse []reattachPodResponse
+	if req.Restore {
+		resp := ctx.Ask(k.podsActor, reattachAllocationPods{
+			allocationID: req.AllocationID,
+			numPods:      numPods,
+			taskActor:    req.AllocationRef,
+			proxyPort:    req.ProxyPort,
+			slots:        slotsPerPod,
+			logContext:   req.LogContext,
+		})
+		if err := resp.Error(); err != nil {
+			ctx.Log().
+				WithField("allocation-id", req.AllocationID).
+				WithError(err).Error("unable to restore allocation")
+
+			unknownExit := sproto.ExitCode(-1)
+			ctx.Tell(req.AllocationRef, sproto.ResourcesFailure{
+				FailureType: sproto.ResourcesMissing,
+				ErrMsg:      errors.Wrap(err, "unable to restore allocation").Error(),
+				ExitCode:    &unknownExit,
+			})
+			return
+		}
+		restoreResponse = resp.Get().([]reattachPodResponse)
+	}
+
 	allocations := sproto.ResourceList{}
 	for pod := 0; pod < numPods; pod++ {
-		containerID := cproto.NewID()
+		var containerID cproto.ID
+		var started *sproto.ResourcesStarted
+		if req.Restore {
+			containerID = cproto.ID(restoreResponse[pod].containerID)
+			started = restoreResponse[pod].started
+		} else {
+			containerID = cproto.NewID()
+		}
+
 		rs := &k8sPodResources{
 			req:             req,
 			podsActor:       k.podsActor,
@@ -657,6 +707,7 @@ func (k *kubernetesResourcePool) assignResources(
 			slots:           slotsPerPod,
 			group:           k.groups[req.Group],
 			initialPosition: k.queuePositions[k.addrToJobID[req.AllocationRef]],
+			started:         started,
 		}
 		allocations[rs.Summary().ResourcesID] = rs
 		k.addrToContainerID[req.AllocationRef] = containerID
@@ -667,10 +718,17 @@ func (k *kubernetesResourcePool) assignResources(
 	k.reqList.AddAllocationRaw(req.AllocationRef, &assigned)
 	req.AllocationRef.System().Tell(req.AllocationRef, assigned.Clone())
 
-	ctx.Log().
-		WithField("allocation-id", req.AllocationID).
-		WithField("task-handler", req.AllocationRef.Address()).
-		Infof("resources assigned with %d pods", numPods)
+	if req.Restore {
+		ctx.Log().
+			WithField("allocation-id", req.AllocationID).
+			WithField("task-handler", req.AllocationRef.Address()).
+			Infof("resources restored with %d pods", numPods)
+	} else {
+		ctx.Log().
+			WithField("allocation-id", req.AllocationID).
+			WithField("task-handler", req.AllocationRef.Address()).
+			Infof("resources assigned with %d pods", numPods)
+	}
 }
 
 func (k *kubernetesResourcePool) resourcesReleased(
@@ -747,6 +805,8 @@ type k8sPodResources struct {
 	containerID     cproto.ID
 	slots           int
 	initialPosition decimal.Decimal
+
+	started *sproto.ResourcesStarted
 }
 
 // Summary summarizes a container allocation.
@@ -761,6 +821,7 @@ func (p k8sPodResources) Summary() sproto.ResourcesSummary {
 		},
 
 		ContainerID: &p.containerID,
+		Started:     p.started,
 	}
 }
 

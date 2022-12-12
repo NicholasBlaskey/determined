@@ -948,9 +948,13 @@ func (a *apiServer) AllocationPreemptionSignal(
 
 	id := uuid.New()
 	var w task.PreemptionWatcher
-	if err := a.ask(handler.Address(), task.WatchPreemption{
+	err = a.ask(handler.Address(), task.WatchPreemption{
 		ID: id, AllocationID: allocationID,
-	}, &w); err != nil {
+	}, &w)
+
+	if _, ok := err.(task.ErrAllocationUnfulfilled); ok {
+		return nil, status.Errorf(codes.Unavailable, "allocation isn't active yet")
+	} else if err != nil {
 		return nil, err
 	}
 	defer a.m.system.TellAt(handler.Address(), task.UnwatchPreemption{ID: id})

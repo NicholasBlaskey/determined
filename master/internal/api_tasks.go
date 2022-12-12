@@ -46,7 +46,7 @@ func expFromAllocationID(
 		m.system,
 		sproto.GetAllocationHandler{ID: allocationID},
 	)
-	if err != nil {
+	if err != nil || resp == nil {
 		return false, nil, status.Errorf(codes.NotFound, "allocation not found: %s", allocationID)
 	}
 

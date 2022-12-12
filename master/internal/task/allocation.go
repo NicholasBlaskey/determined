@@ -133,6 +133,9 @@ func NewAllocation(
 	logCtx detLogger.Context, req sproto.AllocateRequest, db db.DB, rm rm.ResourceManager,
 	logger *Logger,
 ) actor.Actor {
+	req.LogContext = detLogger.MergeContexts(logCtx, detLogger.Context{
+		"allocation-id": req.AllocationID,
+	})
 	return &Allocation{
 		db:     db,
 		rm:     rm,
@@ -149,9 +152,7 @@ func NewAllocation(
 
 		resources: resourcesList{},
 
-		logCtx: detLogger.MergeContexts(logCtx, detLogger.Context{
-			"allocation-id": req.AllocationID,
-		}),
+		logCtx: req.LogContext,
 	}
 }
 
@@ -325,6 +326,10 @@ func (a *Allocation) Receive(ctx *actor.Context) error {
 			return nil
 		}
 		if err := a.preemption.ReceiveMsg(ctx); err != nil {
+			if _, ok := err.(ErrAllocationUnfulfilled); ok {
+				ctx.Respond(err)
+				return nil
+			}
 			a.logger.Insert(ctx, a.enrichLog(model.TaskLog{Log: err.Error()}))
 			a.Error(ctx, err)
 		}
@@ -660,7 +665,12 @@ func (a *Allocation) RestoreResourceFailure(
 	if a.req.Restore {
 		switch heartbeat := cluster.TheLastBootClusterHeartbeat(); {
 		case a.model.StartTime == nil:
-			break
+			// This happens in k8s when submitted but not running pods get deleted
+			// when master is away. We never record a start time for this allocation
+			// and we will want to close it. This is an issue since we keep trying
+			// to restore these commands without an endTime.
+			a.model.StartTime = ptrs.Ptr(time.Now().UTC())
+			a.model.EndTime = a.model.StartTime
 		case heartbeat.Before(*a.model.StartTime):
 			a.model.EndTime = a.model.StartTime
 		default:
