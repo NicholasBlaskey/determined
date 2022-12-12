@@ -368,7 +368,6 @@ func (a *Allocation) RequestResources(ctx *actor.Context) error {
 	}
 
 	a.req.AllocationRef = ctx.Self()
-	// TODO race here.
 	if err := a.rm.Allocate(ctx, a.req); err != nil {
 		return errors.Wrap(err, "failed to request allocation")
 	}
@@ -662,13 +661,10 @@ func (a *Allocation) RestoreResourceFailure(
 	if a.req.Restore {
 		switch heartbeat := cluster.TheLastBootClusterHeartbeat(); {
 		case a.model.StartTime == nil:
-			// TODO this occurs in k8s resource manager.
-			// Pods are submitted but don't get scheduled.
-			// Master goes down
-			// kubectl delete "scheduled pod"
-			// Master goes up
-			// We never record a start time for this allocation and we will want to close it.
-			// This is an issue since we keep trying to restore these commands without an endTime.
+			// This happens in k8s when submitted but not running pods get deleted
+			// when master is away. We never record a start time for this allocation
+			// and we will want to close it. This is an issue since we keep trying
+			// to restore these commands without an endTime.
 			a.model.StartTime = ptrs.Ptr(time.Now().UTC())
 			a.model.EndTime = a.model.StartTime
 		case heartbeat.Before(*a.model.StartTime):

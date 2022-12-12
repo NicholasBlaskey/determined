@@ -166,8 +166,11 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			return err
 		}
 		p.startResourceRequestQueue(ctx)
-		if err := p.deleteExistingKubernetesResources(ctx); err != nil {
-			return err
+
+		if !config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachKubernetesResources {
+			if err := p.deleteExistingKubernetesResources(ctx); err != nil {
+				return err
+			}
 		}
 		p.startPodInformer(ctx)
 		p.startNodeInformer(ctx)
@@ -206,7 +209,9 @@ func (p *pods) Receive(ctx *actor.Context) error {
 		p.receiveResourceSummarize(ctx, msg)
 
 	case reattachAllocationPods:
-		p.reattachAllocationPods(ctx, msg)
+		if err := p.reattachAllocationPods(ctx, msg); err != nil {
+			return err
+		}
 
 	case resourceDeletionFailed:
 		if msg.err != nil {
@@ -341,18 +346,15 @@ func (p *pods) getSystemResourceRequests(ctx *actor.Context) error {
 	return nil
 }
 
-// TODO remove params
-func (p *pods) restorePod(
+func (p *pods) reattachPod(
 	ctx *actor.Context,
 	taskActor *actor.Ref,
 	containerID string,
-	podName string,
 	pod *k8sV1.Pod,
 	proxyPort *sproto.ProxyPortConfig,
 	slots int,
 	logContext logger.Context,
 ) (reattachPodResponse, error) {
-	// We need parent address?
 	startMsg := StartTaskPod{
 		TaskActor: taskActor,
 		Spec: tasks.TaskSpec{
@@ -384,9 +386,9 @@ func (p *pods) restorePod(
 	)
 
 	newPodHandler.restore = true
-	newPodHandler.logCtx["pod"] = podName
-	newPodHandler.podName = podName
-	newPodHandler.configMapName = podName
+	newPodHandler.logCtx["pod"] = pod.Name
+	newPodHandler.podName = pod.Name
+	newPodHandler.configMapName = pod.Name
 
 	if proxyPort != nil {
 		// TODO in pod.go cproto.Running p.ports is an array.
@@ -418,18 +420,18 @@ func (p *pods) restorePod(
 			"pod actor %s already exists", ref.Address().String())
 	}
 
-	p.podNameToPodHandler[podName] = ref
-	p.containerIDToPodName[containerID] = podName
-	p.podNameToContainerID[podName] = containerID
+	p.podNameToPodHandler[pod.Name] = ref
+	p.containerIDToPodName[containerID] = pod.Name
+	p.podNameToContainerID[pod.Name] = containerID
 	p.containerIDToSchedulingState[containerID] = sproto.SchedulingStateQueued
 	p.podHandlerToMetadata[ref] = podMetadata{
-		podName:     podName,
+		podName:     pod.Name,
 		containerID: containerID,
 	}
 
 	// Send a podStatusUpdate for any missed updates between master going up
 	// and the pod restored.
-	updated, err := p.podInterface.Get(context.TODO(), newPodHandler.podName, metaV1.GetOptions{})
+	updated, err := p.podInterface.Get(context.TODO(), pod.Name, metaV1.GetOptions{})
 	if err != nil {
 		return reattachPodResponse{}, errors.Wrap(err, "error getting pod status update in restore")
 	}
@@ -438,19 +440,17 @@ func (p *pods) restorePod(
 	return reattachPodResponse{containerID: containerID, started: started}, nil
 }
 
-func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocationPods) {
+func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocationPods) error {
 	listOptions := metaV1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", determinedLabel, msg.allocationID),
 	}
 	pods, err := p.podInterface.List(context.TODO(), listOptions)
 	if err != nil {
-		ctx.Respond(errors.Wrap(err, "unable to list pods checking if they can be restored"))
-		return // TODO this error is bad.
+		return errors.Wrap(err, "unable to list pods checking if they can be restored")
 	}
 	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
 	if err != nil {
-		ctx.Respond(errors.Wrap(err, "unable to list config maps checking if they can be restored"))
-		return // TODO this error is bad.
+		return errors.Wrap(err, "unable to list config maps checking if they can be restored")
 	}
 
 	existingConfigMaps := make(map[string]bool)
@@ -459,7 +459,6 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 	}
 
 	var containerIDs []string
-	var podNames []string
 	var k8sPods []*k8sV1.Pod
 	for _, pod := range pods.Items {
 		found := false
@@ -469,11 +468,10 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 					if !existingConfigMaps[pod.Name] {
 						p.deleteAllocationResources(ctx, pods, configMaps)
 						ctx.Respond(fmt.Errorf("pod missing config map %s", pod.Name))
-						return
+						return nil
 					}
 
 					k8sPods = append(k8sPods, &pod)
-					podNames = append(podNames, pod.Name)
 					containerIDs = append(containerIDs, env.Value)
 					found = true
 					break
@@ -485,25 +483,26 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 		}
 	}
 
-	if len(containerIDs) != msg.numPods {
+	if len(k8sPods) != msg.numPods {
 		p.deleteAllocationResources(ctx, pods, configMaps)
 		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
-		return
+		return nil
 	}
 
 	var restoreResponses []reattachPodResponse
 	for i, containerID := range containerIDs {
-		resp, err := p.restorePod(ctx, msg.taskActor, containerID,
-			podNames[i], k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
+		resp, err := p.reattachPod(ctx, msg.taskActor, containerID,
+			k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
 		if err != nil {
 			p.deleteAllocationResources(ctx, pods, configMaps)
 			ctx.Respond(errors.Wrapf(err,
 				"error restoring pod with containerID %s", containerID))
-			return
+			return nil
 		}
 		restoreResponses = append(restoreResponses, resp)
 	}
 	ctx.Respond(restoreResponses)
+	return nil
 }
 
 func (p *pods) deleteAllocationResources(
@@ -523,9 +522,6 @@ func (p *pods) deleteAllocationResources(
 }
 
 func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
-	// TODO don't...
-	return nil
-
 	listOptions := metaV1.ListOptions{LabelSelector: determinedLabel}
 
 	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)

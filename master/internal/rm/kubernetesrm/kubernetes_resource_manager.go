@@ -170,11 +170,11 @@ func (a ResourceManager) IsReattachableOnlyAfterStarted(ctx actor.Messenger) boo
 }
 
 func (a ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
-	return true
+	return config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachKubernetesResources
 }
 
 func (a ResourceManager) IsReattachEnabledForRP(ctx actor.Messenger, rp string) bool {
-	return true
+	return a.IsReattachEnabled(ctx)
 }
 
 // kubernetesResourceProvider manages the lifecycle of k8s resources.
