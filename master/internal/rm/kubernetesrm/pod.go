@@ -71,6 +71,8 @@ type pod struct {
 	containerNames   map[string]bool
 
 	logCtx logger.Context
+
+	restore bool
 }
 
 type getPodNodeInfo struct{}
@@ -148,8 +150,20 @@ func (p *pod) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
 		ctx.AddLabels(p.logCtx)
-		if err := p.createPodSpecAndSubmit(ctx); err != nil {
-			return err
+		if p.restore {
+			if p.container.State == cproto.Running && !p.testLogStreamer {
+				logStreamer, err := newPodLogStreamer(p.podInterface, p.podName, ctx.Self())
+				if err != nil {
+					return err
+				}
+				if _, ok := ctx.ActorOf(fmt.Sprintf("%s-logs", p.podName), logStreamer); !ok {
+					return errors.Errorf("log streamer already exists")
+				}
+			}
+		} else {
+			if err := p.createPodSpecAndSubmit(ctx); err != nil {
+				return errors.Wrap(err, "error creating pod spec")
+			}
 		}
 
 	case resourceCreationFailed:
@@ -276,28 +290,7 @@ func (p *pod) receivePodStatusUpdate(ctx *actor.Context, msg podStatusUpdate) er
 			}
 		}
 
-		addresses := []cproto.Address{}
-		for _, port := range p.ports {
-			addresses = append(addresses, cproto.Address{
-				ContainerIP:   p.pod.Status.PodIP,
-				ContainerPort: port,
-				HostIP:        p.pod.Status.PodIP,
-				HostPort:      port,
-			})
-		}
-		var taskContainerID string
-		for _, containerStatus := range p.pod.Status.ContainerStatuses {
-			if containerStatus.Name == model.DeterminedK8ContainerName {
-				taskContainerID = containerStatus.ContainerID
-				break
-			}
-		}
-
-		p.informTaskResourcesStarted(ctx, sproto.ResourcesStarted{
-			Addresses:         addresses,
-			NativeResourcesID: taskContainerID,
-		})
-
+		p.informTaskResourcesStarted(ctx, getResourcesStartedForPod(p.pod, p.ports))
 	case cproto.Terminated:
 		exitCode, exitMessage, err := getExitCodeAndMessage(p.pod, p.containerNames)
 		if err != nil {
@@ -584,6 +577,31 @@ func getExitCodeAndMessage(pod *k8sV1.Pod, containerNames map[string]bool) (int,
 	}
 
 	return 0, "", errors.Errorf("unable to get exit code from pod %s", pod.Name)
+}
+
+func getResourcesStartedForPod(pod *k8sV1.Pod, ports []int) sproto.ResourcesStarted {
+	addresses := []cproto.Address{}
+	for _, port := range ports {
+		addresses = append(addresses, cproto.Address{
+			ContainerIP:   pod.Status.PodIP,
+			ContainerPort: port,
+			HostIP:        pod.Status.PodIP,
+			HostPort:      port,
+		})
+	}
+
+	var taskContainerID string
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.Name == model.DeterminedK8ContainerName {
+			taskContainerID = containerStatus.ContainerID
+			break
+		}
+	}
+
+	return sproto.ResourcesStarted{
+		Addresses:         addresses,
+		NativeResourcesID: taskContainerID,
+	}
 }
 
 func getDeterminedContainersStatus(
