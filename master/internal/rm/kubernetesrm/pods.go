@@ -187,8 +187,8 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			}
 		}
 
-		// TODO is it needed to kill pods that will never be restored?
-		// Like the question is when do allocations get marked as complete?
+		// TODO do we need to identify and kill pods that have allocations that will
+		// never restore resources. Slurm seems to have this as a TODO currently.
 
 		p.startPodInformer(ctx)
 		p.startNodeInformer(ctx)
