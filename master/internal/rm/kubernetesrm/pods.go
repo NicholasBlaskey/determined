@@ -398,7 +398,12 @@ func (p *pods) restorePod(
 	if err != nil {
 		return reattachPodResponse{}, errors.Wrap(err, "error finding pod state to restoring")
 	}
-	newPodHandler.container.State = state
+	// Don't set container state if the state is terminated.
+	// This is so that when we send the update message we will go
+	// through pod shutdown logic and avoid dropping a duplicate state messages.
+	if state != cproto.Terminated {
+		newPodHandler.container.State = state
+	}
 
 	var started *sproto.ResourcesStarted
 	if newPodHandler.container.State == cproto.Running {
@@ -422,14 +427,13 @@ func (p *pods) restorePod(
 		containerID: containerID,
 	}
 
-	// Update status of pod. If a pod is running and master goes down and still running
-	// this will update the job and pod state.
-	//
-	// TODO race here. If we somehow miss an update? Maybe we need to requery for the pod.
-	// Like we miss an update before querying and now. I guess we could double update.
-	// So maybe query here now again and we will be 100% okay?
-	// Also what about error state?
-	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: pod})
+	// Send a podStatusUpdate for any missed updates between master going up
+	// and the pod restored.
+	updated, err := p.podInterface.Get(context.TODO(), newPodHandler.podName, metaV1.GetOptions{})
+	if err != nil {
+		return reattachPodResponse{}, errors.Wrap(err, "error getting pod status update in restore")
+	}
+	ctx.Tell(ctx.Self(), podStatusUpdate{updatedPod: updated})
 
 	return reattachPodResponse{containerID: containerID, started: started}, nil
 }
