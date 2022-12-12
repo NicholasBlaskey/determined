@@ -326,6 +326,10 @@ func (a *Allocation) Receive(ctx *actor.Context) error {
 			return nil
 		}
 		if err := a.preemption.ReceiveMsg(ctx); err != nil {
+			if _, ok := err.(ErrAllocationUnfulfilled); ok {
+				ctx.Respond(err)
+				return nil
+			}
 			a.logger.Insert(ctx, a.enrichLog(model.TaskLog{Log: err.Error()}))
 			a.Error(ctx, err)
 		}

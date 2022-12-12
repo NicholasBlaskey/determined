@@ -186,6 +186,10 @@ func (p *pods) Receive(ctx *actor.Context) error {
 				return err
 			}
 		}
+
+		// TODO is it needed to kill pods that will never be restored?
+		// Like the question is when do allocations get marked as complete?
+
 		p.startPodInformer(ctx)
 		p.startNodeInformer(ctx)
 		p.startEventListener(ctx)
@@ -424,6 +428,7 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 		}
 		restoreResponses = append(restoreResponses, resp)
 	}
+
 	ctx.Respond(restoreResponses)
 	return nil
 }
