@@ -141,6 +141,7 @@ def test_master_restart_kill_works(managed_cluster_restarts: ManagedCluster) -> 
         managed_cluster_restarts.restart_agent()
 
 
+# TODO abstract.
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("slots", [0, 1])
 @pytest.mark.parametrize("downtime", [0, 20, 60])
