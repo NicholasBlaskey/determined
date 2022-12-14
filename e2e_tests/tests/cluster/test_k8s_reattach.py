@@ -20,7 +20,7 @@ from determined.common.api.bindings import determinedexperimentv1State as EXP_ST
 import time
 from kubernetes import client, config, watch
 
-from .managed_cluster import cluster
+from .managed_cluster import Cluster
 
 class ManagedK8sCluster(Cluster):
     def __init__(self) -> None:
@@ -88,12 +88,9 @@ class ManagedK8sCluster(Cluster):
         pytest.fail(f"Unable to reach master after {WAIT_FOR_UP} seconds")
             
 
-# @pytest.mark.e2e_k8s
-'''    
 @pytest.fixture
-def restartable_managed_cluster() -> ManagedK8sCluster:
+def k8s_managed_cluster() -> ManagedK8sCluster:
     cluster = ManagedK8sCluster()
     cluster._scale_master(up=True)
     yield cluster
     cluster._scale_master(up=True)
-'''
