@@ -35,8 +35,16 @@ def _sanity_check(managed_cluster_restarts: ManagedCluster) -> None:
 
 @pytest.fixture
 def restartable_managed_cluster(
-    managed_cluster_restarts: ManagedCluster,
-) -> Iterator[ManagedCluster]:
+    managed_cluster_restarts: Cluster,
+) -> Iterator[Cluster]:
+
+    if using_k8s():
+        cluster = ManagedK8sCluster()
+        cluster._scale_master(up=True)
+        yield cluster
+        cluster._scale_master(up=True)
+        return
+        
     _sanity_check(managed_cluster_restarts)
 
     try:
@@ -47,9 +55,9 @@ def restartable_managed_cluster(
         managed_cluster_restarts.restart_agent()
         raise
 
-
+# TODO
 @pytest.mark.managed_devcluster
-def test_master_restart_ok(managed_cluster_restarts: ManagedCluster) -> None:
+def test_master_restart_ok(managed_cluster_restarts: Cluster) -> None:
     # - Kill master
     # - Restart master
     # - Schedule something.
@@ -77,10 +85,11 @@ def test_master_restart_ok(managed_cluster_restarts: ManagedCluster) -> None:
     _sanity_check(managed_cluster_restarts)
 
 
+# TODO
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [0, 20, 60])
 def test_master_restart_reattach_recover_experiment(
-    managed_cluster_restarts: ManagedCluster, downtime: int
+    managed_cluster_restarts: Cluster, downtime: int
 ) -> None:
     _sanity_check(managed_cluster_restarts)
 
@@ -112,9 +121,9 @@ def test_master_restart_reattach_recover_experiment(
         managed_cluster_restarts.restart_agent()
         raise
 
-
+# TODO
 @pytest.mark.managed_devcluster
-def test_master_restart_kill_works(managed_cluster_restarts: ManagedCluster) -> None:
+def test_master_restart_kill_works(managed_cluster_restarts: Cluster) -> None:
     _sanity_check(managed_cluster_restarts)
 
     try:
@@ -146,7 +155,7 @@ def test_master_restart_kill_works(managed_cluster_restarts: ManagedCluster) -> 
 @pytest.mark.parametrize("slots", [0, 1])
 @pytest.mark.parametrize("downtime", [0, 20, 60])
 def test_master_restart_cmd(
-    restartable_managed_cluster: ManagedCluster, slots: int, downtime: int
+    restartable_managed_cluster: Cluster, slots: int, downtime: int
 ) -> None:
     managed_cluster = restartable_managed_cluster
 
@@ -166,7 +175,7 @@ def test_master_restart_cmd(
 # TODO abstract
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [5])
-def test_master_restart_shell(restartable_managed_cluster: ManagedCluster, downtime: int) -> None:
+def test_master_restart_shell(restartable_managed_cluster: Cluster, downtime: int) -> None:
     managed_cluster = restartable_managed_cluster
 
     with cmd.interactive_command("shell", "start", "--detach") as shell:
@@ -232,7 +241,7 @@ def _check_tb_url(url: str) -> None:
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [5])
 def test_master_restart_notebook(
-    restartable_managed_cluster: ManagedCluster, downtime: int
+    restartable_managed_cluster: Cluster, downtime: int
 ) -> None:
     managed_cluster = restartable_managed_cluster
     with cmd.interactive_command("notebook", "start", "--detach") as notebook:
@@ -255,7 +264,7 @@ def test_master_restart_notebook(
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [5])
 def test_master_restart_tensorboard(
-    restartable_managed_cluster: ManagedCluster, downtime: int
+    restartable_managed_cluster: Cluster, downtime: int
 ) -> None:
     managed_cluster = restartable_managed_cluster
 
@@ -286,7 +295,7 @@ def test_master_restart_tensorboard(
 
 # TODO abstract
 @pytest.mark.managed_devcluster
-def test_agent_devices_change(restartable_managed_cluster: ManagedCluster) -> None:
+def test_agent_devices_change(restartable_managed_cluster: Cluster) -> None:
     managed_cluster = restartable_managed_cluster
     try:
         managed_cluster.kill_agent()
