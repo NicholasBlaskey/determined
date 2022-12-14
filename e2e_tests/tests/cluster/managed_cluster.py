@@ -28,6 +28,11 @@ class Cluster(metaclass=abc.ABCMeta):
     def restart_master(self) -> None:
         pass    
 
+    @abc.abstractmethod
+    def restart_agent(self, wait_for_amnesia: bool = True, wait_for_agent: bool = True) -> None:
+        pass
+
+    
 
 DEVCLUSTER_CONFIG_ROOT_PATH = conf.PROJECT_ROOT_PATH.joinpath(".circleci/devcluster")
 DEVCLUSTER_REATTACH_OFF_CONFIG_PATH = DEVCLUSTER_CONFIG_ROOT_PATH / "double.devcluster.yaml"

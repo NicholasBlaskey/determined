@@ -50,15 +50,20 @@ def restartable_managed_cluster(
         managed_cluster_restarts.restart_agent()
         raise
 
-# TODO
 @pytest.mark.managed_devcluster
-def test_master_restart_ok(managed_cluster_restarts: Cluster) -> None:
+def test_master_restart_ok(managed_cluster_restarts: ManagedCluster) -> None:
+    _test_master_restart_ok(managed_cluster_restarts)
+
+@pytest.mark.e2e_k8s
+def test_master_restart_ok_k8s(k8s_managed_cluster: ManagedK8sCluster) -> None:
+    _test_master_restart_ok(k8s_managed_cluster)
+
+    
+def _test_master_restart_ok(managed_cluster: Cluster) -> None:        
     # - Kill master
     # - Restart master
     # - Schedule something.
     # Do it twice to ensure nothing gets stuck.
-    _sanity_check(managed_cluster_restarts)
-
     try:
         for i in range(3):
             print("test_master_restart_ok stage %s start" % i)
@@ -68,26 +73,33 @@ def test_master_restart_ok(managed_cluster_restarts: Cluster) -> None:
                 wait_for_command_state(cmd_id, "TERMINATED", 10)
                 assert command_succeeded(cmd_id)
 
-            managed_cluster_restarts.kill_master()
-            managed_cluster_restarts.restart_master()
+            managed_cluster.kill_master()
+            managed_cluster.restart_master()
 
             print("test_master_restart_ok stage %s done" % i)
     except Exception:
-        managed_cluster_restarts.restart_master()
-        managed_cluster_restarts.restart_agent()
+        managed_cluster.restart_master()
+        managed_cluster.restart_agent()
         raise
-    managed_cluster_restarts.restart_agent(wait_for_amnesia=False)
-    _sanity_check(managed_cluster_restarts)
 
-
-# TODO
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [0, 20, 60])
 def test_master_restart_reattach_recover_experiment(
+        managed_cluster_restarts: ManagedCluster, downtime: int,
+) -> None:
+    _test_master_restart_reattach_recover_experiment(managed_cluster_restarts, downtime)
+
+@pytest.mark.e2e_k8s
+@pytest.mark.parametrize("downtime", [0, 20, 60])
+def test_master_restart_reattach_recover_experiment_k8s(
+        k8s_managed_cluster: ManagedK8sCluster, downtime: int,
+) -> None:
+    _test_master_restart_reattach_recover_experiment(k8s_managed_cluster, downtime)
+
+@pytest.mark.managed_devcluster
+def _test_master_restart_reattach_recover_experiment(
     managed_cluster_restarts: Cluster, downtime: int
 ) -> None:
-    _sanity_check(managed_cluster_restarts)
-
     try:
         exp_id = exp.create_experiment(
             conf.fixtures_path("no_op/single-medium-train-step.yaml"),
@@ -116,11 +128,21 @@ def test_master_restart_reattach_recover_experiment(
         managed_cluster_restarts.restart_agent()
         raise
 
-# TODO
-@pytest.mark.managed_devcluster
-def test_master_restart_kill_works(managed_cluster_restarts: Cluster) -> None:
-    _sanity_check(managed_cluster_restarts)
 
+@pytest.mark.managed_devcluster
+def test_master_restart_kill_works_experiment(
+        managed_cluster_restarts: ManagedCluster,
+) -> None:
+    _test_master_restart_kill_works(managed_cluster_restarts)
+
+@pytest.mark.e2e_k8s
+def test_master_restart_kill_works_k8s(
+        k8s_managed_cluster: ManagedK8sCluster,
+) -> None:
+    _test_master_restart_kill_works(k8s_managed_cluster)
+
+
+def _test_master_restart_kill_works(managed_cluster_restarts: Cluster) -> None:
     try:
         exp_id = exp.create_experiment(
             conf.fixtures_path("no_op/single-many-long-steps.yaml"),
@@ -137,7 +159,7 @@ def test_master_restart_kill_works(managed_cluster_restarts: Cluster) -> None:
         command = ["det", "-m", conf.make_master_url(), "e", "kill", str(exp_id)]
         subprocess.check_call(command)
 
-        exp.wait_for_experiment_state(exp_id, EXP_STATE.STATE_CANCELED, max_wait_secs=10)
+        exp.wait_for_experiment_state(exp_id, EXP_STATE.STATE_CANCELED, max_wait_secs=20)
 
         managed_cluster_restarts.ensure_agent_ok()
     except Exception:
@@ -321,7 +343,7 @@ def _test_master_restart_tensorboard(managed_cluster: Cluster, downtime: int) ->
 
         print("tensorboard ok")
 
-# TODO abstract
+
 @pytest.mark.managed_devcluster
 def test_agent_devices_change(restartable_managed_cluster: ManagedCluster) -> None:
     managed_cluster = restartable_managed_cluster

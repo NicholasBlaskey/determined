@@ -31,12 +31,15 @@ class ManagedK8sCluster(Cluster):
     def master_down_for(self, downtime: int) -> None:
         pass
 
+    def restart_agent(self, wait_for_amnesia: bool = True, wait_for_agent: bool = True) -> None:
+        pass
+    
     def kill_master(self) -> None:
         self._scale_master(up=False)
 
     def restart_master(self) -> None:
         self._scale_master(up=True)
-    
+        
     def _scale_master(self, up: bool) -> None:
         desired_pods = 0
         if up:
