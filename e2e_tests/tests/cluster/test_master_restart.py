@@ -163,6 +163,7 @@ def test_master_restart_cmd(
     assert succeeded
 
 
+# TODO abstract
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [5])
 def test_master_restart_shell(restartable_managed_cluster: ManagedCluster, downtime: int) -> None:
@@ -227,7 +228,7 @@ def _check_notebook_url(url: str) -> None:
 def _check_tb_url(url: str) -> None:
     return _check_web_url(url, "TensorBoard")
 
-
+#TODO abstract
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [5])
 def test_master_restart_notebook(
@@ -250,7 +251,7 @@ def test_master_restart_notebook(
 
         print("notebook ok")
 
-
+#TODO abstract
 @pytest.mark.managed_devcluster
 @pytest.mark.parametrize("downtime", [5])
 def test_master_restart_tensorboard(
@@ -283,7 +284,7 @@ def test_master_restart_tensorboard(
 
         print("tensorboard ok")
 
-
+# TODO abstract
 @pytest.mark.managed_devcluster
 def test_agent_devices_change(restartable_managed_cluster: ManagedCluster) -> None:
     managed_cluster = restartable_managed_cluster
