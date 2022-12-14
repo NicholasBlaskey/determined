@@ -1,3 +1,4 @@
+import abc
 import json
 import os
 import subprocess
@@ -13,7 +14,6 @@ from tests import config as conf
 from .test_users import ADMIN_CREDENTIALS, logged_in_user
 from .utils import get_master_port
 
-import abc
 
 class Cluster(metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -26,13 +26,16 @@ class Cluster(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def restart_master(self) -> None:
-        pass    
+        pass
 
     @abc.abstractmethod
     def restart_agent(self, wait_for_amnesia: bool = True, wait_for_agent: bool = True) -> None:
         pass
 
-    
+    @abc.abstractmethod
+    def ensure_agent_ok(self) -> None:
+        pass
+
 
 DEVCLUSTER_CONFIG_ROOT_PATH = conf.PROJECT_ROOT_PATH.joinpath(".circleci/devcluster")
 DEVCLUSTER_REATTACH_OFF_CONFIG_PATH = DEVCLUSTER_CONFIG_ROOT_PATH / "double.devcluster.yaml"
