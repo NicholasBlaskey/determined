@@ -6,3 +6,4 @@ from .managed_cluster import (  # noqa
     managed_cluster_session,
     managed_cluster_session_priority_scheduler,
 )
+from .test_k8s_reattach import k8s_managed_cluster  # noqa
