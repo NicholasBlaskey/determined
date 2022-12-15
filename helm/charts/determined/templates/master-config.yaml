@@ -121,8 +121,8 @@ data:
       {{- if .Values.fluent }}
       fluent:
         {{- toYaml .Values.fluent | nindent 8}}
-      {{- if .Values._ReattachKubernetesResources }}
-      _reattach_kubernetes_resources: {{ .Values._ReattachKubernetesResources }}
+      {{- if .Values.ReattachResources }}
+      _reattach_resources: {{ .Values.ReattachResources }}
       {{- end }}
       {{- end }}
 

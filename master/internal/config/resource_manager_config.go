@@ -112,7 +112,7 @@ type KubernetesResourceManagerConfig struct {
 	MasterPort               int32                   `json:"_master_port,omitempty"`
 	// TODO(nick) this will eventually move down to resource pools when added to k8s
 	// so this is just an experimental feature flag for now.
-	ReattachKubernetesResources bool `json:"_reattach_kubernetes_resources"`
+	ReattachResources bool `json:"_kubernetes_resources"`
 }
 
 var defaultKubernetesResourceManagerConfig = KubernetesResourceManagerConfig{

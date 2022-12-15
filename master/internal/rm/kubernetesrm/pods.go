@@ -181,7 +181,7 @@ func (p *pods) Receive(ctx *actor.Context) error {
 		}
 		p.startResourceRequestQueue(ctx)
 
-		if !config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachKubernetesResources {
+		if !config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachResources {
 			if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 				return err
 			}
@@ -485,7 +485,7 @@ func (p *pods) reattachPod(
 
 	state, err := getPodState(ctx, pod, newPodHandler.containerNames)
 	if err != nil {
-		return reattachPodResponse{}, errors.Wrap(err, "error finding pod state to restoring")
+		return reattachPodResponse{}, errors.Wrap(err, "error finding pod state to restore")
 	}
 	// Don't set container state if the state is terminated.
 	// This is so that when we send the update message we will go
