@@ -731,7 +731,6 @@ func (k *kubernetesResourceManager) restoreResources(
 		allocationID: req.AllocationID,
 		numPods:      numPods,
 		taskActor:    req.AllocationRef,
-		proxyPort:    req.ProxyPort,
 		slots:        slotsPerPod,
 		logContext:   req.LogContext,
 	})

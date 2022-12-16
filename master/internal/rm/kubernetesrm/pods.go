@@ -13,6 +13,7 @@ import (
 
 	"github.com/determined-ai/determined/master/pkg/cproto"
 
+	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/sproto"
 
 	"github.com/labstack/echo/v4"
@@ -103,7 +104,6 @@ type reattachAllocationPods struct {
 	numPods      int
 	allocationID model.AllocationID
 	taskActor    *actor.Ref
-	proxyPort    *sproto.ProxyPortConfig
 	slots        int
 	logContext   logger.Context
 }
@@ -185,10 +185,11 @@ func (p *pods) Receive(ctx *actor.Context) error {
 			if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 				return err
 			}
+		} else {
+			if err := p.deleteResourcesWithEndedAllocation(ctx); err != nil {
+				return err
+			}
 		}
-
-		// TODO do we need to identify and kill pods that have allocations that will
-		// never restore resources. Slurm seems to have this as a TODO currently.
 
 		p.startPodInformer(ctx)
 		p.startNodeInformer(ctx)
@@ -385,13 +386,14 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 
 	var containerIDs []string
 	var k8sPods []*k8sV1.Pod
+	var ports [][]int
 	for _, pod := range pods.Items {
 		found := false
 		for _, container := range pod.Spec.Containers {
 			for _, env := range container.Env {
 				if env.Name == "DET_CONTAINER_ID" {
 					if !existingConfigMaps[pod.Name] {
-						p.deleteAllocationResources(ctx, pods, configMaps)
+						p.deleteKubernetesResources(ctx, pods, configMaps)
 						ctx.Respond(fmt.Errorf("pod missing config map %s", pod.Name))
 						return nil
 					}
@@ -399,6 +401,12 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 					p := pod
 					k8sPods = append(k8sPods, &p)
 					containerIDs = append(containerIDs, env.Value)
+
+					var podPorts []int
+					for _, p := range container.Ports {
+						podPorts = append(podPorts, int(p.ContainerPort))
+					}
+					ports = append(ports, podPorts)
 
 					found = true
 					break
@@ -411,17 +419,18 @@ func (p *pods) reattachAllocationPods(ctx *actor.Context, msg reattachAllocation
 	}
 
 	if len(k8sPods) != msg.numPods {
-		p.deleteAllocationResources(ctx, pods, configMaps)
-		ctx.Respond(fmt.Errorf("not enough pods found for allocation"))
+		p.deleteKubernetesResources(ctx, pods, configMaps)
+		ctx.Respond(fmt.Errorf("not enough pods found for allocation expected %d got %d instead",
+			msg.numPods, len(k8sPods)))
 		return nil
 	}
 
 	var restoreResponses []reattachPodResponse
 	for i, containerID := range containerIDs {
 		resp, err := p.reattachPod(ctx, msg.taskActor, containerID,
-			k8sPods[i], msg.proxyPort, msg.slots, msg.logContext)
+			k8sPods[i], ports[i], msg.slots, msg.logContext)
 		if err != nil {
-			p.deleteAllocationResources(ctx, pods, configMaps)
+			p.deleteKubernetesResources(ctx, pods, configMaps)
 			ctx.Respond(errors.Wrapf(err,
 				"error restoring pod with containerID %s", containerID))
 			return nil
@@ -438,7 +447,7 @@ func (p *pods) reattachPod(
 	taskActor *actor.Ref,
 	containerID string,
 	pod *k8sV1.Pod,
-	proxyPort *sproto.ProxyPortConfig,
+	ports []int,
 	slots int,
 	logContext logger.Context,
 ) (reattachPodResponse, error) {
@@ -476,12 +485,7 @@ func (p *pods) reattachPod(
 	newPodHandler.logCtx["pod"] = pod.Name
 	newPodHandler.podName = pod.Name
 	newPodHandler.configMapName = pod.Name
-
-	if proxyPort != nil {
-		// TODO in pod.go cproto.Running p.ports is an array.
-		// When do multiple ports exist? proxyPort only allows one.
-		newPodHandler.ports = []int{proxyPort.Port}
-	}
+	newPodHandler.ports = ports
 
 	state, err := getPodState(ctx, pod, newPodHandler.containerNames)
 	if err != nil {
@@ -527,44 +531,11 @@ func (p *pods) reattachPod(
 	return reattachPodResponse{containerID: containerID, started: started}, nil
 }
 
-func (p *pods) deleteAllocationResources(
+func (p *pods) deleteKubernetesResources(
 	ctx *actor.Context, pods *k8sV1.PodList, configMaps *k8sV1.ConfigMapList,
 ) {
 	for _, pod := range pods.Items {
-		ctx.Tell(p.resourceRequestQueue, deleteKubernetesResources{
-			handler: ctx.Self(), podName: pod.Name,
-		})
-	}
-
-	for _, configMap := range configMaps.Items {
-		ctx.Tell(p.resourceRequestQueue, deleteKubernetesResources{
-			handler: ctx.Self(), configMapName: configMap.Name,
-		})
-	}
-}
-
-func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
-	listOptions := metaV1.ListOptions{LabelSelector: determinedLabel}
-
-	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
-	if err != nil {
-		return errors.Wrap(err, "error listing existing config maps")
-	}
-	for _, configMap := range configMaps.Items {
-		if configMap.Namespace != p.namespace {
-			continue
-		}
-
-		ctx.Tell(p.resourceRequestQueue, deleteKubernetesResources{
-			handler: ctx.Self(), configMapName: configMap.Name,
-		})
-	}
-
-	pods, err := p.podInterface.List(context.TODO(), listOptions)
-	if err != nil {
-		return errors.Wrap(err, "error listing existing pod")
-	}
-	for _, pod := range pods.Items {
+		// TODO once we do multiple namespaces this will need to be updated.
 		if pod.Namespace != p.namespace {
 			continue
 		}
@@ -574,6 +545,76 @@ func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
 		})
 	}
 
+	for _, configMap := range configMaps.Items {
+		// TODO once we do multiple namespaces this will need to be updated.
+		if configMap.Namespace != p.namespace {
+			continue
+		}
+
+		ctx.Tell(p.resourceRequestQueue, deleteKubernetesResources{
+			handler: ctx.Self(), configMapName: configMap.Name,
+		})
+	}
+}
+
+func (p *pods) deleteExistingKubernetesResources(ctx *actor.Context) error {
+	listOptions := metaV1.ListOptions{LabelSelector: determinedLabel}
+	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "error listing existing config maps")
+	}
+
+	pods, err := p.podInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "error listing existing pod")
+	}
+
+	p.deleteKubernetesResources(ctx, pods, configMaps)
+	return nil
+}
+
+func (p *pods) deleteResourcesWithEndedAllocation(ctx *actor.Context) error {
+	var openAllocations []model.Allocation
+	if err := db.Bun().NewSelect().Model(&openAllocations).
+		Where("end_time IS NULL").
+		Scan(context.TODO()); err != nil {
+		return errors.Wrap(err, "error querying the database for open allocations")
+	}
+	openAllocationIDs := make(map[model.AllocationID]bool)
+	for _, alloc := range openAllocations {
+		openAllocationIDs[alloc.AllocationID] = true
+	}
+
+	listOptions := metaV1.ListOptions{LabelSelector: determinedLabel}
+	configMaps, err := p.configMapInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "error listing existing config maps")
+	}
+	toKillConfigMaps := &k8sV1.ConfigMapList{}
+	for _, cm := range configMaps.Items {
+		if !openAllocationIDs[model.AllocationID(cm.Labels[determinedLabel])] {
+			ctx.Log().Warnf("Could not find open allocation for "+
+				"allocation ID '%s' for existig config map '%s', deleting config map",
+				cm.Labels[determinedLabel], cm.Name)
+			toKillConfigMaps.Items = append(toKillConfigMaps.Items, cm)
+		}
+	}
+
+	pods, err := p.podInterface.List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "error listing existing pod")
+	}
+	toKillPods := &k8sV1.PodList{}
+	for _, pod := range pods.Items {
+		if !openAllocationIDs[model.AllocationID(pod.Labels[determinedLabel])] {
+			ctx.Log().Warnf("Could not find open allocation for "+
+				"allocation ID '%s' for existig pod '%s', deleting pod",
+				pod.Labels[determinedLabel], pod.Name)
+			toKillPods.Items = append(toKillPods.Items, pod)
+		}
+	}
+
+	p.deleteKubernetesResources(ctx, toKillPods, toKillConfigMaps)
 	return nil
 }
 

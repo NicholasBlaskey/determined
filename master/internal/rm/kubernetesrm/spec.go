@@ -380,8 +380,15 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 
 	env := spec.Environment
 
+	// This array containerPorts is set on the container spec.
+	// This field on the container spec is for "primarily informational"
+	// reasons and to allow us to read these ports in reattaching pods.
+	var containerPorts []k8sV1.ContainerPort
 	for _, port := range env.Ports() {
 		p.ports = append(p.ports, port)
+		containerPorts = append(containerPorts, k8sV1.ContainerPort{
+			ContainerPort: int32(port),
+		})
 	}
 
 	envVars, err := p.configureEnvVars(spec.EnvVars(), env, deviceType)
@@ -493,6 +500,7 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		Resources:       p.configureResourcesRequirements(),
 		VolumeMounts:    volumeMounts,
 		WorkingDir:      spec.WorkDir,
+		Ports:           containerPorts,
 	}
 
 	p.configMap, err = p.configureConfigMapSpec(runArchives, fluentFiles)
