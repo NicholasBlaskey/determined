@@ -707,7 +707,7 @@ func (k *kubernetesResourcePool) assignResources(
 	}
 }
 
-func (k *kubernetesResourceManager) createResources(
+func (k *kubernetesResourcePool) createResources(
 	ctx *actor.Context, req *sproto.AllocateRequest, slotsPerPod, numPods int,
 ) []*k8sPodResources {
 	var resources []*k8sPodResources
@@ -724,7 +724,7 @@ func (k *kubernetesResourceManager) createResources(
 	return resources
 }
 
-func (k *kubernetesResourceManager) restoreResources(
+func (k *kubernetesResourcePool) restoreResources(
 	ctx *actor.Context, req *sproto.AllocateRequest, slotsPerPod, numPods int,
 ) ([]*k8sPodResources, error) {
 	resp := ctx.Ask(k.podsActor, reattachAllocationPods{
@@ -755,7 +755,7 @@ func (k *kubernetesResourceManager) restoreResources(
 	return resources, nil
 }
 
-func (k *kubernetesResourceManager) resourcesReleased(
+func (k *kubernetesResourcePool) resourcesReleased(
 	ctx *actor.Context,
 	msg sproto.ResourcesReleased,
 ) {
