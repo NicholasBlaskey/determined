@@ -34,18 +34,24 @@ const (
 	determinedSystemLabel     = "determined-system"
 )
 
+type podSubmissionInfo struct {
+	taskSpec tasks.TaskSpec
+}
+
 // pod manages the lifecycle of a Kubernetes pod that executes a
 // Determined task. The lifecycle of the pod is managed based on
 // the status of the specified set of containers.
 type pod struct {
-	cluster                  *actor.Ref
-	clusterID                string
-	taskActor                *actor.Ref
-	clientSet                *k8sClient.Clientset
-	namespace                string
-	masterIP                 string
-	masterPort               int32
-	taskSpec                 tasks.TaskSpec
+	cluster    *actor.Ref
+	clusterID  string
+	taskActor  *actor.Ref
+	clientSet  *k8sClient.Clientset
+	namespace  string
+	masterIP   string
+	masterPort int32
+	// submissionInfo will be nil when the pod is restored.
+	// These fields can not be relied on after a pod is submitted.
+	submissionInfo           *podSubmissionInfo
 	masterTLSConfig          model.TLSClientConfig
 	loggingTLSConfig         model.TLSClientConfig
 	loggingConfig            model.LoggingConfig
@@ -116,6 +122,9 @@ func newPod(
 	containerNames := map[string]bool{model.DeterminedK8ContainerName: true}
 
 	return &pod{
+		submissionInfo: &podSubmissionInfo{
+			taskSpec: msg.Spec,
+		},
 		cluster:                  cluster,
 		clusterID:                clusterID,
 		taskActor:                msg.TaskActor,
@@ -123,7 +132,6 @@ func newPod(
 		namespace:                namespace,
 		masterIP:                 masterIP,
 		masterPort:               masterPort,
-		taskSpec:                 msg.Spec,
 		masterTLSConfig:          masterTLSConfig,
 		loggingTLSConfig:         loggingTLSConfig,
 		loggingConfig:            loggingConfig,

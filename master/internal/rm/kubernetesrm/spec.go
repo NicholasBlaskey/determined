@@ -140,7 +140,7 @@ func (p *pod) configureConfigMapSpec(
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      p.configMapName,
 			Namespace: p.namespace,
-			Labels:    map[string]string{determinedLabel: p.taskSpec.AllocationID},
+			Labels:    map[string]string{determinedLabel: p.submissionInfo.taskSpec.AllocationID},
 		},
 		BinaryData: configMapData,
 	}, nil
@@ -192,9 +192,9 @@ func (p *pod) configureVolumes(
 	volumeMounts = append(volumeMounts, hostVolumeMounts...)
 	volumes = append(volumes, hostVolumes...)
 
-	shmSize := p.taskSpec.ShmSize
+	shmSize := p.submissionInfo.taskSpec.ShmSize
 	if shmSize == 0 {
-		shmSize = p.taskSpec.TaskContainerDefaults.ShmSizeBytes
+		shmSize = p.submissionInfo.taskSpec.TaskContainerDefaults.ShmSizeBytes
 	}
 	shmVolumeMount, shmVolume := configureShmVolume(shmSize)
 	volumeMounts = append(volumeMounts, shmVolumeMount)
@@ -213,11 +213,11 @@ func (p *pod) configureVolumes(
 }
 
 func (p *pod) modifyPodSpec(newPod *k8sV1.Pod, scheduler string) {
-	if p.taskSpec.Description == cmdTask {
+	if p.submissionInfo.taskSpec.Description == cmdTask {
 		return
 	}
 
-	if p.taskSpec.Description == gcTask {
+	if p.submissionInfo.taskSpec.Description == gcTask {
 		if newPod.Spec.PriorityClassName != "" {
 			log.Warnf(
 				"GC Priority is currently using priority class: %s. "+
@@ -233,9 +233,10 @@ func (p *pod) modifyPodSpec(newPod *k8sV1.Pod, scheduler string) {
 		p.configureCoscheduler(newPod, scheduler)
 	}
 
-	if newPod.Spec.PriorityClassName == "" && p.taskSpec.ResourcesConfig.Priority() != nil {
-		priority := int32(*p.taskSpec.ResourcesConfig.Priority())
-		name := fmt.Sprintf("%s-priorityclass", p.taskSpec.ContainerID)
+	if newPod.Spec.PriorityClassName == "" &&
+		p.submissionInfo.taskSpec.ResourcesConfig.Priority() != nil {
+		priority := int32(*p.submissionInfo.taskSpec.ResourcesConfig.Priority())
+		name := fmt.Sprintf("%s-priorityclass", p.submissionInfo.taskSpec.ContainerID)
 
 		err := p.createPriorityClass(name, priority)
 
@@ -252,7 +253,7 @@ func (p *pod) configureCoscheduler(newPod *k8sV1.Pod, scheduler string) {
 		return
 	}
 
-	resources := p.taskSpec.ResourcesConfig
+	resources := p.submissionInfo.taskSpec.ResourcesConfig
 	minAvailable := 0
 
 	if p.slotType == device.CUDA && p.slots > 0 {
@@ -318,7 +319,7 @@ func (p *pod) configurePodSpec(
 	if podSpec.ObjectMeta.Labels == nil {
 		podSpec.ObjectMeta.Labels = make(map[string]string)
 	}
-	podSpec.ObjectMeta.Labels[determinedLabel] = p.taskSpec.AllocationID
+	podSpec.ObjectMeta.Labels[determinedLabel] = p.submissionInfo.taskSpec.AllocationID
 
 	p.modifyPodSpec(podSpec, scheduler)
 
@@ -355,7 +356,7 @@ func (p *pod) configurePodSpec(
 	podSpec.Spec.Containers = append(podSpec.Spec.Containers, sidecarContainers...)
 	podSpec.Spec.Containers = append(podSpec.Spec.Containers, determinedContainer)
 	podSpec.Spec.Volumes = append(podSpec.Spec.Volumes, volumes...)
-	podSpec.Spec.HostNetwork = p.taskSpec.TaskContainerDefaults.NetworkMode.IsHost()
+	podSpec.Spec.HostNetwork = p.submissionInfo.taskSpec.TaskContainerDefaults.NetworkMode.IsHost()
 	podSpec.Spec.InitContainers = append(podSpec.Spec.InitContainers, determinedInitContainers)
 	podSpec.Spec.RestartPolicy = k8sV1.RestartPolicyNever
 
@@ -370,7 +371,7 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 		deviceType = device.CPU
 	}
 
-	spec := p.taskSpec
+	spec := p.submissionInfo.taskSpec
 
 	runArchives, rootArchives := spec.Archives()
 
@@ -469,8 +470,8 @@ func (p *pod) createPodSpec(ctx *actor.Context, scheduler string) error {
 	)
 
 	var fluentSecCtx *k8sV1.SecurityContext
-	nonRootTask := p.taskSpec.AgentUserGroup != nil &&
-		p.taskSpec.AgentUserGroup.User != rootUserName
+	nonRootTask := p.submissionInfo.taskSpec.AgentUserGroup != nil &&
+		p.submissionInfo.taskSpec.AgentUserGroup.User != rootUserName
 	if p.fluentConfig.UID != 0 || p.fluentConfig.GID != 0 {
 		fluentSecCtx = configureSecurityContext(&model.AgentUserGroup{
 			UID: p.fluentConfig.UID,
