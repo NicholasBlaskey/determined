@@ -120,6 +120,8 @@ type (
 	SetAllocationProxyAddress struct {
 		ProxyAddress string
 	}
+	// IsAllocationInProgressOfRestore asks the allocation if it is in the middle of a restore.
+	IsAllocationInProgressOfRestore struct{}
 )
 
 const (
@@ -185,6 +187,14 @@ func (a *Allocation) Receive(ctx *actor.Context) error {
 		if err := a.RequestResources(ctx); err != nil {
 			a.Error(ctx, err)
 		}
+
+	case IsAllocationInProgressOfRestore:
+		if a.req.Restore && !a.restored {
+			ctx.Respond(ErrAllocationStillRestoring{})
+		} else {
+			ctx.Respond(true)
+		}
+
 	case sproto.ResourcesAllocated:
 		if err := a.ResourcesAllocated(ctx, msg); err != nil {
 			a.Error(ctx, err)
@@ -326,10 +336,6 @@ func (a *Allocation) Receive(ctx *actor.Context) error {
 			return nil
 		}
 		if err := a.preemption.ReceiveMsg(ctx); err != nil {
-			if _, ok := err.(ErrAllocationUnfulfilled); ok {
-				ctx.Respond(err)
-				return nil
-			}
 			a.logger.Insert(ctx, a.enrichLog(model.TaskLog{Log: err.Error()}))
 			a.Error(ctx, err)
 		}
@@ -484,6 +490,7 @@ func (a *Allocation) ResourcesAllocated(ctx *actor.Context, msg sproto.Resources
 		}
 	}
 
+	a.restored = a.req.Restore
 	a.resourcesStarted = true
 	a.sendEvent(ctx, sproto.Event{AssignedEvent: &msg})
 	return nil
