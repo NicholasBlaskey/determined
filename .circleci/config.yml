@@ -2428,7 +2428,7 @@ workflows:
               slot-type: ["cpu"]
               slot-resource-requests-cpu: [7]
 
-      - test-e2e-gke-k8s:
+      - test-e2e-gke:
           name: test-e2e-gke-k8s-single-cpu
           context: gcp
           filters:
