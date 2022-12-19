@@ -743,7 +743,7 @@ commands:
           steps:
             - run:
                 command: |
-                  echo 'export HELM_VALUES="${HELM_VALUES},slotType=<<parameters.slot-type>>,slotResourceRequests.cpu=<<parameters.slot-resource-requests-cpu>>"' >> "$BASH_ENV"
+                  echo 'export HELM_VALUES="${HELM_VALUES},slotType=<<parameters.slot-type>>,slotResourceRequests.cpu=<<parameters.slot-resource-requests-cpu>>,_reattachResources=true"' >> "$BASH_ENV"
                 name: CPU setup helm overrides
       - when:
           condition: <<parameters.environment-image>>

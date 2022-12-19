@@ -15,20 +15,17 @@ class ManagedK8sCluster(Cluster):
         self.v1 = client.AppsV1Api()
         self._scale_master(up=True)
 
-    def master_down_for(self, downtime: int) -> None:
-        pass
+    def kill_master(self) -> None:
+        self._scale_master(up=False)
+
+    def restart_master(self) -> None:
+        self._scale_master(up=True)
 
     def restart_agent(self, wait_for_amnesia: bool = True, wait_for_agent: bool = True) -> None:
         pass
 
     def ensure_agent_ok(self) -> None:
         pass
-
-    def kill_master(self) -> None:
-        self._scale_master(up=False)
-
-    def restart_master(self) -> None:
-        self._scale_master(up=True)
 
     def _scale_master(self, up: bool) -> None:
         desired_pods = 0

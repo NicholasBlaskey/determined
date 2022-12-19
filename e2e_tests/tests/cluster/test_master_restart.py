@@ -39,7 +39,6 @@ def _sanity_check(managed_cluster_restarts: ManagedCluster) -> None:
 def restartable_managed_cluster(
     managed_cluster_restarts: ManagedCluster,
 ) -> Iterator[ManagedCluster]:
-
     _sanity_check(managed_cluster_restarts)
 
     try:
@@ -53,7 +52,10 @@ def restartable_managed_cluster(
 
 @pytest.mark.managed_devcluster
 def test_master_restart_ok(managed_cluster_restarts: ManagedCluster) -> None:
+    _sanity_check(managed_cluster_restarts)
     _test_master_restart_ok(managed_cluster_restarts)
+    managed_cluster_restarts.restart_agent(wait_for_amnesia=False)
+    _sanity_check(managed_cluster_restarts)
 
 
 @pytest.mark.e2e_k8s
@@ -91,6 +93,7 @@ def test_master_restart_reattach_recover_experiment(
     managed_cluster_restarts: ManagedCluster,
     downtime: int,
 ) -> None:
+    _sanity_check(managed_cluster_restarts)
     _test_master_restart_reattach_recover_experiment(managed_cluster_restarts, downtime)
 
 
@@ -140,6 +143,7 @@ def _test_master_restart_reattach_recover_experiment(
 def test_master_restart_kill_works_experiment(
     managed_cluster_restarts: ManagedCluster,
 ) -> None:
+    _sanity_check(managed_cluster_restarts)
     _test_master_restart_kill_works(managed_cluster_restarts)
 
 
@@ -382,9 +386,7 @@ def test_agent_devices_change(restartable_managed_cluster: ManagedCluster) -> No
 @pytest.mark.e2e_k8s
 def test_master_restart_with_queued(k8s_managed_cluster: ManagedK8sCluster) -> None:
     agent_data = get_agent_data(conf.make_master_url())
-    slots = 0
-    for agent in agent_data:
-        slots += agent["num_slots"]
+    slots = sum([a["num_slots"] for a in agent_data])
 
     running_command_id = run_command(60, slots)
     queued_command_id = run_command(60, slots)
@@ -399,12 +401,9 @@ def test_master_restart_with_queued(k8s_managed_cluster: ManagedK8sCluster) -> N
 
     post_restart_job_list = det_cmd_json(["job", "list", "--json"])["jobs"]
 
-    # TODO bug with submission time getting overwritten!
+    # TODO(DET-8776): command submission times get overwritten to master start currently.
     assert len(job_list) == len(post_restart_job_list)
     for pre, post in zip(job_list, post_restart_job_list):
-        # pre_time = parser.parse(pre["submissionTime"])
-        # post_time = parser.parse(post["submissionTime"])
-        # assert pre_time == post_time
         post["submissionTime"] = pre["submissionTime"]
 
     assert job_list == post_restart_job_list

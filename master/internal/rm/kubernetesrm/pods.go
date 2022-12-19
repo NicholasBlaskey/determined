@@ -181,12 +181,12 @@ func (p *pods) Receive(ctx *actor.Context) error {
 		}
 		p.startResourceRequestQueue(ctx)
 
-		if !config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachResources {
-			if err := p.deleteExistingKubernetesResources(ctx); err != nil {
+		if config.GetMasterConfig().ResourceManager.KubernetesRM.ReattachResources {
+			if err := p.deleteResourcesWithEndedAllocation(ctx); err != nil {
 				return err
 			}
 		} else {
-			if err := p.deleteResourcesWithEndedAllocation(ctx); err != nil {
+			if err := p.deleteExistingKubernetesResources(ctx); err != nil {
 				return err
 			}
 		}
