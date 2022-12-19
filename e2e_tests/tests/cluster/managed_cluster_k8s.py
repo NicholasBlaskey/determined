@@ -7,6 +7,8 @@ from kubernetes import client, config, watch
 from tests import config as conf
 
 from .managed_cluster import Cluster, get_agent_data
+from .test_groups import det_cmd
+from .utils import run_command, wait_for_command_state
 
 
 class ManagedK8sCluster(Cluster):
@@ -14,6 +16,11 @@ class ManagedK8sCluster(Cluster):
         config.load_kube_config()
         self.v1 = client.AppsV1Api()
         self._scale_master(up=True)
+
+        # Verify we have pulled our image.
+        # TODO this won't work if we have multiple nodes.
+        wait_for_command_state(run_command(0, slots=0), "TERMINATED", 300)
+        wait_for_command_state(run_command(0, slots=1), "TERMINATED", 300)
 
     def kill_master(self) -> None:
         self._scale_master(up=False)
@@ -67,7 +74,7 @@ class ManagedK8sCluster(Cluster):
             return
 
         # Wait for determined to be up.
-        WAIT_FOR_UP = 30
+        WAIT_FOR_UP = 60
         for _ in range(WAIT_FOR_UP):
             try:
                 assert len(get_agent_data(conf.make_master_url())) > 0
@@ -84,3 +91,5 @@ def k8s_managed_cluster() -> Iterator[ManagedK8sCluster]:
     cluster._scale_master(up=True)
     yield cluster
     cluster._scale_master(up=True)
+
+    print("Master logs: ", det_cmd(["master", "logs"], check=True).stdout.decode("utf-8"))
