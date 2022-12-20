@@ -262,7 +262,7 @@ def _get_auth_token_for_curl() -> str:
 def _check_web_url(url: str, name: str) -> None:
     token = _get_auth_token_for_curl()
     bad_status_codes = []
-    for _ in range(10):
+    for _ in range(30):
         r = requests.get(url, headers={"Authorization": f"Bearer {token}"}, allow_redirects=True)
         # Sometimes the TB/JL take a bit of time to stand up, returning 502.
         # Sometimes it takes a bit of time for master to register the proxy, returning 404.
@@ -391,8 +391,8 @@ def test_master_restart_with_queued(k8s_managed_cluster: ManagedK8sCluster) -> N
     running_command_id = run_command(60, slots)
     queued_command_id = run_command(60, slots)
 
-    wait_for_command_state(running_command_id, "RUNNING", 15)
-    wait_for_command_state(queued_command_id, "QUEUED", 15)
+    wait_for_command_state(running_command_id, "RUNNING", 25)
+    wait_for_command_state(queued_command_id, "QUEUED", 25)
 
     job_list = det_cmd_json(["job", "list", "--json"])["jobs"]
 
