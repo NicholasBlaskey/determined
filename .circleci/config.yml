@@ -772,7 +772,7 @@ commands:
           condition: <<parameters.gpus-per-machine>>
           steps:
             - run:
-                command: gcloud container node-pools create accel --cluster ${CLUSTER_ID} --region <<parameters.region>> --num-nodes <<parameters.num-machines>> --machine-type=<<parameters.machine-type>> --scopes --node-taints accel=truth:NoSchedule cloud-platform
+                command: gcloud container node-pools create accel --cluster ${CLUSTER_ID} --region <<parameters.region>> --num-nodes <<parameters.num-machines>> --machine-type=<<parameters.machine-type>> --node-taints accel=truth:NoSchedule --scopes cloud-platform
                 name: Create CPU node pool
 
   generate-tls-cert:
