@@ -1,6 +1,8 @@
 package kubernetesrm
 
 import (
+	"fmt"
+
 	"github.com/determined-ai/determined/master/internal/config"
 	"github.com/determined-ai/determined/master/internal/rm/tasklist"
 	"github.com/determined-ai/determined/master/internal/sproto"
@@ -65,7 +67,13 @@ func (k *kubernetesResourcePool) Receive(ctx *actor.Context) error {
 
 	case sproto.GetAllocationHandler:
 		reschedule = false
-		ctx.Respond(k.reqList.TaskHandler(msg.ID))
+
+		handler := k.reqList.TaskHandler(msg.ID)
+		if handler == nil {
+			ctx.Respond(fmt.Errorf("allocation handler for allocation ID %s not found", msg.ID))
+			return nil
+		}
+		ctx.Respond(handler)
 
 	case sproto.GetAllocationSummary:
 		if resp := k.reqList.TaskSummary(
