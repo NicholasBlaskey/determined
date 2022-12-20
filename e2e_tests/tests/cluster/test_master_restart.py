@@ -74,7 +74,7 @@ def _test_master_restart_ok(managed_cluster: Cluster) -> None:
             cmd_ids = [run_command(1, slots) for slots in [0, 1]]
 
             for cmd_id in cmd_ids:
-                wait_for_command_state(cmd_id, "TERMINATED", 10)
+                wait_for_command_state(cmd_id, "TERMINATED", 20)
                 assert command_succeeded(cmd_id)
 
             managed_cluster.kill_master()
@@ -199,7 +199,7 @@ def test_master_restart_cmd_k8s(
 
 def _test_master_restart_cmd(managed_cluster: Cluster, slots: int, downtime: int) -> None:
     command_id = run_command(30, slots=slots)
-    wait_for_command_state(command_id, "RUNNING", 10)
+    wait_for_command_state(command_id, "RUNNING", 20)
 
     if downtime >= 0:
         managed_cluster.kill_master()
