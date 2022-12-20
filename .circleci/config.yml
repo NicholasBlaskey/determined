@@ -2429,7 +2429,7 @@ workflows:
               slot-resource-requests-cpu: [7]
 
       - test-e2e-gke:
-          name: test-e2e-gke-k8s-single-cpu
+          name: test-e2e-gke-k8s-reattach
           context: gcp
           filters:
             branches:
@@ -2630,7 +2630,7 @@ workflows:
               slot-resource-requests-cpu: [7]
 
       - test-e2e-gke:
-          name: test-e2e-gke-k8s-single-cpu
+          name: test-e2e-gke-k8s-reattach
           context: gcp
           filters: *upstream-feature-branch
           requires:
