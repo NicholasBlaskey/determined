@@ -262,27 +262,18 @@ def _get_auth_token_for_curl() -> str:
 def _check_web_url(url: str, name: str) -> None:
     token = _get_auth_token_for_curl()
     bad_status_codes = []
-    for _ in range(1600):
-        try:
-            print("Trying again (debug here)")
+    for _ in range(30):
+        r = requests.get(url, headers={"Authorization": f"Bearer {token}"}, allow_redirects=True)
+        # Sometimes the TB/JL take a bit of time to stand up, returning 502.
+        # Sometimes it takes a bit of time for master to register the proxy, returning 404.
+        if r.status_code == 502 or r.status_code == 404:
             time.sleep(1)
-            r = requests.get(
-                url, headers={"Authorization": f"Bearer {token}"}, allow_redirects=True
-            )
-            # Sometimes the TB/JL take a bit of time to stand up, returning 502.
-            # Sometimes it takes a bit of time for master to register the proxy, returning 404.
-            if r.status_code == 502 or r.status_code == 404:
-                print("Can't check weburl trying again (debug here)")
-                time.sleep(1)
-                bad_status_codes.append(r.status_code)
-                continue
-            r.raise_for_status()
-            html = r.content.decode("utf-8")
-            assert name in html  # Brutal.
-            break
-        except:  # noqa
+            bad_status_codes.append(r.status_code)
             continue
-
+        r.raise_for_status()
+        html = r.content.decode("utf-8")
+        assert name in html  # Brutal.
+        break
     else:
         error_msg = ",".join(str(v) for v in bad_status_codes)
         pytest.fail(f"{name} {url} got error codes: {error_msg}")
@@ -346,7 +337,7 @@ def test_master_restart_tensorboard_k8s(
 
 def _test_master_restart_tensorboard(managed_cluster: Cluster, downtime: int) -> None:
     exp_id = exp.create_experiment(
-        conf.fixtures_path("no_op/single.yaml"),
+        conf.fixtures_path("no_op/single-default-ckpt.yaml"),
         conf.fixtures_path("no_op"),
         None,
     )
