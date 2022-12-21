@@ -262,11 +262,12 @@ def _get_auth_token_for_curl() -> str:
 def _check_web_url(url: str, name: str) -> None:
     token = _get_auth_token_for_curl()
     bad_status_codes = []
-    for _ in range(30):
+    for _ in range(600):
         r = requests.get(url, headers={"Authorization": f"Bearer {token}"}, allow_redirects=True)
         # Sometimes the TB/JL take a bit of time to stand up, returning 502.
         # Sometimes it takes a bit of time for master to register the proxy, returning 404.
         if r.status_code == 502 or r.status_code == 404:
+            print("Can't check weburl trying again (debug here)")
             time.sleep(1)
             bad_status_codes.append(r.status_code)
             continue
