@@ -704,6 +704,8 @@ commands:
         type: env_var_name
       environment-image:
         type: string
+      accel-node-taints:
+        type: string
     steps:
       - set-cluster-id:
           cluster-id: <<parameters.cluster-id>>
@@ -766,13 +768,13 @@ commands:
           condition: <<parameters.gpus-per-machine>>
           steps:
             - run:
-                command: gcloud container node-pools create accel --cluster ${CLUSTER_ID} --region <<parameters.region>> --num-nodes <<parameters.num-machines>> --accelerator type=<<parameters.gpu-type>>,count=<<parameters.gpus-per-machine>> --machine-type=<<parameters.machine-type>> --scopes cloud-platform
+                command: gcloud container node-pools create accel --cluster ${CLUSTER_ID} --region <<parameters.region>> --num-nodes <<parameters.num-machines>> --accelerator type=<<parameters.gpu-type>>,count=<<parameters.gpus-per-machine>> --machine-type=<<parameters.machine-type>> --scopes cloud-platform --node-taints=<<parameters.accel-node-taints>>
                 name: Create GPU node pool
       - unless:
           condition: <<parameters.gpus-per-machine>>
           steps:
             - run:
-                command: gcloud container node-pools create accel --cluster ${CLUSTER_ID} --region <<parameters.region>> --num-nodes <<parameters.num-machines>> --machine-type=<<parameters.machine-type>> --node-taints accel=truth:NoSchedule --scopes cloud-platform
+                command: gcloud container node-pools create accel --cluster ${CLUSTER_ID} --region <<parameters.region>> --num-nodes <<parameters.num-machines>> --machine-type=<<parameters.machine-type>> --scopes cloud-platform --node-taints=<<parameters.accel-node-taints>>
                 name: Create CPU node pool
 
   generate-tls-cert:
@@ -1892,6 +1894,8 @@ jobs:
       environment-image:
         default: determinedai/environments:cuda-11.3-pytorch-1.10-tf-2.8-gpu-0.19.10
         type: string
+      accel-node-taints:
+        type: string
     environment:
       DET_TEST_GPU_ENABLED: <<parameters.environment-gpu-enabled>>
     docker:
@@ -1921,6 +1925,7 @@ jobs:
           region: <<parameters.region>>
           node-locations: <<parameters.node-locations>>
           environment-image: <<parameters.environment-image>>
+          accel-node-taints: <<parameters.accel-node-taints>>
       - set-google-application-credentials
       - when:
           condition: <<parameters.environment-image>>
@@ -2447,6 +2452,7 @@ workflows:
               environment-gpu-enabled: ["0"]
               slot-type: ["cpu"]
               slot-resource-requests-cpu: [7]
+              accel-node-taints: "truth:NoSchedule"
 
       - test-stress:
           name: test-stress
@@ -2647,6 +2653,7 @@ workflows:
               environment-gpu-enabled: ["0"]
               slot-type: ["cpu"]
               slot-resource-requests-cpu: [7]
+              accel-node-taints: "truth:NoSchedule"
 
       # Nightly distributed tests
       - request-gpu-distributed-nightly:
