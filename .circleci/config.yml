@@ -2454,7 +2454,7 @@ workflows:
               environment-gpu-enabled: ["0"]
               slot-type: ["cpu"]
               slot-resource-requests-cpu: [7]
-              accel-node-taints: "truth:NoSchedule"
+              accel-node-taints: ["truth:NoSchedule"]
 
       - test-stress:
           name: test-stress
@@ -2655,7 +2655,7 @@ workflows:
               environment-gpu-enabled: ["0"]
               slot-type: ["cpu"]
               slot-resource-requests-cpu: [7]
-              accel-node-taints: "truth:NoSchedule"
+              accel-node-taints: ["truth:NoSchedule"]
 
       # Nightly distributed tests
       - request-gpu-distributed-nightly:
