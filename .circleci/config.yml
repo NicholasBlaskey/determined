@@ -706,6 +706,7 @@ commands:
         type: string
       accel-node-taints:
         type: string
+        default: ""
     steps:
       - set-cluster-id:
           cluster-id: <<parameters.cluster-id>>
@@ -1896,6 +1897,7 @@ jobs:
         type: string
       accel-node-taints:
         type: string
+        default: ""
     environment:
       DET_TEST_GPU_ENABLED: <<parameters.environment-gpu-enabled>>
     docker:
