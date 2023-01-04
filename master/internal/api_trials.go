@@ -931,7 +931,7 @@ func (a *apiServer) PostTrialProfilerMetricsBatch(
 
 func (a *apiServer) waitForAllocationToBeRestored(ctx context.Context, handler *actor.Ref) error {
 	for i := 0; i < 60; i++ {
-		err := a.ask(handler.Address(), task.IsAllocationInProgressOfRestore{}, nil)
+		err := a.ask(handler.Address(), task.AllocationNotRestoring{}, nil)
 		if err == nil {
 			return nil
 		}

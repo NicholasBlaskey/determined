@@ -120,8 +120,8 @@ type (
 	SetAllocationProxyAddress struct {
 		ProxyAddress string
 	}
-	// IsAllocationInProgressOfRestore asks the allocation if it is in the middle of a restore.
-	IsAllocationInProgressOfRestore struct{}
+	// AllocationNotRestoring asks the allocation if it is in the middle of a restore.
+	AllocationNotRestoring struct{}
 )
 
 const (
@@ -188,7 +188,7 @@ func (a *Allocation) Receive(ctx *actor.Context) error {
 			a.Error(ctx, err)
 		}
 
-	case IsAllocationInProgressOfRestore:
+	case AllocationNotRestoring:
 		if a.req.Restore && !a.restored {
 			ctx.Respond(ErrAllocationStillRestoring{})
 		} else {
@@ -672,12 +672,8 @@ func (a *Allocation) RestoreResourceFailure(
 	if a.req.Restore {
 		switch heartbeat := cluster.TheLastBootClusterHeartbeat(); {
 		case a.model.StartTime == nil:
-			// This happens in k8s when submitted but not running pods get deleted
-			// when master is away. We never record a start time for this allocation
-			// and we will want to close it. This is an issue since we keep trying
-			// to restore these commands without an endTime.
-			a.model.StartTime = ptrs.Ptr(time.Now().UTC())
-			a.model.EndTime = a.model.StartTime
+			break
+
 		case heartbeat.Before(*a.model.StartTime):
 			a.model.EndTime = a.model.StartTime
 		default:
