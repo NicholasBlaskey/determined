@@ -158,6 +158,22 @@ func (t *trial) Receive(ctx *actor.Context) error {
 			return nil
 		}
 		if !model.TerminalStates[t.state] {
+			if t.state != model.ErrorState { // Persist DB here. // TODO exponential retries.
+				var err error
+				for i := 0; i < 600; i++ {
+					ctx.Log().Infof("trial changed from state %s to %s", t.state, s.State)
+					if t.idSet {
+						if err = t.db.UpdateTrial(t.id, s.State); err != nil {
+							continue
+						}
+					}
+					t.state = s.State
+				}
+				if err != nil {
+					return errors.Wrap(err, "updating trial with end state")
+				}
+			}
+
 			return t.transition(ctx, model.StateWithReason{
 				State:               model.ErrorState,
 				InformationalReason: "trial did not finish properly",
@@ -505,6 +521,11 @@ func (t *trial) allocationExited(ctx *actor.Context, exit *task.AllocationExited
 		ctx.Log().
 			WithError(exit.Err).
 			Errorf("trial failed (restart %d/%d)", t.restarts, t.config.MaxRestarts())
+
+		// TODO shutdown db here...
+		time.Sleep(30 * time.Second)
+		// HERE!? ... how do we test this...
+
 		t.restarts++
 		if err := t.db.UpdateTrialRestarts(t.id, t.restarts); err != nil {
 			return err
@@ -643,6 +664,7 @@ func (t *trial) enrichTaskLog(log model.TaskLog) (model.TaskLog, error) {
 	if log.Source == nil {
 		log.Source = ptrs.Ptr("master")
 	}
+
 	if log.StdType == nil {
 		log.StdType = ptrs.Ptr("stdout")
 	}
