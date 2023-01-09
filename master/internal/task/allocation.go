@@ -890,8 +890,8 @@ func (a *Allocation) terminated(ctx *actor.Context, reason string) {
 		var err error
 		for i := 0; i < 600; i++ { // TODO exponential retries.
 			if err != nil {
-				time.Sleep(1 * time.Second)
 				ctx.Log().WithError(err).Warn("failed to persist allocation termination retrying")
+				time.Sleep(1 * time.Second)
 			}
 
 			// This cleanup is incorrect I think...

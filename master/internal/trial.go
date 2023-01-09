@@ -158,16 +158,20 @@ func (t *trial) Receive(ctx *actor.Context) error {
 			return nil
 		}
 		if !model.TerminalStates[t.state] {
-			if t.state != model.ErrorState { // Persist DB here. // TODO exponential retries.
+			if t.state != model.ErrorState && t.idSet { // TODO exponential retries.
+				ctx.Log().Infof("trial changed from state %s to %s", t.state, model.ErrorState)
+
 				var err error
 				for i := 0; i < 600; i++ {
-					ctx.Log().Infof("trial changed from state %s to %s", t.state, s.State)
-					if t.idSet {
-						if err = t.db.UpdateTrial(t.id, s.State); err != nil {
-							continue
-						}
+					if err != nil {
+						ctx.Log().WithError(err).Warn("failed to persist trial state change retrying")
+						time.Sleep(1 * time.Second)
 					}
-					t.state = s.State
+
+					if err = t.db.UpdateTrial(t.id, model.ErrorState); err != nil {
+						continue
+					}
+					t.state = model.ErrorState
 				}
 				if err != nil {
 					return errors.Wrap(err, "updating trial with end state")
