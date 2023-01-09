@@ -87,11 +87,11 @@ func ReportExperimentCreated(system *actor.System, e *model.Experiment) {
 // ReportAllocationTerminal reports that an allocation ends.
 func ReportAllocationTerminal(
 	system *actor.System, db db.DB, a model.Allocation, d *device.Device,
-) {
+) error {
 	res, err := db.CompleteAllocationTelemetry(a.AllocationID)
 	if err != nil {
 		logrus.WithError(err).Warn("failed to fetch allocation telemetry")
-		return
+		return err
 	}
 
 	props := analytics.Properties{
@@ -108,7 +108,7 @@ func ReportAllocationTerminal(
 
 	if err = json.Unmarshal(res, &props); err != nil {
 		logrus.WithError(err).Warn("failed to report allocation telemetry")
-		return
+		return err
 	}
 
 	system.TellAt(
@@ -118,6 +118,7 @@ func ReportAllocationTerminal(
 			Properties: props,
 		},
 	)
+	return nil
 }
 
 func fetchNumTrials(db *db.PgDB, experimentID int) *int64 {

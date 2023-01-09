@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -78,6 +79,9 @@ type (
 
 		logCtx   detLogger.Context
 		restored bool
+
+		// telemetryReportedAsTerminal is needed to make markResourcesReleased be idempotent.
+		telemetryReportedAsTerminal bool
 	}
 
 	// MarkResourcesDaemon marks the given reservation as a daemon. In the event of a normal exit,
@@ -721,6 +725,7 @@ func (a *Allocation) Kill(ctx *actor.Context, reason string) {
 
 // Error closes the allocation due to an error, beginning the kill flow.
 func (a *Allocation) Error(ctx *actor.Context, err error) {
+	debug.PrintStack()
 	ctx.Log().WithError(err).Errorf("allocation encountered fatal error")
 	if a.exitErr == nil {
 		a.exitErr = err
@@ -880,26 +885,47 @@ func (a *Allocation) terminated(ctx *actor.Context, reason string) {
 		// This occurred when an allocation completed and was preempted in quick succession.
 		return
 	}
+
+	defer func() {
+		var err error
+		for i := 0; i < 600; i++ { // TODO exponential retries.
+			if err != nil {
+				time.Sleep(1 * time.Second)
+				ctx.Log().WithError(err).Warn("failed to persist allocation termination retrying")
+			}
+
+			// This cleanup is incorrect I think...
+			if err = a.purgeRestorableResources(ctx); err != nil {
+				continue
+			}
+
+			if err = a.markResourcesReleased(ctx); err != nil {
+				continue
+			}
+		}
+
+		if err != nil {
+			ctx.Log().WithError(err).Error("failed to persist allocation termination into db")
+		}
+
+		a.unregisterProxies(ctx)
+		a.rm.Release(ctx, sproto.ResourcesReleased{AllocationRef: ctx.Self()})
+		ctx.Tell(ctx.Self().Parent(), exit)
+		ctx.Self().Stop()
+	}()
+
 	a.exited = true
 	exitReason := fmt.Sprintf("allocation terminated after %s", reason)
-	defer ctx.Tell(ctx.Self().Parent(), exit)
-	defer a.rm.Release(ctx, sproto.ResourcesReleased{AllocationRef: ctx.Self()})
-	defer a.unregisterProxies(ctx)
-	defer ctx.Self().Stop()
 
 	level := ptrs.Ptr(model.LogLevelInfo)
 	if a.exitErr != nil {
 		level = ptrs.Ptr(model.LogLevelError)
 	}
 	defer a.sendEvent(ctx, sproto.Event{Level: level, ExitedEvent: &exitReason})
-	if err := a.purgeRestorableResources(ctx); err != nil {
-		ctx.Log().WithError(err).Error("failed to purge restorable resources")
-	}
 
 	if len(a.resources) == 0 {
 		return
 	}
-	defer a.markResourcesReleased(ctx)
 
 	if a.req.Preemptible {
 		defer a.preemption.Close()
@@ -963,17 +989,23 @@ func (a *Allocation) terminated(ctx *actor.Context, reason string) {
 }
 
 // markResourcesReleased persists completion information.
-func (a *Allocation) markResourcesReleased(ctx *actor.Context) {
+func (a *Allocation) markResourcesReleased(ctx *actor.Context) error {
 	a.model.EndTime = ptrs.Ptr(time.Now().UTC())
 	if err := a.db.DeleteAllocationSession(a.model.AllocationID); err != nil {
-		ctx.Log().WithError(err).Error("error deleting allocation session")
+		return errors.Wrap(err, "error deleting allocation session")
 	}
 	if err := a.db.CompleteAllocation(&a.model); err != nil {
-		ctx.Log().WithError(err).Error("failed to mark allocation completed")
+		return errors.Wrap(err, "failed to mark allocation completed")
 	}
 
-	telemetry.ReportAllocationTerminal(
-		ctx.Self().System(), a.db, a.model, a.resources.firstDevice())
+	if !a.telemetryReportedAsTerminal {
+		if err := telemetry.ReportAllocationTerminal(
+			ctx.Self().System(), a.db, a.model, a.resources.firstDevice()); err != nil {
+			return errors.Wrap(err, "failed to mark allocation completed")
+		}
+		a.telemetryReportedAsTerminal = true
+	}
+	return nil
 }
 
 func (a *Allocation) purgeRestorableResources(ctx *actor.Context) error {
