@@ -661,7 +661,6 @@ func (p *pods) startResourceRequestQueue(ctx *actor.Context) {
 }
 
 func (p *pods) receiveStartTaskPod(ctx *actor.Context, msg StartTaskPod) error {
-	fmt.Println(2, msg.Namespace)
 	newPodHandler := newPod(
 		msg,
 		p.cluster,
