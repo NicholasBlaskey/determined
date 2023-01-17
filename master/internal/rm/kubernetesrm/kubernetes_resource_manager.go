@@ -172,7 +172,6 @@ func (k ResourceManager) IsReattachEnabled(ctx actor.Messenger) bool {
 	return false
 }
 
-// TODO commands still getting asked to reschedule... something is wrong here.
 // IsReattachEnabledForRP returns true, if the specified RP has AgentReattachEnabled.
 func (k ResourceManager) IsReattachEnabledForRP(ctx actor.Messenger, rp string) bool {
 	return isReattachEnabledForRP(rp)

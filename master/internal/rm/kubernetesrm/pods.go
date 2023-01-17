@@ -488,8 +488,8 @@ func (p *pods) reattachPod(
 		p.masterTLSConfig,
 		p.loggingTLSConfig,
 		p.loggingConfig,
-		p.podInterfaces[resourcePool],
-		p.configMapInterfaces[resourcePool],
+		p.podInterfaces[pod.Namespace],
+		p.configMapInterfaces[pod.Namespace],
 		p.resourceRequestQueue,
 		p.leaveKubernetesResources,
 		p.slotType,
@@ -540,7 +540,7 @@ func (p *pods) reattachPod(
 
 	// Send a podStatusUpdate for any missed updates between master going up
 	// and the pod being reattached.
-	updated, err := p.podInterfaces[resourcePool].Get(context.TODO(), pod.Name, metaV1.GetOptions{})
+	updated, err := p.podInterfaces[pod.Namespace].Get(context.TODO(), pod.Name, metaV1.GetOptions{})
 	if err != nil {
 		return reattachPodResponse{}, errors.Wrap(err, "error getting pod status update in restore")
 	}
