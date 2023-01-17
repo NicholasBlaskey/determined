@@ -34,7 +34,8 @@ type ResourcePoolConfig struct {
 	// before abandoning it.
 	AgentReconnectWait model.Duration `json:"agent_reconnect_wait"`
 
-	// If empty, will act as if it is the namespace master is deployed in.
+	// If empty, will behave as if the value is resource_manager.namespace,
+	// which in most cases will be the namespace the helm deployment is in.
 	KubernetesNamespace string `json:"kubernetes_namespace"`
 
 	// Deprecated: Use MaxAuxContainersPerAgent instead.
