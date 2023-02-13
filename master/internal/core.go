@@ -338,7 +338,8 @@ func (m *Master) getAggregatedResourceAllocation(c echo.Context) error {
 		Period string `query:"period"`
 	}{}
 	if err := api.BindArgs(&args, c); err != nil {
-		return err
+		panic(err)
+		// return err
 	}
 
 	resp, err := m.fetchAggregatedResourceAllocation(&apiv1.ResourceAllocationAggregatedRequest{
