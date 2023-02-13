@@ -184,17 +184,18 @@ func (m *Master) getMasterLogs(c echo.Context) (interface{}, error) {
 	return entries, nil
 }
 
-//	@Summary	Get a detailed view of resource allocation during the given time period (CSV).
-//	@Tags		Cluster
-//	@ID			get-raw-resource-allocation-csv
-//	@Accept		json
-//	@Produce	text/csv
-//	@Param		timestamp_after		query	string	true	"Start time to get allocations for (YYYY-MM-DDTHH:MM:SSZ format)"
-//	@Param		timestamp_before	query	string	true	"End time to get allocations for (YYYY-MM-DDTHH:MM:SSZ format)"
-//	@Success	200					{}		string	"A CSV file containing the fields experiment_id,kind,username,labels,slots,start_time,end_time,seconds"
-//	@Router		/allocation/raw [get]
-//	@Deprecated
+// @Summary	Get a detailed view of resource allocation during the given time period (CSV).
+// @Tags		Cluster
+// @ID			get-raw-resource-allocation-csv
+// @Accept		json
+// @Produce	text/csv
+// @Param		timestamp_after		query	string	true	"Start time to get allocations for (YYYY-MM-DDTHH:MM:SSZ format)"
+// @Param		timestamp_before	query	string	true	"End time to get allocations for (YYYY-MM-DDTHH:MM:SSZ format)"
+// @Success	200					{}		string	"A CSV file containing the fields experiment_id,kind,username,labels,slots,start_time,end_time,seconds"
+// @Router		/allocation/raw [get]
+// @Deprecated
 //
+//nolint:gofmt
 //nolint:lll
 //nolint:lll
 //nolint:lll
@@ -316,15 +317,15 @@ func (m *Master) fetchAggregatedResourceAllocation(
 	}
 }
 
-//	@Summary	Get an aggregated view of resource allocation during the given time period (CSV).
-//	@Tags		Cluster
-//	@ID			get-aggregated-resource-allocation-csv
-//	@Produce	text/csv
-//	@Param		start_date	query	string	true	"Start time to get allocations for (YYYY-MM-DD format for daily, YYYY-MM format for monthly)"
-//	@Param		end_date	query	string	true	"End time to get allocations for (YYYY-MM-DD format for daily, YYYY-MM format for monthly)"
-//	@Param		period		query	string	true	"Period to aggregate over (RESOURCE_ALLOCATION_AGGREGATION_PERIOD_DAILY or RESOURCE_ALLOCATION_AGGREGATION_PERIOD_MONTHLY)"
-//	@Success	200			{}		string	"aggregation_type,aggregation_key,date,seconds"
-//	@Router		/allocation/aggregated [get]
+// @Summary	Get an aggregated view of resource allocation during the given time period (CSV).
+// @Tags		Cluster
+// @ID			get-aggregated-resource-allocation-csv
+// @Produce	text/csv
+// @Param		start_date	query	string	true	"Start time to get allocations for (YYYY-MM-DD format for daily, YYYY-MM format for monthly)"
+// @Param		end_date	query	string	true	"End time to get allocations for (YYYY-MM-DD format for daily, YYYY-MM format for monthly)"
+// @Param		period		query	string	true	"Period to aggregate over (RESOURCE_ALLOCATION_AGGREGATION_PERIOD_DAILY or RESOURCE_ALLOCATION_AGGREGATION_PERIOD_MONTHLY)"
+// @Success	200			{}		string	"aggregation_type,aggregation_key,date,seconds"
+// @Router		/allocation/aggregated [get]
 //
 //nolint:lll
 //nolint:lll
