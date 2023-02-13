@@ -5,7 +5,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"math"
+	"net/http"
+	"net/http/pprof"
+	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -269,7 +275,7 @@ func (a *Agent) connect(ctx context.Context, reconnect bool) (*MasterWebsocket, 
 			return nil, errors.Wrap(err, "error dialing master")
 		}
 
-		b, rErr := ioutil.ReadAll(resp.Body)
+		b, rErr := io.ReadAll(resp.Body)
 		if rErr == nil && strings.Contains(string(b), aproto.ErrAgentMustReconnect.Error()) {
 			return nil, aproto.ErrAgentMustReconnect
 		}
