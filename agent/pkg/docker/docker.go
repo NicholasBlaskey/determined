@@ -124,28 +124,30 @@ func (d *Client) ReattachContainer(
 	if len(containers) > 1 {
 		return nil, nil, errors.New("reattach filters matched more than one container")
 	}
-	cont := containers[0]
 
-	// Subscribe to termination notifications first, to not miss immediate exits.
-	waiter, errs := d.cl.ContainerWait(ctx, cont.ID, dcontainer.WaitConditionNextExit)
+	for _, cont := range containers {
+		// Subscribe to termination notifications first, to not miss immediate exits.
+		waiter, errs := d.cl.ContainerWait(ctx, cont.ID, dcontainer.WaitConditionNextExit)
 
-	// Restore containerInfo.
-	containerInfo, err := d.cl.ContainerInspect(ctx, cont.ID)
-	if err != nil {
-		return nil, nil, fmt.Errorf("inspecting reattached container: %w", err)
+		// Restore containerInfo.
+		containerInfo, err := d.cl.ContainerInspect(ctx, cont.ID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("inspecting reattached container: %w", err)
+		}
+
+		// Check if container has exited while we were trying to reattach it.
+		if !containerInfo.State.Running {
+			return nil, ptrs.Ptr(aproto.ExitCode(containerInfo.State.ExitCode)), nil
+		}
+		return &Container{ //nolint: staticcheck // We mean to terminate this loop.
+			ContainerInfo: containerInfo,
+			ContainerWaiter: ContainerWaiter{
+				Waiter: waiter,
+				Errs:   errs,
+			},
+		}, nil, nil
 	}
-
-	// Check if container has exited while we were trying to reattach it.
-	if !containerInfo.State.Running {
-		return nil, ptrs.Ptr(aproto.ExitCode(containerInfo.State.ExitCode)), nil
-	}
-	return &Container{
-		ContainerInfo: containerInfo,
-		ContainerWaiter: ContainerWaiter{
-			Waiter: waiter,
-			Errs:   errs,
-		},
-	}, nil, nil
+	return nil, nil, nil
 }
 
 // PullImage describes a request to pull an image.
