@@ -2,7 +2,6 @@ package docker
 
 import (
 	"encoding/json"
-	"io"
 	"os"
 	"path"
 

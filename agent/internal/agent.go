@@ -6,12 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"math"
-	"net/http"
-	"net/http/pprof"
 	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
@@ -461,7 +456,7 @@ func (a *Agent) tlsConfig() (*tls.Config, error) {
 
 	var pool *x509.CertPool
 	if certFile := a.opts.Security.TLS.MasterCert; certFile != "" {
-		certData, err := ioutil.ReadFile(certFile) //nolint:gosec
+		certData, err := os.ReadFile(certFile) //nolint:gosec
 		if err != nil {
 			msg := fmt.Sprintf("failed to read certificate file %q", certFile)
 			return nil, errors.Wrapf(err, msg)
