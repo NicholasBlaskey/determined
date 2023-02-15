@@ -41,7 +41,7 @@ parameters:
   # the old build may be cached, and you may need to invalidate it.
   cache-buster:
     type: string
-    default: v1dev18nickcachebust
+    default: v1dev18nickcachebusttrying
   gke-version:
     type: string
     default: "1.21.14"
@@ -1342,13 +1342,14 @@ jobs:
 
   build-go:
     docker:
-      - image: cimg/go:1.20
+      - image: <<pipeline.parameters.machine-image>>
         environment:
           GO111MODULE: "on"
     steps:
       - checkout
       - skip-if-docs-only
       - skip-if-webui-only
+      - reinstall-go
       - go-get-deps
       - run: make -C proto build
       - run: make -C master build
