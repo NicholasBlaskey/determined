@@ -84,7 +84,7 @@ get-deps:
 build: export DET_SEGMENT_MASTER_KEY ?=
 build: export DET_SEGMENT_WEBUI_KEY ?=
 build: gen
-	go build \
+	go build -trimpath \
 		-ldflags "-X github.com/determined-ai/determined/master/version.Version=$(VERSION) \
 		          -X github.com/determined-ai/determined/master/internal/config.DefaultSegmentMasterKey=$(DET_SEGMENT_MASTER_KEY) \
 		          -X github.com/determined-ai/determined/master/internal/config.DefaultSegmentWebUIKey=$(DET_SEGMENT_WEBUI_KEY)" \
@@ -95,7 +95,7 @@ build: gen
 build-race: export DET_SEGMENT_MASTER_KEY ?=
 build-race: export DET_SEGMENT_WEBUI_KEY ?=
 build-race: gen
-	go build \
+	go build -trimpath \
 		-ldflags "-X github.com/determined-ai/determined/master/version.Version=$(VERSION) \
 		          -X github.com/determined-ai/determined/master/internal/config.DefaultSegmentMasterKey=$(DET_SEGMENT_MASTER_KEY) \
 		          -X github.com/determined-ai/determined/master/internal/config.DefaultSegmentWebUIKey=$(DET_SEGMENT_WEBUI_KEY)" \

@@ -38,14 +38,14 @@ get-deps:
 
 .PHONY: build
 build:
-	go build \
+	go build -trimpath \
 		-ldflags "-X main.version=$(VERSION)" \
 		-o build/determined-agent \
 		./cmd/determined-agent
 
 .PHONY: build-race
 build-race:
-	go build \
+	go build -trimpath \
 		-ldflags "-X main.version=$(VERSION)" \
 		-o build/determined-agent \
 		-race \
