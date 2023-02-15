@@ -209,10 +209,10 @@ commands:
       - run: sudo rm -rf /usr/local/go # Remove system go.
       - run: curl --retry-connrefused --retry 10 https://dl.google.com/go/go1.20.linux-amd64.tar.gz -o /tmp/go.linux-amd64.tar.gz
       - run: sudo tar -C /usr/local -xzf /tmp/go.linux-amd64.tar.gz
-      - run: export GOPATH=$HOME/go
-      - run: export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-      - run: export PATH="$PATH:/home/circleci/go/bin"
-      - run: export PATH="$PATH:$HOME/.local/bin"
+      - run: echo 'export GOPATH=$HOME/go' >> $BASH_ENV
+      - run: echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' >> $BASH_ENV
+      - run: echo 'export PATH=$PATH:/home/circleci/go/bin' >> $BASH_ENV
+      - run: echo 'export PATH=$PATH:$HOME/.local/bin' >> $BASH_ENV
 
 
   install-protoc:
