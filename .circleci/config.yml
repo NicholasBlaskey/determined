@@ -1045,6 +1045,7 @@ jobs:
       - checkout
       - skip-if-docs-only
       - skip-if-webui-only
+      - reinstall-go      
       - attach_workspace:
           at: .
       - setup_remote_docker:
