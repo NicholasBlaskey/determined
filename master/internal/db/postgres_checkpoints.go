@@ -147,7 +147,8 @@ func UpdateCheckpointSize(checkpoints []uuid.UUID) error {
 		Column("trial_id").
 		Where("state != ?", "DELETED").
 		Where("c.resources != 'null'::jsonb").
-		Where("trial_id IN (?)", trialID)
+		// https://dba.stackexchange.com/questions/114337/postgresql-query-very-slow-when-subquery-added
+		Where("trial_id = ANY((SELECT ARRAY(SELECT DISTINCT trial_id FROM checkpoints_view WHERE (UUID IN (?))))::bigint[])", bun.In(checkpoints))
 
 	sizeAndCount := Bun().NewSelect().With("cp_size_tuple", sizeTuple).With("trial_ids", trialID).
 		Table("cp_size_tuple").
