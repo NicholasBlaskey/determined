@@ -5961,6 +5961,84 @@ class v1Metrics:
             out["batchMetrics"] = self.batchMetrics
         return out
 
+class v1MetricsKeysetResponse:
+
+    def __init__(
+        self,
+        *,
+        nextPage: str,
+        prevPage: str,
+        steps: "typing.Sequence[v1Step]",
+    ):
+        self.nextPage = nextPage
+        self.prevPage = prevPage
+        self.steps = steps
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1MetricsKeysetResponse":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "nextPage": obj["nextPage"],
+            "prevPage": obj["prevPage"],
+            "steps": [v1Step.from_json(x) for x in obj["steps"]],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "nextPage": self.nextPage,
+            "prevPage": self.prevPage,
+            "steps": [x.to_json(omit_unset) for x in self.steps],
+        }
+        return out
+
+class v1MetricsLimitOffsetResponse:
+
+    def __init__(
+        self,
+        *,
+        pagination: "v1Pagination",
+        steps: "typing.Sequence[v1Step]",
+    ):
+        self.pagination = pagination
+        self.steps = steps
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1MetricsLimitOffsetResponse":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "pagination": v1Pagination.from_json(obj["pagination"]),
+            "steps": [v1Step.from_json(x) for x in obj["steps"]],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "pagination": self.pagination.to_json(omit_unset),
+            "steps": [x.to_json(omit_unset) for x in self.steps],
+        }
+        return out
+
+class v1MetricsNoPagingResponse:
+
+    def __init__(
+        self,
+        *,
+        steps: "typing.Sequence[v1Step]",
+    ):
+        self.steps = steps
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1MetricsNoPagingResponse":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "steps": [v1Step.from_json(x) for x in obj["steps"]],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "steps": [x.to_json(omit_unset) for x in self.steps],
+        }
+        return out
+
 class v1MetricsWorkload:
     endTime: "typing.Optional[str]" = None
 
@@ -9829,6 +9907,48 @@ class v1Slot:
             out["enabled"] = self.enabled
         if not omit_unset or "id" in vars(self):
             out["id"] = self.id
+        return out
+
+class v1Step:
+
+    def __init__(
+        self,
+        *,
+        archived: bool,
+        endTime: str,
+        id: int,
+        metrics: "typing.Dict[str, typing.Any]",
+        totalBatches: int,
+        trialId: int,
+    ):
+        self.archived = archived
+        self.endTime = endTime
+        self.id = id
+        self.metrics = metrics
+        self.totalBatches = totalBatches
+        self.trialId = trialId
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1Step":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "archived": obj["archived"],
+            "endTime": obj["endTime"],
+            "id": obj["id"],
+            "metrics": obj["metrics"],
+            "totalBatches": obj["totalBatches"],
+            "trialId": obj["trialId"],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "archived": self.archived,
+            "endTime": self.endTime,
+            "id": self.id,
+            "metrics": self.metrics,
+            "totalBatches": self.totalBatches,
+            "trialId": self.trialId,
+        }
         return out
 
 class v1SummarizeTrialResponse:
@@ -14535,6 +14655,76 @@ def get_MetricNames(
         return
     raise APIHttpError("get_MetricNames", _resp)
 
+def get_MetricsKeyset(
+    session: "api.Session",
+    *,
+    trialId: int,
+    key: "typing.Optional[str]" = None,
+    size: "typing.Optional[int]" = None,
+) -> "v1MetricsKeysetResponse":
+    _params = {
+        "key": key,
+        "size": size,
+    }
+    _resp = session._do_request(
+        method="GET",
+        path=f"/api/v1/trials/{trialId}/metrics/v3",
+        params=_params,
+        json=None,
+        data=None,
+        headers=None,
+        timeout=None,
+        stream=False,
+    )
+    if _resp.status_code == 200:
+        return v1MetricsKeysetResponse.from_json(_resp.json())
+    raise APIHttpError("get_MetricsKeyset", _resp)
+
+def get_MetricsLimitOffset(
+    session: "api.Session",
+    *,
+    trialId: int,
+    limit: "typing.Optional[int]" = None,
+    offset: "typing.Optional[int]" = None,
+) -> "v1MetricsLimitOffsetResponse":
+    _params = {
+        "limit": limit,
+        "offset": offset,
+    }
+    _resp = session._do_request(
+        method="GET",
+        path=f"/api/v1/trials/{trialId}/metrics/v2",
+        params=_params,
+        json=None,
+        data=None,
+        headers=None,
+        timeout=None,
+        stream=False,
+    )
+    if _resp.status_code == 200:
+        return v1MetricsLimitOffsetResponse.from_json(_resp.json())
+    raise APIHttpError("get_MetricsLimitOffset", _resp)
+
+def get_MetricsNoPaging(
+    session: "api.Session",
+    *,
+    trialId: int,
+) -> "v1MetricsNoPagingResponse":
+    _params = None
+    _resp = session._do_request(
+        method="GET",
+        path=f"/api/v1/trials/{trialId}/metrics/v1",
+        params=_params,
+        json=None,
+        data=None,
+        headers=None,
+        timeout=None,
+        stream=False,
+    )
+    if _resp.status_code == 200:
+        return v1MetricsNoPagingResponse.from_json(_resp.json())
+    raise APIHttpError("get_MetricsNoPaging", _resp)
+
 def post_MoveExperiment(
     session: "api.Session",
     *,
@@ -15960,5 +16150,6 @@ Paginated = typing.Union[
     v1GetWorkspaceProjectsResponse,
     v1GetWorkspacesResponse,
     v1ListRolesResponse,
+    v1MetricsLimitOffsetResponse,
     v1SearchRolesAssignableToScopeResponse,
 ]

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -797,6 +798,99 @@ func (a *apiServer) CompareTrials(ctx context.Context,
 	}
 	return &apiv1.CompareTrialsResponse{Trials: trials}, nil
 }
+
+/*
+type RawStep struct {
+	TrialID      int
+	EndTime      time.Time
+	Metrics      map[string]any
+	TotalBatches int
+	TrialRunID   int
+	Archived     bool
+	ID           int
+}
+*/
+
+// RESTART FAIL
+func (a *apiServer) MetricsNoPaging(
+	ctx context.Context, req *apiv1.MetricsNoPagingRequest,
+) (*apiv1.MetricsNoPagingResponse, error) {
+	resp := &apiv1.MetricsNoPagingResponse{}
+	if err := db.Bun().NewSelect().Table("steps").
+		ColumnExpr("proto_time(end_time) AS end_time").
+		Where("trial_id = ?", req.TrialId).
+		Order("total_batches").
+		Scan(ctx, &resp.Steps); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (a *apiServer) MetricsLimitOffset(
+	ctx context.Context, req *apiv1.MetricsLimitOffsetRequest,
+) (*apiv1.MetricsLimitOffsetResponse, error) {
+	resp := &apiv1.MetricsLimitOffsetResponse{Steps: []*apiv1.Step{}}
+	query := db.Bun().NewSelect().ModelTableExpr("steps as s").
+		Model(&resp.Steps).
+		ColumnExpr("proto_time(s.end_time) AS end_time").
+		Where("s.trial_id = ?", req.TrialId).
+		Order("s.total_batches")
+
+	var err error
+	resp.Pagination, err = runPagedBunExperimentsQuery(ctx, query, int(req.Offset), int(req.Limit))
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (a *apiServer) MetricsKeyset(
+	ctx context.Context, req *apiv1.MetricsKeysetRequest,
+) (*apiv1.MetricsKeysetResponse, error) {
+	var key int
+	if req.Key == "" {
+		key = 0
+	} else {
+		k, err := strconv.Atoi(req.Key)
+		if err != nil {
+			return nil, err
+		}
+		key = k
+	}
+
+	resp := &apiv1.MetricsKeysetResponse{PrevPage: req.Key}
+	if err := db.Bun().NewSelect().Table("steps").
+		ColumnExpr("proto_time(end_time) AS end_time").
+		ColumnExpr("total_batches AS total_batches").
+		Where("trial_id = ?", req.TrialId).
+		Where("total_batches > ?", key).
+		Order("total_batches").
+		Limit(int(req.Size)).
+		Scan(ctx, &resp.Steps); err != nil {
+		return nil, err
+	}
+	if len(resp.Steps) == int(req.Size) {
+		resp.NextPage = fmt.Sprintf("%d", resp.Steps[len(resp.Steps)-1].TotalBatches)
+	}
+
+	return resp, nil
+}
+
+/*
+// RESTART FAIL
+func (a *apiServer) MetricsStreaming(
+	ctx context.Context, req *apiv1.RawMetricsNaiveRequest,
+) {
+}
+
+// RESTART FAIL
+func (a *apiServer) MetricsStreamingNDJSON( // Possibly echo route.
+	ctx context.Context, req *apiv1.RawMetricsNaiveRequest,
+) {
+}
+*/
 
 func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWorkloadsRequest) (
 	*apiv1.GetTrialWorkloadsResponse, error,
