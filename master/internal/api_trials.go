@@ -13,10 +13,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	//"github.com/uptrace/bun"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/labstack/echo/v4"
 
 	"github.com/determined-ai/determined/master/internal/api"
 	"github.com/determined-ai/determined/master/internal/db"
@@ -876,6 +879,96 @@ func (a *apiServer) MetricsKeyset(
 	}
 
 	return resp, nil
+}
+
+func (a *apiServer) MetricsStreaming(
+	req *apiv1.MetricsStreamingRequest, resp apiv1.Determined_MetricsStreamingServer,
+) error {
+	/*
+		err := db.Bun().RunInTx(resp.Context(), nil, func(ctx context.Context, tx bun.Tx) error {
+			if _, err := tx.Exec(`DECLARE metric_cursor CURSOR FOR SELECT
+			trial_id, proto_time(end_time) as end_time, metrics, total_batches,
+			trial_run_id AS trial_run_id, archived, id FROM steps
+			WHERE trial_id = ? ORDER BY total_batches;`, req.TrialId); err != nil {
+				fmt.Println("ERR HERE!")
+				return err
+			}
+
+			for {
+				res := &apiv1.MetricsStreamingResponse{}
+				if err := tx.NewRaw("FETCH ? FROM metric_cursor", req.Size).
+					Scan(resp.Context(), &res.Steps); err != nil {
+					return err
+				}
+
+				if err := resp.Send(res); err != nil {
+					return err
+				}
+				if len(res.Steps) != int(req.Size) {
+					break
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	*/
+
+	key := 0
+	for {
+		res := &apiv1.MetricsStreamingResponse{}
+		if err := db.Bun().NewSelect().Table("steps").
+			ColumnExpr("proto_time(end_time) AS end_time").
+			ColumnExpr("total_batches AS total_batches").
+			Where("trial_id = ?", req.TrialId).
+			Where("total_batches > ?", key).
+			Order("total_batches").
+			Limit(int(req.Size)).
+			Scan(resp.Context(), &res.Steps); err != nil {
+			return err
+		}
+
+		if err := resp.Send(res); err != nil {
+			return err
+		}
+
+		if len(res.Steps) != int(req.Size) {
+			break
+		}
+		key = int(res.Steps[len(res.Steps)-1].TotalBatches)
+	}
+
+	return nil
+}
+
+func (m *Master) EchoMetricsNoPaging(c echo.Context) (interface{}, error) {
+	trialID := c.Param("trial_id")
+
+	type Steps struct {
+		TrialID      int
+		EndTime      time.Time
+		Metrics      map[string]any
+		TotalBatches int
+		TrialRunID   int
+		Archived     bool
+		ID           int
+	}
+
+	var steps Steps
+	if err := db.Bun().NewSelect().Table("steps").
+		Where("trial_id = ?", trialID).
+		Order("total_batches").
+		Scan(c.Request().Context(), &steps); err != nil {
+		return nil, err
+	}
+
+	return map[string]any{"steps": steps}, nil
+}
+
+func (m *Master) EchoMetricsStream(c echo.Context) error {
+	// trialID := c.Param("trial_id")
+	return nil
 }
 
 /*
