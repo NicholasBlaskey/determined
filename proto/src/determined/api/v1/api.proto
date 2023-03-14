@@ -740,6 +740,16 @@ service Determined {
     };
   }
 
+  // Stream metrics.
+  rpc MetricsStreaming(MetricsStreamingRequest)
+      returns (stream MetricsStreamingResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/trials/{trial_id}/metrics/v4"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      tags: [ "internal" ]
+    };
+  }  
   
   // Stream the available series in a trial's profiler metrics.
   rpc GetTrialProfilerAvailableSeries(GetTrialProfilerAvailableSeriesRequest)

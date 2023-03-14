@@ -73,7 +73,9 @@ func NewGRPCServer(db *db.PgDB, srv proto.DeterminedServer, enablePrometheus boo
 		// Allow receiving messages _slightly_ larger than the maximum allowed context
 		// directory. We should either just move these back to echo or have a chunker for
 		// .tar.gz files long term.
-		grpc.MaxRecvMsgSize(96*1024*1024),
+		grpc.MaxRecvMsgSize(1024*1024*1024),
+		grpc.MaxSendMsgSize(1024*1024*1024),
+		grpc.MaxMsgSize(1024*1024*1024),
 	)
 	proto.RegisterDeterminedServer(grpcS, srv)
 	return grpcS
@@ -96,7 +98,7 @@ func newGRPCGatewayMux() *runtime.ServeMux {
 func RegisterHTTPProxy(ctx context.Context, e *echo.Echo, port int, cert *tls.Certificate) error {
 	addr := fmt.Sprintf(":%d", port)
 	opts := []grpc.DialOption{
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1 << 27)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024)),
 		grpc.WithNoProxy(),
 	}
 	if cert == nil {

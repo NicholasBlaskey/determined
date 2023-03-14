@@ -439,6 +439,25 @@ export interface StreamResultOfV1MetricNamesResponse {
 /**
  * 
  * @export
+ * @interface StreamResultOfV1MetricsStreamingResponse
+ */
+export interface StreamResultOfV1MetricsStreamingResponse {
+    /**
+     * 
+     * @type {V1MetricsStreamingResponse}
+     * @memberof StreamResultOfV1MetricsStreamingResponse
+     */
+    result?: V1MetricsStreamingResponse;
+    /**
+     * 
+     * @type {RuntimeStreamError}
+     * @memberof StreamResultOfV1MetricsStreamingResponse
+     */
+    error?: RuntimeStreamError;
+}
+/**
+ * 
+ * @export
  * @interface StreamResultOfV1TaskLogsFieldsResponse
  */
 export interface StreamResultOfV1TaskLogsFieldsResponse {
@@ -4806,6 +4825,19 @@ export interface V1MetricsNoPagingResponse {
     steps: Array<V1Step>;
 }
 /**
+ * 
+ * @export
+ * @interface V1MetricsStreamingResponse
+ */
+export interface V1MetricsStreamingResponse {
+    /**
+     * 
+     * @type {Array<V1Step>}
+     * @memberof V1MetricsStreamingResponse
+     */
+    steps: Array<V1Step>;
+}
+/**
  * MetricsWorkload is a workload generating metrics.
  * @export
  * @interface V1MetricsWorkload
@@ -7870,6 +7902,12 @@ export interface V1Step {
      * @memberof V1Step
      */
     id: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof V1Step
+     */
+    trialRunId?: number;
 }
 /**
  * Summarized Metric captures a metric's name and downsampled data points.
@@ -15552,6 +15590,48 @@ export const InternalApiFetchParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary Stream metrics.
+         * @param {number} trialId
+         * @param {number} [size]
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        metricsStreaming(trialId: number, size?: number, options: any = {}): FetchArgs {
+            // verify required parameter 'trialId' is not null or undefined
+            if (trialId === null || trialId === undefined) {
+                throw new RequiredError('trialId','Required parameter trialId was null or undefined when calling metricsStreaming.');
+            }
+            const localVarPath = `/api/v1/trials/{trialId}/metrics/v4`
+                .replace(`{${"trialId"}}`, encodeURIComponent(String(trialId)));
+            const localVarUrlObj = url.parse(localVarPath, true);
+            const localVarRequestOptions = { method: 'GET', ...options };
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+            
+            // authentication BearerToken required
+            if (configuration && configuration.apiKey) {
+                const localVarApiKeyValue = typeof configuration.apiKey === 'function'
+                    ? configuration.apiKey("Authorization")
+                    : configuration.apiKey;
+                localVarHeaderParameter["Authorization"] = localVarApiKeyValue;
+            }
+            
+            if (size) {
+                localVarQueryParameter['size'] = size
+            }
+            
+            localVarUrlObj.query = { ...localVarUrlObj.query, ...localVarQueryParameter, ...options.query };
+            // fix override query string Detail: https://stackoverflow.com/a/7517673/1077943
+            localVarUrlObj.search = null;
+            localVarRequestOptions.headers = { ...localVarHeaderParameter, ...options.headers };
+            
+            return {
+                url: url.format(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary NotifyContainterRunning is used to notify the master that the container is running.  On HPC, the launcher will report a state of "Running" as soon as Slurm starts the job, but the container may be in the process of getting pulled down from the Internet, so the experiment is not really considered to be in a "Running" state until all the containers that are part of the experiment are running and not being pulled.
          * @param {string} allocationId The ID of the allocation.
          * @param {V1NotifyContainerRunningRequest} body
@@ -16774,6 +16854,26 @@ export const InternalApiFp = function (configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Stream metrics.
+         * @param {number} trialId
+         * @param {number} [size]
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        metricsStreaming(trialId: number, size?: number, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<StreamResultOfV1MetricsStreamingResponse> {
+            const localVarFetchArgs = InternalApiFetchParamCreator(configuration).metricsStreaming(trialId, size, options);
+            return (fetch: FetchAPI = portableFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response.json();
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+        /**
+         * 
          * @summary NotifyContainterRunning is used to notify the master that the container is running.  On HPC, the launcher will report a state of "Running" as soon as Slurm starts the job, but the container may be in the process of getting pulled down from the Internet, so the experiment is not really considered to be in a "Running" state until all the containers that are part of the experiment are running and not being pulled.
          * @param {string} allocationId The ID of the allocation.
          * @param {V1NotifyContainerRunningRequest} body
@@ -17371,6 +17471,17 @@ export const InternalApiFactory = function (configuration?: Configuration, fetch
         },
         /**
          * 
+         * @summary Stream metrics.
+         * @param {number} trialId
+         * @param {number} [size]
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        metricsStreaming(trialId: number, size?: number, options?: any) {
+            return InternalApiFp(configuration).metricsStreaming(trialId, size, options)(fetch, basePath);
+        },
+        /**
+         * 
          * @summary NotifyContainterRunning is used to notify the master that the container is running.  On HPC, the launcher will report a state of "Running" as soon as Slurm starts the job, but the container may be in the process of getting pulled down from the Internet, so the experiment is not really considered to be in a "Running" state until all the containers that are part of the experiment are running and not being pulled.
          * @param {string} allocationId The ID of the allocation.
          * @param {V1NotifyContainerRunningRequest} body
@@ -17906,6 +18017,19 @@ export class InternalApi extends BaseAPI {
      */
     public metricsNoPaging(trialId: number, options?: any) {
         return InternalApiFp(this.configuration).metricsNoPaging(trialId, options)(this.fetch, this.basePath)
+    }
+    
+    /**
+     * 
+     * @summary Stream metrics.
+     * @param {number} trialId
+     * @param {number} [size]
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InternalApi
+     */
+    public metricsStreaming(trialId: number, size?: number, options?: any) {
+        return InternalApiFp(this.configuration).metricsStreaming(trialId, size, options)(this.fetch, this.basePath)
     }
     
     /**

@@ -6039,6 +6039,28 @@ class v1MetricsNoPagingResponse:
         }
         return out
 
+class v1MetricsStreamingResponse:
+
+    def __init__(
+        self,
+        *,
+        steps: "typing.Sequence[v1Step]",
+    ):
+        self.steps = steps
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1MetricsStreamingResponse":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "steps": [v1Step.from_json(x) for x in obj["steps"]],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "steps": [x.to_json(omit_unset) for x in self.steps],
+        }
+        return out
+
 class v1MetricsWorkload:
     endTime: "typing.Optional[str]" = None
 
@@ -9910,6 +9932,7 @@ class v1Slot:
         return out
 
 class v1Step:
+    trialRunId: "typing.Optional[int]" = None
 
     def __init__(
         self,
@@ -9920,6 +9943,7 @@ class v1Step:
         metrics: "typing.Dict[str, typing.Any]",
         totalBatches: int,
         trialId: int,
+        trialRunId: "typing.Union[int, None, Unset]" = _unset,
     ):
         self.archived = archived
         self.endTime = endTime
@@ -9927,6 +9951,8 @@ class v1Step:
         self.metrics = metrics
         self.totalBatches = totalBatches
         self.trialId = trialId
+        if not isinstance(trialRunId, Unset):
+            self.trialRunId = trialRunId
 
     @classmethod
     def from_json(cls, obj: Json) -> "v1Step":
@@ -9938,6 +9964,8 @@ class v1Step:
             "totalBatches": obj["totalBatches"],
             "trialId": obj["trialId"],
         }
+        if "trialRunId" in obj:
+            kwargs["trialRunId"] = obj["trialRunId"]
         return cls(**kwargs)
 
     def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
@@ -9949,6 +9977,8 @@ class v1Step:
             "totalBatches": self.totalBatches,
             "trialId": self.trialId,
         }
+        if not omit_unset or "trialRunId" in vars(self):
+            out["trialRunId"] = self.trialRunId
         return out
 
 class v1SummarizeTrialResponse:
@@ -14724,6 +14754,37 @@ def get_MetricsNoPaging(
     if _resp.status_code == 200:
         return v1MetricsNoPagingResponse.from_json(_resp.json())
     raise APIHttpError("get_MetricsNoPaging", _resp)
+
+def get_MetricsStreaming(
+    session: "api.Session",
+    *,
+    trialId: int,
+    size: "typing.Optional[int]" = None,
+) -> "typing.Iterable[v1MetricsStreamingResponse]":
+    _params = {
+        "size": size,
+    }
+    _resp = session._do_request(
+        method="GET",
+        path=f"/api/v1/trials/{trialId}/metrics/v4",
+        params=_params,
+        json=None,
+        data=None,
+        headers=None,
+        timeout=None,
+        stream=True,
+    )
+    if _resp.status_code == 200:
+        for _line in _resp.iter_lines():
+            _j = json.loads(_line)
+            if "error" in _j:
+                raise APIHttpStreamError(
+                    "get_MetricsStreaming",
+                    runtimeStreamError.from_json(_j["error"])
+            )
+            yield v1MetricsStreamingResponse.from_json(_j["result"])
+        return
+    raise APIHttpError("get_MetricsStreaming", _resp)
 
 def post_MoveExperiment(
     session: "api.Session",
