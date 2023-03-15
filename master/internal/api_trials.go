@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+	"os"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -820,6 +822,7 @@ func (a *apiServer) MetricsNoPaging(
 ) (*apiv1.MetricsNoPagingResponse, error) {
 	resp := &apiv1.MetricsNoPagingResponse{}
 	if err := db.Bun().NewSelect().Table("steps").
+		Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
 		ColumnExpr("proto_time(end_time) AS end_time").
 		Where("trial_id = ?", req.TrialId).
 		Order("total_batches").
@@ -834,8 +837,9 @@ func (a *apiServer) MetricsLimitOffset(
 	ctx context.Context, req *apiv1.MetricsLimitOffsetRequest,
 ) (*apiv1.MetricsLimitOffsetResponse, error) {
 	resp := &apiv1.MetricsLimitOffsetResponse{Steps: []*apiv1.Step{}}
-	query := db.Bun().NewSelect().ModelTableExpr("steps as s").
+	query := db.Bun().NewSelect().ModelTableExpr("steps AS s").
 		Model(&resp.Steps).
+		Column("s.trial_id", "s.metrics", "s.total_batches", "s.archived", "s.id", "s.trial_run_id").
 		ColumnExpr("proto_time(s.end_time) AS end_time").
 		Where("s.trial_id = ?", req.TrialId).
 		Order("s.total_batches")
@@ -865,6 +869,7 @@ func (a *apiServer) MetricsKeyset(
 
 	resp := &apiv1.MetricsKeysetResponse{PrevPage: req.Key}
 	if err := db.Bun().NewSelect().Table("steps").
+		Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
 		ColumnExpr("proto_time(end_time) AS end_time").
 		ColumnExpr("total_batches AS total_batches").
 		Where("trial_id = ?", req.TrialId).
@@ -915,12 +920,18 @@ func (a *apiServer) MetricsStreaming(
 		}
 	*/
 
+	go func() {
+		time.Sleep(20 * time.Second)
+		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+	}()
+
 	key := 0
 	for {
+		fmt.Println("START query")
 		res := &apiv1.MetricsStreamingResponse{}
 		if err := db.Bun().NewSelect().Table("steps").
+			Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
 			ColumnExpr("proto_time(end_time) AS end_time").
-			ColumnExpr("total_batches AS total_batches").
 			Where("trial_id = ?", req.TrialId).
 			Where("total_batches > ?", key).
 			Order("total_batches").
@@ -928,10 +939,14 @@ func (a *apiServer) MetricsStreaming(
 			Scan(resp.Context(), &res.Steps); err != nil {
 			return err
 		}
+		fmt.Println("end query")
 
+		fmt.Println(len(res.Steps))
+		fmt.Println("START SNED")
 		if err := resp.Send(res); err != nil {
 			return err
 		}
+		fmt.Println("END SNED")
 
 		if len(res.Steps) != int(req.Size) {
 			break
@@ -955,7 +970,7 @@ func (m *Master) EchoMetricsNoPaging(c echo.Context) (interface{}, error) {
 		ID           int
 	}
 
-	var steps Steps
+	var steps []Steps
 	if err := db.Bun().NewSelect().Table("steps").
 		Where("trial_id = ?", trialID).
 		Order("total_batches").
