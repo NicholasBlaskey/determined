@@ -13,6 +13,7 @@ def metrics_no_paging(trial_ids):
         start = time.time()
         
         r = bindings.get_MetricsNoPaging(sess, trialId=trial_id)
+        print("First row\t", r.steps[0].to_json())
         print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(r.steps)}")
 
 print("Metrics no paging")
@@ -31,6 +32,7 @@ def metrics_limit_offset(trial_ids, page_size):
         start = time.time()        
         resps = api.read_paginated(get_with_offset, offset=0, pages="all")
         r = [s for r in resps for s in r.steps]
+        print("First row\t", r[0].to_json())        
         print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(r)}")
 
 print("\nMetrics limit offset")        
@@ -56,6 +58,7 @@ def metrics_keyset(trial_ids, page_size):
             if key == "":
                 break
 
+        print("First row\t", r[0].to_json())                    
         print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(r)}")
 
 print("\nMetrics keyset")                
@@ -68,23 +71,27 @@ def metrics_streaming_response(trial_ids, page_size):
 
         r = []
         for res in bindings.get_MetricsStreaming(sess, trialId=trial_id, size=page_size):
+            print("GOT BATCH", trial_id)
             r.extend(res.steps)            
 
+        # https://github.com/grpc/grpc-go/issues/2427                    
+        print("First row\t", r[0].to_json())                                
         print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(r)}")        
 
 print("\nMetrics streaming")
-#metrics_streaming_response([1, 2, 3], page_size=250)        
+metrics_streaming_response([3], page_size=250)
 
-# /:trial_id/metrics/nopage
-# /:trial_id/metrics/stream
 
 def metrics_no_paging_echo(trial_ids):
     for trial_id in trial_ids:
         start = time.time()
 
         resp = api.get("127.0.0.1:8080", f"/trials/{trial_id}/metrics/nopage")
-        r = resp.json()
+        r = resp.json()["steps"]
+        print("First row\t", r[0])
         print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(r)}")
 
 print("\nEcho no paging")
-metrics_no_paging_echo([1, 2, 3])        
+#metrics_no_paging_echo([1, 2, 3])        
+
+# /:trial_id/metrics/stream
