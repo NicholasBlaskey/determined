@@ -3,8 +3,10 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"os"
 	"runtime/pprof"
 	"sort"
@@ -927,7 +929,6 @@ func (a *apiServer) MetricsStreaming(
 
 	key := 0
 	for {
-		fmt.Println("START query")
 		res := &apiv1.MetricsStreamingResponse{}
 		if err := db.Bun().NewSelect().Table("steps").
 			Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
@@ -939,14 +940,22 @@ func (a *apiServer) MetricsStreaming(
 			Scan(resp.Context(), &res.Steps); err != nil {
 			return err
 		}
-		fmt.Println("end query")
 
-		fmt.Println(len(res.Steps))
-		fmt.Println("START SNED")
 		if err := resp.Send(res); err != nil {
 			return err
 		}
-		fmt.Println("END SNED")
+
+		/*
+			for _, s := range res.Steps {
+				// QUOTA
+				if err := resp.Send(&apiv1.MetricsStreamingResponse{
+					Steps: []*apiv1.Step{s},
+				}); err != nil {
+					return err
+				}
+			}
+			fmt.Println("END SNED")
+		*/
 
 		if len(res.Steps) != int(req.Size) {
 			break
@@ -957,20 +966,20 @@ func (a *apiServer) MetricsStreaming(
 	return nil
 }
 
+type Step struct {
+	TrialID      int            `json:"trialId"`
+	EndTime      time.Time      `json:"endTime"`
+	Metrics      map[string]any `json:"metrics"`
+	TotalBatches int            `json:"totalBatches"`
+	TrialRunID   int            `json:"trialRunId"`
+	Archived     bool           `json:"archived"`
+	ID           int            `json:"id"`
+}
+
 func (m *Master) EchoMetricsNoPaging(c echo.Context) (interface{}, error) {
 	trialID := c.Param("trial_id")
 
-	type Steps struct {
-		TrialID      int
-		EndTime      time.Time
-		Metrics      map[string]any
-		TotalBatches int
-		TrialRunID   int
-		Archived     bool
-		ID           int
-	}
-
-	var steps []Steps
+	var steps []Step
 	if err := db.Bun().NewSelect().Table("steps").
 		Where("trial_id = ?", trialID).
 		Order("total_batches").
@@ -982,7 +991,83 @@ func (m *Master) EchoMetricsNoPaging(c echo.Context) (interface{}, error) {
 }
 
 func (m *Master) EchoMetricsStream(c echo.Context) error {
-	// trialID := c.Param("trial_id")
+	trialID, err := strconv.Atoi(c.Param("trial_id"))
+	if err != nil {
+		return err
+	}
+	size, err := strconv.Atoi(c.QueryParam("size"))
+	if err != nil {
+		return err
+	}
+
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	c.Response().WriteHeader(http.StatusOK)
+
+	enc := json.NewEncoder(c.Response())
+
+	key := 0
+	for {
+		var steps []Step
+		if err := db.Bun().NewSelect().Table("steps").
+			Where("trial_id = ?", trialID).
+			Where("total_batches > ?", key).
+			Order("total_batches").
+			Limit(size).
+			Scan(c.Request().Context(), &steps); err != nil {
+			return err
+		}
+
+		if len(steps) > 0 {
+			// good
+			/*
+				t := time.Now()
+				b, err := json.Marshal(map[string]any{"steps": steps})
+				if err != nil {
+					return nil
+				}
+				fmt.Println("Time to encode", time.Now().Sub(t))
+
+				t = time.Now()
+				_, err = c.Response().Write(b)
+				if err != nil {
+					return err
+				}
+				_, err = c.Response().Write([]byte{'\n'})
+				if err != nil {
+					return err
+				}
+				fmt.Println("Time to write", time.Now().Sub(t))
+				c.Response().Flush()
+			*/
+
+			// bad
+			/*
+				fmt.Println("ENCODING")
+				if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
+					return err
+				}
+				fmt.Println("flushng")
+				c.Response().Flush()
+			*/
+		}
+
+		s := time.Now()
+		fmt.Println("Encoding")
+		for _, s := range steps {
+			if err := enc.Encode(map[string]any{"steps": []any{s}}); err != nil {
+				return err
+			}
+		}
+		c.Response().Flush()
+		fmt.Println("end Encoding", time.Now().Sub(s))
+
+		if len(steps) != size {
+			break
+		}
+		key = int(steps[len(steps)-1].TotalBatches)
+	}
+
+	// Some kind of endl or connection close
 	return nil
 }
 
