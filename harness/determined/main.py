@@ -61,7 +61,7 @@ def metrics_stream_echo(trial_id, page_size=page_size):
 
     r = []
     resp = api.get("127.0.0.1:8080", f"/trials/{trial_id}/metrics/stream?size={page_size}",
-                   stream=False)
+                   stream=True)
     for line in resp.iter_lines(): # chunk_size=len(resp.text)
         if line:
             r.extend(bindings.v1MetricsStreamingResponse.from_json(
@@ -97,7 +97,7 @@ def main():
                 print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(steps)}")
                 x.append(len(steps))
                 y.append(time.time() - start)
-            except Exception as e:
+            except:
                 print("FAILURE")
                 print("Sleeping for 20")
                 time.sleep(20)
