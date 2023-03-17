@@ -5,7 +5,6 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"testing"
@@ -106,48 +105,6 @@ var minExpConfig = expconf.ExperimentConfig{
 			RawMaxLength: &expconf.Length{Units: 10, Unit: "batches"},
 		},
 	},
-}
-
-func TestGetMetricZ(t *testing.T) {
-	api, curUser, ctx := setupAPITest(t, nil)
-	_, _, _ = api, curUser, ctx
-
-	trialID := 3
-	resp, err := api.m.db.RawQuery("get_trial_metrics", trialID)
-	require.NoError(t, err)
-
-	// What is the equivlant way to download metrics currently???
-	// Another question is what data do we have for the raw metrics???
-	// Is it just workloads?
-
-	// proto_get_trials_plus (GOOD just is summary for total_batches)
-	// GetExperimentTrials
-	// GetTrial
-
-	// get_trial_metrics
-	// getTrialMetrics (deprecated)
-
-	// proto_get_trial_workloads (YAYA)
-	// GetTrialWorkloads
-
-	// What is even this data?
-	// http://127.0.0.1:8080/trials/1/metrics
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(resp, &data))
-	fmt.Println(data["id"])
-
-	/*
-		for i := range data {
-			fmt.Printf("%+v\n", i)
-		}
-	*/
-
-	// When does this fail?
-	// 1426332 bytes
-	// 256MB to 1 GB
-	// ERROR: total size of jsonb array elements exceeds the maximum of 268435455 bytes (SQLSTATE 54000)
-	fmt.Println(len(resp))
-	require.Equal(t, len(resp), 0)
 }
 
 func TestGetExperimentLabels(t *testing.T) {
