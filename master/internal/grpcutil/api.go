@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"runtime/debug"
-	"time"
 
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpclogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -19,7 +18,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 
 	"github.com/determined-ai/determined/master/internal/db"
@@ -28,19 +26,6 @@ import (
 )
 
 const jsonPretty = "application/json+pretty"
-
-var kaep = keepalive.EnforcementPolicy{
-	MinTime:             5 * time.Second, // If a client pings more than once every 5 seconds, terminate the connection
-	PermitWithoutStream: true,            // Allow pings even when there are no active streams
-}
-
-var kasp = keepalive.ServerParameters{
-	MaxConnectionIdle:     15 * time.Second, // If a client is idle for 15 seconds, send a GOAWAY
-	MaxConnectionAge:      30 * time.Second, // If any connection is alive for more than 30 seconds, send a GOAWAY
-	MaxConnectionAgeGrace: 5 * time.Second,  // Allow 5 seconds for pending RPCs to complete before forcibly closing connections
-	Time:                  5 * time.Second,  // Ping the client if it is idle for 5 seconds to ensure the connection is still active
-	Timeout:               1 * time.Second,  // Wait 1 second for the ping ack before assuming the connection is dead
-}
 
 // NewGRPCServer creates a Determined gRPC service.
 func NewGRPCServer(db *db.PgDB, srv proto.DeterminedServer, enablePrometheus bool,
@@ -83,16 +68,12 @@ func NewGRPCServer(db *db.PgDB, srv proto.DeterminedServer, enablePrometheus boo
 	}
 
 	grpcS := grpc.NewServer(
-		grpc.KeepaliveEnforcementPolicy(kaep),
-		grpc.KeepaliveParams(kasp),
 		grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(streamInterceptors...)),
 		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(unaryInterceptors...)),
 		// Allow receiving messages _slightly_ larger than the maximum allowed context
 		// directory. We should either just move these back to echo or have a chunker for
 		// .tar.gz files long term.
-		grpc.MaxRecvMsgSize(1024*1024*1024),
-		grpc.MaxSendMsgSize(1024*1024*1024),
-		grpc.MaxMsgSize(1024*1024*1024),
+		grpc.MaxRecvMsgSize(96*1024*1024),
 	)
 	proto.RegisterDeterminedServer(grpcS, srv)
 	return grpcS
@@ -111,19 +92,12 @@ func newGRPCGatewayMux() *runtime.ServeMux {
 	return runtime.NewServeMux(serverOpts...)
 }
 
-var kacp = keepalive.ClientParameters{
-	Time:    10 * time.Second, // send pings every 10 seconds if there is no activity
-	Timeout: 0,                // wait 1 second for ping ack before considering the connection dead
-	// PermitWithoutStream: true,             // send pings even without active streams
-}
-
 // RegisterHTTPProxy registers grpc-gateway with the master echo server.
 func RegisterHTTPProxy(ctx context.Context, e *echo.Echo, port int, cert *tls.Certificate) error {
 	addr := fmt.Sprintf(":%d", port)
 	opts := []grpc.DialOption{
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1 << 27)),
 		grpc.WithNoProxy(),
-		grpc.WithKeepaliveParams(kacp),
 	}
 	if cert == nil {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))

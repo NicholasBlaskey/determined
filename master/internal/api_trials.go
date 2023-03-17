@@ -823,7 +823,6 @@ func (a *apiServer) MetricsNoPaging(
 func (a *apiServer) MetricsLimitOffset(
 	ctx context.Context, req *apiv1.MetricsLimitOffsetRequest,
 ) (*apiv1.MetricsLimitOffsetResponse, error) {
-	fmt.Println(req.Offset, req.Limit)
 	resp := &apiv1.MetricsLimitOffsetResponse{Steps: []*apiv1.Step{}}
 	query := db.Bun().NewSelect().ModelTableExpr("steps AS s").
 		Model(&resp.Steps).
@@ -946,7 +945,6 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 	key := -1
 	for {
 		var steps []Step
-		fmt.Println("QUERY START")
 		if err := db.Bun().NewSelect().Table("steps").
 			Where("trial_id = ?", trialID).
 			Where("total_batches > ?", key).
@@ -955,7 +953,6 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 			Scan(c.Request().Context(), &steps); err != nil {
 			return err
 		}
-		fmt.Println("QUERY end", key)
 
 		if len(steps) > 0 {
 			if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
@@ -970,7 +967,6 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 		key = int(steps[len(steps)-1].TotalBatches)
 	}
 
-	// Some kind of endl or connection close
 	return nil
 }
 
