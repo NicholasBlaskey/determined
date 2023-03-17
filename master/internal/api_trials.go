@@ -804,19 +804,6 @@ func (a *apiServer) CompareTrials(ctx context.Context,
 	return &apiv1.CompareTrialsResponse{Trials: trials}, nil
 }
 
-/*
-type RawStep struct {
-	TrialID      int
-	EndTime      time.Time
-	Metrics      map[string]any
-	TotalBatches int
-	TrialRunID   int
-	Archived     bool
-	ID           int
-}
-*/
-
-// RESTART FAIL
 func (a *apiServer) MetricsNoPaging(
 	ctx context.Context, req *apiv1.MetricsNoPagingRequest,
 ) (*apiv1.MetricsNoPagingResponse, error) {
@@ -890,37 +877,6 @@ func (a *apiServer) MetricsKeyset(
 func (a *apiServer) MetricsStreaming(
 	req *apiv1.MetricsStreamingRequest, resp apiv1.Determined_MetricsStreamingServer,
 ) error {
-	/*
-		err := db.Bun().RunInTx(resp.Context(), nil, func(ctx context.Context, tx bun.Tx) error {
-			if _, err := tx.Exec(`DECLARE metric_cursor CURSOR FOR SELECT
-			trial_id, proto_time(end_time) as end_time, metrics, total_batches,
-			trial_run_id AS trial_run_id, archived, id FROM steps
-			WHERE trial_id = ? ORDER BY total_batches;`, req.TrialId); err != nil {
-				fmt.Println("ERR HERE!")
-				return err
-			}
-
-			for {
-				res := &apiv1.MetricsStreamingResponse{}
-				if err := tx.NewRaw("FETCH ? FROM metric_cursor", req.Size).
-					Scan(resp.Context(), &res.Steps); err != nil {
-					return err
-				}
-
-				if err := resp.Send(res); err != nil {
-					return err
-				}
-				if len(res.Steps) != int(req.Size) {
-					break
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	*/
-
 	key := -1
 	for {
 		res := &apiv1.MetricsStreamingResponse{}
@@ -938,18 +894,6 @@ func (a *apiServer) MetricsStreaming(
 		if err := resp.Send(res); err != nil {
 			return err
 		}
-
-		/*
-			for _, s := range res.Steps {
-				// QUOTA
-				if err := resp.Send(&apiv1.MetricsStreamingResponse{
-					Steps: []*apiv1.Step{s},
-				}); err != nil {
-					return err
-				}
-			}
-			fmt.Println("END SNED")
-		*/
 
 		if len(res.Steps) != int(req.Size) {
 			break
@@ -1002,6 +946,7 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 	key := -1
 	for {
 		var steps []Step
+		fmt.Println("QUERY START")
 		if err := db.Bun().NewSelect().Table("steps").
 			Where("trial_id = ?", trialID).
 			Where("total_batches > ?", key).
@@ -1010,57 +955,14 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 			Scan(c.Request().Context(), &steps); err != nil {
 			return err
 		}
+		fmt.Println("QUERY end", key)
 
 		if len(steps) > 0 {
-			// good
-			/*
-				t := time.Now()
-				b, err := json.Marshal(map[string]any{"steps": steps})
-				if err != nil {
-					return nil
-				}
-				fmt.Println("Time to encode", time.Now().Sub(t))
-
-				t = time.Now()
-				_, err = c.Response().Write(b)
-				if err != nil {
-					return err
-				}
-				_, err = c.Response().Write([]byte{'\n'})
-				if err != nil {
-					return err
-				}
-				fmt.Println("Time to write", time.Now().Sub(t))
-				c.Response().Flush()
-			*/
-
-			// bad
-			/*
-				fmt.Println("ENCODING")
-				if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
-					return err
-				}
-				fmt.Println("flushng")
-				c.Response().Flush()
-			*/
-
 			if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
 				return err
 			}
 			c.Response().Flush()
 		}
-
-		/*
-			s := time.Now()
-			fmt.Println("Encoding")
-			for _, s := range steps {
-				if err := enc.Encode(map[string]any{"steps": []any{s}}); err != nil {
-					return err
-				}
-			}
-			c.Response().Flush()
-			fmt.Println("end Encoding", time.Now().Sub(s))
-		*/
 
 		if len(steps) != size {
 			break
@@ -1071,20 +973,6 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 	// Some kind of endl or connection close
 	return nil
 }
-
-/*
-// RESTART FAIL
-func (a *apiServer) MetricsStreaming(
-	ctx context.Context, req *apiv1.RawMetricsNaiveRequest,
-) {
-}
-
-// RESTART FAIL
-func (a *apiServer) MetricsStreamingNDJSON( // Possibly echo route.
-	ctx context.Context, req *apiv1.RawMetricsNaiveRequest,
-) {
-}
-*/
 
 func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWorkloadsRequest) (
 	*apiv1.GetTrialWorkloadsResponse, error,

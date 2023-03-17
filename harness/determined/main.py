@@ -5,7 +5,7 @@ from common import api
 from common.api import authentication, bindings, errors
 import matplotlib.pyplot as plt
 
-page_size = 1000
+page_size = 10000
 
 master_url = "127.0.0.1:8080"
 authentication.cli_auth = authentication.Authentication(master_url)
@@ -79,8 +79,9 @@ routes = [
 ]
 
 def main():
-    #trial_ids = [1, 2, 3, 4, 5, 6]
-    trial_ids = [1, 2, 3, 4, 5, 6]
+    trial_ids = [1, 2, 3, 4, 5, 6, 7]
+    #trial_ids = [1, 2, 3, 4, 5, 6, 7]
+    #trial_ids = [6]
 
     x_y_labels = []
     for r in routes:
@@ -90,11 +91,17 @@ def main():
         
         for trial_id in trial_ids:
             start = time.time()
-            steps = r[1](trial_id)
-            print(steps[0].to_json())
-            print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(steps)}")
-            x.append(len(steps))
-            y.append(time.time() - start)
+            try:
+                steps = r[1](trial_id)
+                print(steps[0].to_json())
+                print(f"Trial ID = {trial_id} took {time.time() - start} with # rows = {len(steps)}")
+                x.append(len(steps))
+                y.append(time.time() - start)
+            except Exception as e:
+                print("FAILURE")
+                print("Sleeping for 20")
+                time.sleep(20)
+                print("Done sleeping for 10")                
         print("")
 
         x_y_labels.append([x, y, labels])
