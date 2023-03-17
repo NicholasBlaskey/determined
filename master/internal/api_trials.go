@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"os"
-	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -838,6 +836,7 @@ func (a *apiServer) MetricsNoPaging(
 func (a *apiServer) MetricsLimitOffset(
 	ctx context.Context, req *apiv1.MetricsLimitOffsetRequest,
 ) (*apiv1.MetricsLimitOffsetResponse, error) {
+	fmt.Println(req.Offset, req.Limit)
 	resp := &apiv1.MetricsLimitOffsetResponse{Steps: []*apiv1.Step{}}
 	query := db.Bun().NewSelect().ModelTableExpr("steps AS s").
 		Model(&resp.Steps).
@@ -860,7 +859,7 @@ func (a *apiServer) MetricsKeyset(
 ) (*apiv1.MetricsKeysetResponse, error) {
 	var key int
 	if req.Key == "" {
-		key = 0
+		key = -1
 	} else {
 		k, err := strconv.Atoi(req.Key)
 		if err != nil {
@@ -922,12 +921,7 @@ func (a *apiServer) MetricsStreaming(
 		}
 	*/
 
-	go func() {
-		time.Sleep(20 * time.Second)
-		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
-	}()
-
-	key := 0
+	key := -1
 	for {
 		res := &apiv1.MetricsStreamingResponse{}
 		if err := db.Bun().NewSelect().Table("steps").
@@ -1005,7 +999,7 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 
 	enc := json.NewEncoder(c.Response())
 
-	key := 0
+	key := -1
 	for {
 		var steps []Step
 		if err := db.Bun().NewSelect().Table("steps").
@@ -1049,17 +1043,24 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 				fmt.Println("flushng")
 				c.Response().Flush()
 			*/
-		}
 
-		s := time.Now()
-		fmt.Println("Encoding")
-		for _, s := range steps {
-			if err := enc.Encode(map[string]any{"steps": []any{s}}); err != nil {
+			if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
 				return err
 			}
+			c.Response().Flush()
 		}
-		c.Response().Flush()
-		fmt.Println("end Encoding", time.Now().Sub(s))
+
+		/*
+			s := time.Now()
+			fmt.Println("Encoding")
+			for _, s := range steps {
+				if err := enc.Encode(map[string]any{"steps": []any{s}}); err != nil {
+					return err
+				}
+			}
+			c.Response().Flush()
+			fmt.Println("end Encoding", time.Now().Sub(s))
+		*/
 
 		if len(steps) != size {
 			break
