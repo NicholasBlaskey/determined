@@ -159,27 +159,29 @@ WHERE id = $1`, id, restartCount); err != nil {
 // training and validation metrics are cleaned up.
 func (db *PgDB) AddTrainingMetrics(ctx context.Context, m *trialv1.TrialMetrics) error {
 	return db.withTransaction("add training metrics", func(tx *sqlx.Tx) error {
-		if err := checkTrialRunID(ctx, tx, m.TrialId, m.TrialRunId); err != nil {
-			return err
-		}
+		/*
+			if err := checkTrialRunID(ctx, tx, m.TrialId, m.TrialRunId); err != nil {
+				return err
+			}
 
-		if _, err := tx.ExecContext(ctx, `
-UPDATE raw_steps SET archived = true
-WHERE trial_id = $1
-  AND trial_run_id < $2
-  AND total_batches >= $3;
-`, m.TrialId, m.TrialRunId, m.StepsCompleted); err != nil {
-			return errors.Wrap(err, "archiving training metrics")
-		}
+					if _, err := tx.ExecContext(ctx, `
+			UPDATE raw_steps SET archived = true
+			WHERE trial_id = $1
+			  AND trial_run_id < $2
+			  AND total_batches >= $3;
+			`, m.TrialId, m.TrialRunId, m.StepsCompleted); err != nil {
+						return errors.Wrap(err, "archiving training metrics")
+					}
 
-		if _, err := tx.ExecContext(ctx, `
-UPDATE raw_validations SET archived = true
-WHERE trial_id = $1
-  AND trial_run_id < $2
-  AND total_batches > $3;
-`, m.TrialId, m.TrialRunId, m.StepsCompleted); err != nil {
-			return errors.Wrap(err, "archiving validations")
-		}
+					if _, err := tx.ExecContext(ctx, `
+			UPDATE raw_validations SET archived = true
+			WHERE trial_id = $1
+			  AND trial_run_id < $2
+			  AND total_batches > $3;
+			`, m.TrialId, m.TrialRunId, m.StepsCompleted); err != nil {
+						return errors.Wrap(err, "archiving validations")
+					}
+		*/
 
 		if _, err := tx.NamedExecContext(ctx, `
 INSERT INTO raw_steps

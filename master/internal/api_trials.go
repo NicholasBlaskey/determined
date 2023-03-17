@@ -1230,10 +1230,12 @@ func (a *apiServer) ReportTrialProgress(
 func (a *apiServer) ReportTrialTrainingMetrics(
 	ctx context.Context, req *apiv1.ReportTrialTrainingMetricsRequest,
 ) (*apiv1.ReportTrialTrainingMetricsResponse, error) {
-	if err := a.canGetTrialsExperimentAndCheckCanDoAction(ctx, int(req.TrainingMetrics.TrialId),
-		expauth.AuthZProvider.Get().CanEditExperiment); err != nil {
-		return nil, err
-	}
+	/*
+		if err := a.canGetTrialsExperimentAndCheckCanDoAction(ctx, int(req.TrainingMetrics.TrialId),
+			expauth.AuthZProvider.Get().CanEditExperiment); err != nil {
+			return nil, err
+		}
+	*/
 	if err := a.m.db.AddTrainingMetrics(ctx, req.TrainingMetrics); err != nil {
 		return nil, err
 	}

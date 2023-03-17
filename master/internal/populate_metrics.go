@@ -43,52 +43,53 @@ func makeMetrics() *structpb.Struct {
 	}
 }
 
-func reportMetrics(ctx context.Context, api *apiServer, trialID int32) error {
-	trainingbBatchMetrics := []*structpb.Struct{}
-	const stepSize = 500
-	for j := 0; j < stepSize; j++ {
-		trainingbBatchMetrics = append(trainingbBatchMetrics, makeMetrics())
-	}
+func reportMetrics(ctx context.Context, api *apiServer, trialID int32, n int) error {
+	fmt.Println("STARTING trialID", trialID, n)
+	// trainingbBatchMetrics := []*structpb.Struct{}
+	//	const stepSize = 500
 
-	trainingMetrics := trialv1.TrialMetrics{
-		TrialId:        trialID,
-		StepsCompleted: stepSize,
-		Metrics: &commonv1.Metrics{
-			AvgMetrics:   makeMetrics(),
-			BatchMetrics: trainingbBatchMetrics,
-		},
-	}
+	/*
+		for j := 0; j < stepSize; j++ {
+			trainingbBatchMetrics = append(trainingbBatchMetrics, makeMetrics())
+		}
+	*/
+	for i := 0; i < n; i++ {
+		trainingMetrics := trialv1.TrialMetrics{
+			TrialId:        trialID,
+			StepsCompleted: int32(i),
+			Metrics: &commonv1.Metrics{
+				AvgMetrics:   makeMetrics(),
+				BatchMetrics: []*structpb.Struct{makeMetrics()}, // trainingbBatchMetrics,
+			},
+		}
 
-	_, err := api.ReportTrialTrainingMetrics(ctx,
-		&apiv1.ReportTrialTrainingMetricsRequest{
-			TrainingMetrics: &trainingMetrics,
-		})
-	if err != nil {
-		return err
-	}
+		_, err := api.ReportTrialTrainingMetrics(ctx,
+			&apiv1.ReportTrialTrainingMetricsRequest{
+				TrainingMetrics: &trainingMetrics,
+			})
+		if err != nil {
+			return err
+		}
 
-	validationBatchMetrics := []*structpb.Struct{}
+		/*
+			validationMetrics := trialv1.TrialMetrics{
+				TrialId:        trialID,
+				StepsCompleted: int32(i),
+				Metrics: &commonv1.Metrics{
+					AvgMetrics:   makeMetrics(),
+					BatchMetrics: []*structpb.Struct{makeMetrics()},
+				},
+			}
 
-	for j := 0; j < stepSize; j++ {
-		validationBatchMetrics = append(validationBatchMetrics, makeMetrics())
-	}
+				_, err = api.ReportTrialValidationMetrics(ctx,
+					&apiv1.ReportTrialValidationMetricsRequest{
+						ValidationMetrics: &validationMetrics,
+					})
 
-	validationMetrics := trialv1.TrialMetrics{
-		TrialId:        trialID,
-		StepsCompleted: stepSize,
-		Metrics: &commonv1.Metrics{
-			AvgMetrics:   makeMetrics(),
-			BatchMetrics: validationBatchMetrics,
-		},
-	}
-
-	_, err = api.ReportTrialValidationMetrics(ctx,
-		&apiv1.ReportTrialValidationMetricsRequest{
-			ValidationMetrics: &validationMetrics,
-		})
-
-	if err != nil {
-		return err
+				if err != nil {
+					return err
+				}
+		*/
 	}
 
 	return nil
@@ -131,77 +132,87 @@ func PopulateExpTrialsMetrics(pgdb *db.PgDB, masterConfig *config.Config) error 
 	ctx := metadata.NewIncomingContext(context.TODO(),
 		metadata.Pairs("x-user-token", fmt.Sprintf("Bearer %s", resp.Token)))
 
-	// create exp and config
-	maxLength := expconf.NewLengthInBatches(100)
-	maxRestarts := 0
-	activeConfig := expconf.ExperimentConfig{ //nolint:exhaustivestruct
-		RawSearcher: &expconf.SearcherConfig{ //nolint:exhaustivestruct
-			RawMetric: ptrs.Ptr("loss"),
-			RawSingleConfig: &expconf.SingleConfig{ //nolint:exhaustivestruct
-				RawMaxLength: &maxLength,
+	n := 1
+	for i := 0; i < 6; i++ {
+		// create exp and config
+		maxLength := expconf.NewLengthInBatches(100)
+		maxRestarts := 0
+		activeConfig := expconf.ExperimentConfig{ //nolint:exhaustivestruct
+			RawSearcher: &expconf.SearcherConfig{ //nolint:exhaustivestruct
+				RawMetric: ptrs.Ptr("loss"),
+				RawSingleConfig: &expconf.SingleConfig{ //nolint:exhaustivestruct
+					RawMaxLength: &maxLength,
+				},
 			},
-		},
-		RawEntrypoint:      &expconf.Entrypoint{RawEntrypoint: "model_def:SomeTrialClass"},
-		RawHyperparameters: expconf.Hyperparameters{},
-		RawCheckpointStorage: &expconf.CheckpointStorageConfig{ //nolint:exhaustivestruct
-			RawSharedFSConfig: &expconf.SharedFSConfig{ //nolint:exhaustivestruct
-				RawHostPath: ptrs.Ptr("/"),
+			RawEntrypoint:      &expconf.Entrypoint{RawEntrypoint: "model_def:SomeTrialClass"},
+			RawHyperparameters: expconf.Hyperparameters{},
+			RawCheckpointStorage: &expconf.CheckpointStorageConfig{ //nolint:exhaustivestruct
+				RawSharedFSConfig: &expconf.SharedFSConfig{ //nolint:exhaustivestruct
+					RawHostPath: ptrs.Ptr("/"),
+				},
 			},
-		},
-		RawMaxRestarts: &maxRestarts,
-	} //nolint:exhaustivestruct
-	activeConfig = schemas.WithDefaults(activeConfig)
-	model.DefaultTaskContainerDefaults().MergeIntoExpConfig(&activeConfig)
+			RawMaxRestarts: &maxRestarts,
+		} //nolint:exhaustivestruct
+		activeConfig = schemas.WithDefaults(activeConfig)
+		model.DefaultTaskContainerDefaults().MergeIntoExpConfig(&activeConfig)
 
-	var defaultDeterminedUID model.UserID = 2
-	exp := &model.Experiment{
-		JobID:                model.NewJobID(),
-		State:                model.ActiveState,
-		Config:               activeConfig.AsLegacy(),
-		StartTime:            time.Now(),
-		OwnerID:              &defaultDeterminedUID,
-		ModelDefinitionBytes: []byte{},
-		ProjectID:            1,
-	}
-	err = pgdb.AddExperiment(exp, activeConfig)
-	if err != nil {
-		return err
-	}
-	// create job and task
-	jID := model.NewJobID()
-	jIn := &model.Job{
-		JobID:   jID,
-		JobType: model.JobTypeExperiment,
-		OwnerID: exp.OwnerID,
-		QPos:    decimal.New(0, 0),
-	}
-	err = pgdb.AddJob(jIn)
-	if err != nil {
-		return err
-	}
-	tID := model.NewTaskID()
-	tIn := &model.Task{
-		TaskID:    tID,
-		JobID:     &jID,
-		TaskType:  model.TaskTypeTrial,
-		StartTime: time.Now().UTC().Truncate(time.Millisecond),
-	}
-	if err = pgdb.AddTask(tIn); err != nil {
-		return err
-	}
+		var defaultDeterminedUID model.UserID = 2
+		exp := &model.Experiment{
+			JobID:                model.NewJobID(),
+			State:                model.ActiveState,
+			Config:               activeConfig.AsLegacy(),
+			StartTime:            time.Now(),
+			OwnerID:              &defaultDeterminedUID,
+			ModelDefinitionBytes: []byte{},
+			ProjectID:            1,
+		}
+		err = pgdb.AddExperiment(exp, activeConfig)
+		if err != nil {
+			return err
+		}
+		// create job and task
+		jID := model.NewJobID()
+		jIn := &model.Job{
+			JobID:   jID,
+			JobType: model.JobTypeExperiment,
+			OwnerID: exp.OwnerID,
+			QPos:    decimal.New(0, 0),
+		}
+		err = pgdb.AddJob(jIn)
+		if err != nil {
+			return err
+		}
+		tID := model.NewTaskID()
+		tIn := &model.Task{
+			TaskID:    tID,
+			JobID:     &jID,
+			TaskType:  model.TaskTypeTrial,
+			StartTime: time.Now().UTC().Truncate(time.Millisecond),
+		}
+		if err = pgdb.AddTask(tIn); err != nil {
+			return err
+		}
 
-	// create trial
+		// create trial
 
-	tr := model.Trial{
-		TaskID:       tID,
-		JobID:        exp.JobID,
-		ExperimentID: exp.ID,
-		State:        model.ActiveState,
-		StartTime:    time.Now(),
-	}
-	if err = pgdb.AddTrial(&tr); err != nil {
-		return err
-	}
+		s := time.Now()
+		tr := model.Trial{
+			TaskID:       tID,
+			JobID:        exp.JobID,
+			ExperimentID: exp.ID,
+			State:        model.ActiveState,
+			StartTime:    time.Now(),
+		}
+		if err = pgdb.AddTrial(&tr); err != nil {
+			return err
+		}
 
-	return reportMetrics(ctx, api, int32(tr.ID)) // single searcher so there's only one trial
+		err := reportMetrics(ctx, api, int32(tr.ID), n) // single searcher so there's only one trial
+		if err != nil {
+			return err
+		}
+		n *= 10
+		fmt.Println("TOOK", time.Now().Sub(s))
+	}
+	return nil
 }
