@@ -932,11 +932,14 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	size, err := strconv.Atoi(c.QueryParam("size"))
-	if err != nil {
-		return err
-	}
-	_ = size
+
+	/*
+		size, err := strconv.Atoi(c.QueryParam("size"))
+		if err != nil {
+			return err
+		}
+		_ = size
+	*/
 
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	c.Response().WriteHeader(http.StatusOK)
@@ -945,7 +948,7 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 		'trialId', trial_id,
 		'endTime', end_time,
 		'metrics', metrics,
-		'total_batches', total_batches,
+		'totalBatches', total_batches,
 		'trialRunId', trial_run_id,
 		'archived', archived,
 		'id', id
