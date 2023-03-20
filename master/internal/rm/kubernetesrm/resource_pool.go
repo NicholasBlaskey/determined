@@ -425,6 +425,8 @@ func (k *kubernetesResourcePool) moveJob(
 
 func (k *kubernetesResourcePool) jobQInfo() map[model.JobID]*sproto.RMJobInfo {
 	reqs := tasklist.SortTasksWithPosition(k.reqList, k.groups, k.queuePositions, true)
+
+	// k.reqList.Allocation(allocRef).Resources
 	jobQinfo := tasklist.ReduceToJobQInfo(reqs)
 
 	return jobQinfo
