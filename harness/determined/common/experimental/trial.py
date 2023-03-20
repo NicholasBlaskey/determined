@@ -1,9 +1,10 @@
 import enum
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Dict
+import datetime
 
 from determined.common import api
 from determined.common.api import bindings, logs
-from determined.common.experimental import checkpoint
+from determined.common.experimental import checkpoint, determined
 
 
 class LogLevel(enum.Enum):
@@ -17,6 +18,28 @@ class LogLevel(enum.Enum):
     def _to_bindings(self) -> bindings.v1LogLevel:
         return bindings.v1LogLevel(self.value)
 
+class Metrics:
+    """
+    Specifies a metric report that the trial reported.
+    """
+
+    def __init__(
+            self,
+            trial_id: int,
+            trial_run_id: int,            
+            steps_completed: int,
+            end_time: datetime.datetime,            
+            metrics: Dict[str, Any],
+            batch_metrics: Optional[List[Dict[str, Any]]] = None,
+    ):
+        self.trial_id = trial_id
+        self.trial_run_id = trial_run_id        
+        self.steps_completed = steps_completed
+        self.end_time = end_time        
+        self.metrics = metrics
+        self.batch_metrics = batch_metrics
+
+    
 
 class TrialReference:
     """
@@ -222,7 +245,53 @@ class TrialReference:
     def __repr__(self) -> str:
         return "Trial(id={})".format(self.id)
 
+    # TODO is it suprising that we have this iterable that will hang onto this connection
+    def training_metrics(self) -> Iterable[Metrics]:
+        """
+        Return the :class:`~determined.experimental.Checkpoint` instance with the best
+        validation metric as defined by the ``sort_by`` and ``smaller_is_better``
+        arguments.
 
+        Arguments:
+            sort_by (string, optional): The name of the validation metric to
+                order checkpoints by. If this parameter is unset the metric defined
+                in the related experiment configuration searcher field will be
+                used.
+
+            smaller_is_better (bool, optional): Whether to sort the
+                metric above in ascending or descending order. If ``sort_by`` is unset,
+                this parameter is ignored. By default, the value of ``smaller_is_better``
+                from the experiment's configuration is used.
+        """
+        d = determined.Determined # TODO this is prob bad.
+        d._session = self._session
+        return d.get_trial_training_metrics(self.id)
+        
+        
+
+    def validation_metrics(self) -> Iterable[Metrics]:
+        """
+        Return the :class:`~determined.experimental.Checkpoint` instance with the best
+        validation metric as defined by the ``sort_by`` and ``smaller_is_better``
+        arguments.
+
+        Arguments:
+            sort_by (string, optional): The name of the validation metric to
+                order checkpoints by. If this parameter is unset the metric defined
+                in the related experiment configuration searcher field will be
+                used.
+
+            smaller_is_better (bool, optional): Whether to sort the
+                metric above in ascending or descending order. If ``sort_by`` is unset,
+                this parameter is ignored. By default, the value of ``smaller_is_better``
+                from the experiment's configuration is used.
+        """
+        return get_trial_validation_metrics(self.id)        
+
+    
+
+    
+    
 # This is to shorten line lengths of the TrialSortBy definition.
 _tsb = bindings.v1GetExperimentTrialsRequestSortBy
 
