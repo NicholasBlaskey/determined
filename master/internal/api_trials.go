@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -936,6 +936,62 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	_ = size
+
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	c.Response().WriteHeader(http.StatusOK)
+
+	rows, err := db.Bun().QueryContext(c.Request().Context(), `SELECT jsonb_build_object(
+		'trialId', trial_id,
+		'endTime', end_time,
+		'metrics', metrics,
+		'total_batches', total_batches,
+		'trialRunId', trial_run_id,
+		'archived', archived,
+		'id', id
+	) FROM steps WHERE trial_id = ? ORDER BY total_batches`, trialID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var b sql.RawBytes
+		err := rows.Scan(&b)
+		if err != nil {
+			return err
+		}
+
+		/*
+			for i := 0; i < 5; i++ {
+				b = append(b, b...)
+			}
+
+			fmt.Println(len(b))
+		*/
+
+		// TODO we do an O(n) copy everytime due to slice cap==len
+		// and we append a newline. This still appears faster than two calls to Write().
+		_, err = c.Response().Write(append(b, '\n'))
+		if err != nil {
+			return err
+		}
+		// break
+	}
+
+	return nil
+}
+
+/*
+func (m *Master) EchoMetricsStream(c echo.Context) error {
+	trialID, err := strconv.Atoi(c.Param("trial_id"))
+	if err != nil {
+		return err
+	}
+	size, err := strconv.Atoi(c.QueryParam("size"))
+	if err != nil {
+		return err
+	}
 
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	c.Response().WriteHeader(http.StatusOK)
@@ -955,10 +1011,12 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 		}
 
 		if len(steps) > 0 {
+			fmt.Println("WRITE DATA")
 			if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
 				return err
 			}
 			c.Response().Flush()
+			fmt.Println("WRITten DATA")
 		}
 
 		if len(steps) != size {
@@ -969,6 +1027,7 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 
 	return nil
 }
+*/
 
 func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWorkloadsRequest) (
 	*apiv1.GetTrialWorkloadsResponse, error,
