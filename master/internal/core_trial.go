@@ -68,6 +68,15 @@ func (m *Master) parseAndRBACTrialIDs(c echo.Context, in string) ([]int, error) 
 	return trialIDs, nil
 }
 
+//	@Summary	Stream one or more trial's training metrics.
+//	@Tags		Trials
+//	@ID			stream-training-metrics
+//	@Produce	application/x-ndjson
+//	@Param		trialIds	query	string	true	"Comma delimited trial IDs"
+//	@Success	200					{}		string	"A new line delimated JSON stream with the following fields trialId,endTime,metrics,totalBatches,trialRunId,id"
+//	@Router		/trials/metrics/training [get]
+//
+// nolint:lll
 func (m *Master) streamTrainingMetrics(c echo.Context) error {
 	trialIDs, err := m.parseAndRBACTrialIDs(c, c.QueryParam("trialIds"))
 	if err != nil {
@@ -90,6 +99,15 @@ func (m *Master) streamTrainingMetrics(c echo.Context) error {
 	return nil
 }
 
+//	@Summary	Stream one or more trial's validation metrics.
+//	@Tags		Trials
+//	@ID			stream-validation-metrics
+//	@Produce	application/x-ndjson
+//	@Param		trialIds	query	string	true	"Comma delimited trial IDs"
+//	@Success	200					{}		string	"A new line delimated JSON stream with the following fields trialId,endTime,metrics,totalBatches,trialRunId,id"
+//	@Router		/trials/metrics/validation [get]
+//
+// nolint:lll
 func (m *Master) streamValidationMetrics(c echo.Context) error {
 	trialIDs, err := m.parseAndRBACTrialIDs(c, c.QueryParam("trialIds"))
 	if err != nil {
