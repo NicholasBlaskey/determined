@@ -706,51 +706,6 @@ service Determined {
       tags: [ "Profiler" ]
     };
   }
-
-  // No paging on metrics.
-  rpc MetricsNoPaging(MetricsNoPagingRequest)
-      returns (MetricsNoPagingResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/trials/{trial_id}/metrics/v1"
-    };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      tags: [ "internal" ]
-    };
-  }
-
-  // Limit offset paging.
-  rpc MetricsLimitOffset(MetricsLimitOffsetRequest)
-      returns (MetricsLimitOffsetResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/trials/{trial_id}/metrics/v2"
-    };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      tags: [ "internal" ]
-    };
-  }
-
-  // Keyset pagination.
-  rpc MetricsKeyset(MetricsKeysetRequest)
-      returns (MetricsKeysetResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/trials/{trial_id}/metrics/v3"
-    };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      tags: [ "internal" ]
-    };
-  }
-
-  // Stream metrics.
-  rpc MetricsStreaming(MetricsStreamingRequest)
-      returns (stream MetricsStreamingResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/trials/{trial_id}/metrics/v4"
-    };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      tags: [ "internal" ]
-    };
-  }  
-  
   // Stream the available series in a trial's profiler metrics.
   rpc GetTrialProfilerAvailableSeries(GetTrialProfilerAvailableSeriesRequest)
       returns (stream GetTrialProfilerAvailableSeriesResponse) {

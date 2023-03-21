@@ -3,27 +3,19 @@ package internal
 import (
 	"context"
 	"database/sql"
-	//"encoding/json"
 	"fmt"
 	"math"
-	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/uptrace/bun"
-	//"github.com/lib/pq"
 	"github.com/pkg/errors"
-	//"github.com/uptrace/bun"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/labstack/echo/v4"
 
 	"github.com/determined-ai/determined/master/internal/api"
 	"github.com/determined-ai/determined/master/internal/db"
@@ -805,229 +797,6 @@ func (a *apiServer) CompareTrials(ctx context.Context,
 	}
 	return &apiv1.CompareTrialsResponse{Trials: trials}, nil
 }
-
-func (a *apiServer) MetricsNoPaging(
-	ctx context.Context, req *apiv1.MetricsNoPagingRequest,
-) (*apiv1.MetricsNoPagingResponse, error) {
-	resp := &apiv1.MetricsNoPagingResponse{}
-	if err := db.Bun().NewSelect().Table("steps").
-		Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
-		ColumnExpr("proto_time(end_time) AS end_time").
-		Where("trial_id = ?", req.TrialId).
-		Order("total_batches").
-		Scan(ctx, &resp.Steps); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func (a *apiServer) MetricsLimitOffset(
-	ctx context.Context, req *apiv1.MetricsLimitOffsetRequest,
-) (*apiv1.MetricsLimitOffsetResponse, error) {
-	resp := &apiv1.MetricsLimitOffsetResponse{Steps: []*apiv1.Step{}}
-	query := db.Bun().NewSelect().ModelTableExpr("steps AS s").
-		Model(&resp.Steps).
-		Column("s.trial_id", "s.metrics", "s.total_batches", "s.archived", "s.id", "s.trial_run_id").
-		ColumnExpr("proto_time(s.end_time) AS end_time").
-		Where("s.trial_id = ?", req.TrialId).
-		Order("s.total_batches")
-
-	var err error
-	resp.Pagination, err = runPagedBunExperimentsQuery(ctx, query, int(req.Offset), int(req.Limit))
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func (a *apiServer) MetricsKeyset(
-	ctx context.Context, req *apiv1.MetricsKeysetRequest,
-) (*apiv1.MetricsKeysetResponse, error) {
-	var key int
-	if req.Key == "" {
-		key = -1
-	} else {
-		k, err := strconv.Atoi(req.Key)
-		if err != nil {
-			return nil, err
-		}
-		key = k
-	}
-
-	resp := &apiv1.MetricsKeysetResponse{PrevPage: req.Key}
-	if err := db.Bun().NewSelect().Table("steps").
-		Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
-		ColumnExpr("proto_time(end_time) AS end_time").
-		ColumnExpr("total_batches AS total_batches").
-		Where("trial_id = ?", req.TrialId).
-		Where("total_batches > ?", key).
-		Order("total_batches").
-		Limit(int(req.Size)).
-		Scan(ctx, &resp.Steps); err != nil {
-		return nil, err
-	}
-	if len(resp.Steps) == int(req.Size) {
-		resp.NextPage = fmt.Sprintf("%d", resp.Steps[len(resp.Steps)-1].TotalBatches)
-	}
-
-	return resp, nil
-}
-
-func (a *apiServer) MetricsStreaming(
-	req *apiv1.MetricsStreamingRequest, resp apiv1.Determined_MetricsStreamingServer,
-) error {
-	key := -1
-	for {
-		res := &apiv1.MetricsStreamingResponse{}
-		if err := db.Bun().NewSelect().Table("steps").
-			Column("trial_id", "metrics", "total_batches", "archived", "id", "trial_run_id").
-			ColumnExpr("proto_time(end_time) AS end_time").
-			Where("trial_id = ?", req.TrialId).
-			Where("total_batches > ?", key).
-			Order("total_batches").
-			Limit(int(req.Size)).
-			Scan(resp.Context(), &res.Steps); err != nil {
-			return err
-		}
-
-		if err := resp.Send(res); err != nil {
-			return err
-		}
-
-		if len(res.Steps) != int(req.Size) {
-			break
-		}
-		key = int(res.Steps[len(res.Steps)-1].TotalBatches)
-	}
-
-	return nil
-}
-
-type Step struct {
-	TrialID      int            `json:"trialId"`
-	EndTime      time.Time      `json:"endTime"`
-	Metrics      map[string]any `json:"metrics"`
-	TotalBatches int            `json:"totalBatches"`
-	TrialRunID   int            `json:"trialRunId"`
-	Archived     bool           `json:"archived"`
-	ID           int            `json:"id"`
-}
-
-func (m *Master) EchoMetricsNoPaging(c echo.Context) (interface{}, error) {
-	trialID := c.Param("trial_id")
-
-	var steps []Step
-	if err := db.Bun().NewSelect().Table("steps").
-		Where("trial_id = ?", trialID).
-		Order("total_batches").
-		Scan(c.Request().Context(), &steps); err != nil {
-		return nil, err
-	}
-
-	return map[string]any{"steps": steps}, nil
-}
-
-func (m *Master) EchoMetricsStream(c echo.Context) error {
-	ids := c.QueryParam("trialIds")
-
-	fmt.Println(ids)
-	var trialIDs []int
-	for _, id := range strings.Split(ids, ",") {
-		trialID, err := strconv.Atoi(id)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf(
-				"could not parse trialIds parameter expected comma seperated ints got %s"), ids)
-		}
-		trialIDs = append(trialIDs, trialID)
-	}
-
-	rows, err := db.Bun().QueryContext(c.Request().Context(), `SELECT jsonb_build_object(
-		'trialId', trial_id,
-		'endTime', end_time,
-		'metrics', metrics,
-		'totalBatches', total_batches,
-		'trialRunId', trial_run_id,
-		'id', id
-	) FROM steps WHERE trial_id IN (?) ORDER BY trial_id, trial_run_id, total_batches`,
-		bun.In(trialIDs))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError,
-			errors.Wrap(err, "error querying for trial training metrics"))
-	}
-	defer rows.Close()
-
-	c.Response().Header().Set(echo.HeaderContentType, "application/x-ndjson")
-	c.Response().WriteHeader(http.StatusOK)
-
-	for rows.Next() {
-		var b sql.RawBytes
-		err := rows.Scan(&b)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError,
-				errors.Wrap(err, "error scanning result for trial training metrics"))
-		}
-
-		// TODO we do an O(n) copy everytime due to slice cap==len
-		// and we append a newline. This still appears faster than two calls to Write().
-		_, err = c.Response().Write(append(b, '\n'))
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError,
-				errors.Wrap(err, "error writing response for trial training metrics"))
-		}
-		// break
-	}
-
-	return nil
-}
-
-/*
-func (m *Master) EchoMetricsStream(c echo.Context) error {
-	trialID, err := strconv.Atoi(c.Param("trial_id"))
-	if err != nil {
-		return err
-	}
-	size, err := strconv.Atoi(c.QueryParam("size"))
-	if err != nil {
-		return err
-	}
-
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	c.Response().WriteHeader(http.StatusOK)
-
-	enc := json.NewEncoder(c.Response())
-
-	key := -1
-	for {
-		var steps []Step
-		if err := db.Bun().NewSelect().Table("steps").
-			Where("trial_id = ?", trialID).
-			Where("total_batches > ?", key).
-			Order("total_batches").
-			Limit(size).
-			Scan(c.Request().Context(), &steps); err != nil {
-			return err
-		}
-
-		if len(steps) > 0 {
-			fmt.Println("WRITE DATA")
-			if err := enc.Encode(map[string]any{"steps": steps}); err != nil {
-				return err
-			}
-			c.Response().Flush()
-			fmt.Println("WRITten DATA")
-		}
-
-		if len(steps) != size {
-			break
-		}
-		key = int(steps[len(steps)-1].TotalBatches)
-	}
-
-	return nil
-}
-*/
 
 func (a *apiServer) GetTrialWorkloads(ctx context.Context, req *apiv1.GetTrialWorkloadsRequest) (
 	*apiv1.GetTrialWorkloadsResponse, error,

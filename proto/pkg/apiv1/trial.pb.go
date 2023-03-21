@@ -5361,548 +5361,6 @@ func (*PostTrialRunnerMetadataResponse) Descriptor() ([]byte, []int) {
 	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{75}
 }
 
-// A step.
-type Step struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TrialId      int32                `protobuf:"varint,1,opt,name=trial_id,json=trialId,proto3" json:"trial_id,omitempty"`
-	EndTime      *timestamp.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	Metrics      *_struct.Struct      `protobuf:"bytes,3,opt,name=metrics,proto3" json:"metrics,omitempty"`
-	TotalBatches int32                `protobuf:"varint,4,opt,name=total_batches,json=totalBatches,proto3" json:"total_batches,omitempty"`
-	Archived     bool                 `protobuf:"varint,5,opt,name=archived,proto3" json:"archived,omitempty"`
-	Id           int32                `protobuf:"varint,6,opt,name=id,proto3" json:"id,omitempty"`
-	TrialRunId   int32                `protobuf:"varint,7,opt,name=trial_run_id,json=trialRunId,proto3" json:"trial_run_id,omitempty"`
-}
-
-func (x *Step) Reset() {
-	*x = Step{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[76]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Step) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Step) ProtoMessage() {}
-
-func (x *Step) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[76]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Step.ProtoReflect.Descriptor instead.
-func (*Step) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{76}
-}
-
-func (x *Step) GetTrialId() int32 {
-	if x != nil {
-		return x.TrialId
-	}
-	return 0
-}
-
-func (x *Step) GetEndTime() *timestamp.Timestamp {
-	if x != nil {
-		return x.EndTime
-	}
-	return nil
-}
-
-func (x *Step) GetMetrics() *_struct.Struct {
-	if x != nil {
-		return x.Metrics
-	}
-	return nil
-}
-
-func (x *Step) GetTotalBatches() int32 {
-	if x != nil {
-		return x.TotalBatches
-	}
-	return 0
-}
-
-func (x *Step) GetArchived() bool {
-	if x != nil {
-		return x.Archived
-	}
-	return false
-}
-
-func (x *Step) GetId() int32 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *Step) GetTrialRunId() int32 {
-	if x != nil {
-		return x.TrialRunId
-	}
-	return 0
-}
-
-// No paging metrics.
-type MetricsNoPagingRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The id of the trial.
-	TrialId int32 `protobuf:"varint,1,opt,name=trial_id,json=trialId,proto3" json:"trial_id,omitempty"`
-}
-
-func (x *MetricsNoPagingRequest) Reset() {
-	*x = MetricsNoPagingRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[77]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsNoPagingRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsNoPagingRequest) ProtoMessage() {}
-
-func (x *MetricsNoPagingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[77]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsNoPagingRequest.ProtoReflect.Descriptor instead.
-func (*MetricsNoPagingRequest) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{77}
-}
-
-func (x *MetricsNoPagingRequest) GetTrialId() int32 {
-	if x != nil {
-		return x.TrialId
-	}
-	return 0
-}
-
-type MetricsNoPagingResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Steps []*Step `protobuf:"bytes,1,rep,name=steps,proto3" json:"steps,omitempty"`
-}
-
-func (x *MetricsNoPagingResponse) Reset() {
-	*x = MetricsNoPagingResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[78]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsNoPagingResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsNoPagingResponse) ProtoMessage() {}
-
-func (x *MetricsNoPagingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[78]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsNoPagingResponse.ProtoReflect.Descriptor instead.
-func (*MetricsNoPagingResponse) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{78}
-}
-
-func (x *MetricsNoPagingResponse) GetSteps() []*Step {
-	if x != nil {
-		return x.Steps
-	}
-	return nil
-}
-
-// No paging metrics.
-type MetricsLimitOffsetRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The id of the trial.
-	TrialId int32 `protobuf:"varint,1,opt,name=trial_id,json=trialId,proto3" json:"trial_id,omitempty"`
-	Offset  int32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	Limit   int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-}
-
-func (x *MetricsLimitOffsetRequest) Reset() {
-	*x = MetricsLimitOffsetRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[79]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsLimitOffsetRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsLimitOffsetRequest) ProtoMessage() {}
-
-func (x *MetricsLimitOffsetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[79]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsLimitOffsetRequest.ProtoReflect.Descriptor instead.
-func (*MetricsLimitOffsetRequest) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{79}
-}
-
-func (x *MetricsLimitOffsetRequest) GetTrialId() int32 {
-	if x != nil {
-		return x.TrialId
-	}
-	return 0
-}
-
-func (x *MetricsLimitOffsetRequest) GetOffset() int32 {
-	if x != nil {
-		return x.Offset
-	}
-	return 0
-}
-
-func (x *MetricsLimitOffsetRequest) GetLimit() int32 {
-	if x != nil {
-		return x.Limit
-	}
-	return 0
-}
-
-type MetricsLimitOffsetResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Steps      []*Step     `protobuf:"bytes,1,rep,name=steps,proto3" json:"steps,omitempty"`
-	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
-}
-
-func (x *MetricsLimitOffsetResponse) Reset() {
-	*x = MetricsLimitOffsetResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[80]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsLimitOffsetResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsLimitOffsetResponse) ProtoMessage() {}
-
-func (x *MetricsLimitOffsetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[80]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsLimitOffsetResponse.ProtoReflect.Descriptor instead.
-func (*MetricsLimitOffsetResponse) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{80}
-}
-
-func (x *MetricsLimitOffsetResponse) GetSteps() []*Step {
-	if x != nil {
-		return x.Steps
-	}
-	return nil
-}
-
-func (x *MetricsLimitOffsetResponse) GetPagination() *Pagination {
-	if x != nil {
-		return x.Pagination
-	}
-	return nil
-}
-
-// Keyset pagination.
-type MetricsKeysetRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TrialId int32  `protobuf:"varint,1,opt,name=trial_id,json=trialId,proto3" json:"trial_id,omitempty"`
-	Key     string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Size    int32  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
-}
-
-func (x *MetricsKeysetRequest) Reset() {
-	*x = MetricsKeysetRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[81]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsKeysetRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsKeysetRequest) ProtoMessage() {}
-
-func (x *MetricsKeysetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[81]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsKeysetRequest.ProtoReflect.Descriptor instead.
-func (*MetricsKeysetRequest) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{81}
-}
-
-func (x *MetricsKeysetRequest) GetTrialId() int32 {
-	if x != nil {
-		return x.TrialId
-	}
-	return 0
-}
-
-func (x *MetricsKeysetRequest) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-func (x *MetricsKeysetRequest) GetSize() int32 {
-	if x != nil {
-		return x.Size
-	}
-	return 0
-}
-
-type MetricsKeysetResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Steps    []*Step `protobuf:"bytes,1,rep,name=steps,proto3" json:"steps,omitempty"`
-	PrevPage string  `protobuf:"bytes,2,opt,name=prevPage,proto3" json:"prevPage,omitempty"`
-	NextPage string  `protobuf:"bytes,3,opt,name=nextPage,proto3" json:"nextPage,omitempty"`
-}
-
-func (x *MetricsKeysetResponse) Reset() {
-	*x = MetricsKeysetResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[82]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsKeysetResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsKeysetResponse) ProtoMessage() {}
-
-func (x *MetricsKeysetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[82]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsKeysetResponse.ProtoReflect.Descriptor instead.
-func (*MetricsKeysetResponse) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{82}
-}
-
-func (x *MetricsKeysetResponse) GetSteps() []*Step {
-	if x != nil {
-		return x.Steps
-	}
-	return nil
-}
-
-func (x *MetricsKeysetResponse) GetPrevPage() string {
-	if x != nil {
-		return x.PrevPage
-	}
-	return ""
-}
-
-func (x *MetricsKeysetResponse) GetNextPage() string {
-	if x != nil {
-		return x.NextPage
-	}
-	return ""
-}
-
-// Streaming metrics.
-type MetricsStreamingRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TrialId int32 `protobuf:"varint,1,opt,name=trial_id,json=trialId,proto3" json:"trial_id,omitempty"`
-	Size    int32 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-}
-
-func (x *MetricsStreamingRequest) Reset() {
-	*x = MetricsStreamingRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[83]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsStreamingRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsStreamingRequest) ProtoMessage() {}
-
-func (x *MetricsStreamingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[83]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsStreamingRequest.ProtoReflect.Descriptor instead.
-func (*MetricsStreamingRequest) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{83}
-}
-
-func (x *MetricsStreamingRequest) GetTrialId() int32 {
-	if x != nil {
-		return x.TrialId
-	}
-	return 0
-}
-
-func (x *MetricsStreamingRequest) GetSize() int32 {
-	if x != nil {
-		return x.Size
-	}
-	return 0
-}
-
-type MetricsStreamingResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Steps []*Step `protobuf:"bytes,1,rep,name=steps,proto3" json:"steps,omitempty"`
-}
-
-func (x *MetricsStreamingResponse) Reset() {
-	*x = MetricsStreamingResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[84]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *MetricsStreamingResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricsStreamingResponse) ProtoMessage() {}
-
-func (x *MetricsStreamingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[84]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricsStreamingResponse.ProtoReflect.Descriptor instead.
-func (*MetricsStreamingResponse) Descriptor() ([]byte, []int) {
-	return file_determined_api_v1_trial_proto_rawDescGZIP(), []int{84}
-}
-
-func (x *MetricsStreamingResponse) GetSteps() []*Step {
-	if x != nil {
-		return x.Steps
-	}
-	return nil
-}
-
 // Specifies a ranking for trials within their experiment.
 type TrialFilters_RankWithinExp struct {
 	state         protoimpl.MessageState
@@ -5918,7 +5376,7 @@ type TrialFilters_RankWithinExp struct {
 func (x *TrialFilters_RankWithinExp) Reset() {
 	*x = TrialFilters_RankWithinExp{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[85]
+		mi := &file_determined_api_v1_trial_proto_msgTypes[76]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5931,7 +5389,7 @@ func (x *TrialFilters_RankWithinExp) String() string {
 func (*TrialFilters_RankWithinExp) ProtoMessage() {}
 
 func (x *TrialFilters_RankWithinExp) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[85]
+	mi := &file_determined_api_v1_trial_proto_msgTypes[76]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5974,7 +5432,7 @@ type UpdateTrialTagsRequest_Ids struct {
 func (x *UpdateTrialTagsRequest_Ids) Reset() {
 	*x = UpdateTrialTagsRequest_Ids{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_determined_api_v1_trial_proto_msgTypes[86]
+		mi := &file_determined_api_v1_trial_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5987,7 +5445,7 @@ func (x *UpdateTrialTagsRequest_Ids) String() string {
 func (*UpdateTrialTagsRequest_Ids) ProtoMessage() {}
 
 func (x *UpdateTrialTagsRequest_Ids) ProtoReflect() protoreflect.Message {
-	mi := &file_determined_api_v1_trial_proto_msgTypes[86]
+	mi := &file_determined_api_v1_trial_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6909,99 +6367,20 @@ var file_determined_api_v1_trial_proto_rawDesc = []byte{
 	0x72, 0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0xd2, 0x01, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61,
 	0x74, 0x61, 0x22, 0x21, 0x0a, 0x1f, 0x50, 0x6f, 0x73, 0x74, 0x54, 0x72, 0x69, 0x61, 0x6c, 0x52,
 	0x75, 0x6e, 0x6e, 0x65, 0x72, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc5, 0x02, 0x0a, 0x04, 0x53, 0x74, 0x65, 0x70, 0x12, 0x19,
-	0x0a, 0x08, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x07, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x49, 0x64, 0x12, 0x35, 0x0a, 0x08, 0x65, 0x6e, 0x64,
-	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
-	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69,
-	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x07, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x6d, 0x65,
-	0x12, 0x31, 0x0a, 0x07, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x17, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x52, 0x07, 0x6d, 0x65, 0x74, 0x72,
-	0x69, 0x63, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x5f, 0x62, 0x61, 0x74,
-	0x63, 0x68, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0c, 0x74, 0x6f, 0x74, 0x61,
-	0x6c, 0x42, 0x61, 0x74, 0x63, 0x68, 0x65, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x61, 0x72, 0x63, 0x68,
-	0x69, 0x76, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x61, 0x72, 0x63, 0x68,
-	0x69, 0x76, 0x65, 0x64, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x02, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x5f, 0x72, 0x75,
-	0x6e, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x74, 0x72, 0x69, 0x61,
-	0x6c, 0x52, 0x75, 0x6e, 0x49, 0x64, 0x3a, 0x45, 0x92, 0x41, 0x42, 0x0a, 0x40, 0xd2, 0x01, 0x08,
-	0x74, 0x72, 0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0xd2, 0x01, 0x08, 0x65, 0x6e, 0x64, 0x5f, 0x74,
-	0x69, 0x6d, 0x65, 0xd2, 0x01, 0x07, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0xd2, 0x01, 0x0d,
-	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x5f, 0x62, 0x61, 0x74, 0x63, 0x68, 0x65, 0x73, 0xd2, 0x01, 0x08,
-	0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x64, 0xd2, 0x01, 0x02, 0x69, 0x64, 0x22, 0x45, 0x0a,
-	0x16, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x4e, 0x6f, 0x50, 0x61, 0x67, 0x69, 0x6e, 0x67,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x74, 0x72, 0x69, 0x61, 0x6c,
-	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x74, 0x72, 0x69, 0x61, 0x6c,
-	0x49, 0x64, 0x3a, 0x10, 0x92, 0x41, 0x0d, 0x0a, 0x0b, 0xd2, 0x01, 0x08, 0x74, 0x72, 0x69, 0x61,
-	0x6c, 0x5f, 0x69, 0x64, 0x22, 0x57, 0x0a, 0x17, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x4e,
-	0x6f, 0x50, 0x61, 0x67, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x2d, 0x0a, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17,
-	0x2e, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x65, 0x64, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x76, 0x31, 0x2e, 0x53, 0x74, 0x65, 0x70, 0x52, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0x3a, 0x0d,
-	0x92, 0x41, 0x0a, 0x0a, 0x08, 0xd2, 0x01, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0x22, 0x76, 0x0a,
-	0x19, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x4f, 0x66, 0x66,
-	0x73, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x74, 0x72,
-	0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x74, 0x72,
-	0x69, 0x61, 0x6c, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x12, 0x14, 0x0a,
-	0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x6c, 0x69,
-	0x6d, 0x69, 0x74, 0x3a, 0x10, 0x92, 0x41, 0x0d, 0x0a, 0x0b, 0xd2, 0x01, 0x08, 0x74, 0x72, 0x69,
-	0x61, 0x6c, 0x5f, 0x69, 0x64, 0x22, 0xa6, 0x01, 0x0a, 0x1a, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63,
-	0x73, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2d, 0x0a, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x65, 0x64,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x65, 0x70, 0x52, 0x05, 0x73, 0x74,
-	0x65, 0x70, 0x73, 0x12, 0x3d, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d,
-	0x69, 0x6e, 0x65, 0x64, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x69,
-	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x3a, 0x1a, 0x92, 0x41, 0x17, 0x0a, 0x15, 0xd2, 0x01, 0x05, 0x73, 0x74, 0x65, 0x70,
-	0x73, 0xd2, 0x01, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x69,
-	0x0a, 0x14, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x4b, 0x65, 0x79, 0x73, 0x65, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x5f,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x49,
-	0x64, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
-	0x6b, 0x65, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x05, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x3a, 0x10, 0x92, 0x41, 0x0d, 0x0a, 0x0b, 0xd2, 0x01,
-	0x08, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x22, 0xa3, 0x01, 0x0a, 0x15, 0x4d, 0x65,
-	0x74, 0x72, 0x69, 0x63, 0x73, 0x4b, 0x65, 0x79, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x2d, 0x0a, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x17, 0x2e, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x65, 0x64, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x65, 0x70, 0x52, 0x05, 0x73, 0x74, 0x65,
-	0x70, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x72, 0x65, 0x76, 0x50, 0x61, 0x67, 0x65, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x72, 0x65, 0x76, 0x50, 0x61, 0x67, 0x65, 0x12, 0x1a,
-	0x0a, 0x08, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x08, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x3a, 0x23, 0x92, 0x41, 0x20, 0x0a,
-	0x1e, 0xd2, 0x01, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0xd2, 0x01, 0x08, 0x70, 0x72, 0x65, 0x76,
-	0x50, 0x61, 0x67, 0x65, 0xd2, 0x01, 0x08, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x22,
-	0x5a, 0x0a, 0x17, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d,
-	0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x74, 0x72,
-	0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x74, 0x72,
-	0x69, 0x61, 0x6c, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x3a, 0x10, 0x92, 0x41, 0x0d, 0x0a, 0x0b,
-	0xd2, 0x01, 0x08, 0x74, 0x72, 0x69, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x22, 0x6e, 0x0a, 0x18, 0x4d,
-	0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x69, 0x6e, 0x67, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2d, 0x0a, 0x05, 0x73, 0x74, 0x65, 0x70, 0x73,
-	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d, 0x69,
-	0x6e, 0x65, 0x64, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x65, 0x70, 0x52,
-	0x05, 0x73, 0x74, 0x65, 0x70, 0x73, 0x3a, 0x23, 0x92, 0x41, 0x20, 0x0a, 0x1e, 0xd2, 0x01, 0x05,
-	0x73, 0x74, 0x65, 0x70, 0x73, 0xd2, 0x01, 0x08, 0x70, 0x72, 0x65, 0x76, 0x50, 0x61, 0x67, 0x65,
-	0xd2, 0x01, 0x08, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x2a, 0x3f, 0x0a, 0x05, 0x53,
-	0x63, 0x61, 0x6c, 0x65, 0x12, 0x15, 0x0a, 0x11, 0x53, 0x43, 0x41, 0x4c, 0x45, 0x5f, 0x55, 0x4e,
-	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x10, 0x0a, 0x0c, 0x53,
-	0x43, 0x41, 0x4c, 0x45, 0x5f, 0x4c, 0x49, 0x4e, 0x45, 0x41, 0x52, 0x10, 0x01, 0x12, 0x0d, 0x0a,
-	0x09, 0x53, 0x43, 0x41, 0x4c, 0x45, 0x5f, 0x4c, 0x4f, 0x47, 0x10, 0x02, 0x2a, 0x54, 0x0a, 0x05,
-	0x58, 0x41, 0x78, 0x69, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x58, 0x5f, 0x41, 0x58, 0x49, 0x53, 0x5f,
-	0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x10, 0x0a,
-	0x0c, 0x58, 0x5f, 0x41, 0x58, 0x49, 0x53, 0x5f, 0x42, 0x41, 0x54, 0x43, 0x48, 0x10, 0x01, 0x12,
-	0x0f, 0x0a, 0x0b, 0x58, 0x5f, 0x41, 0x58, 0x49, 0x53, 0x5f, 0x54, 0x49, 0x4d, 0x45, 0x10, 0x02,
-	0x12, 0x10, 0x0a, 0x0c, 0x58, 0x5f, 0x41, 0x58, 0x49, 0x53, 0x5f, 0x45, 0x50, 0x4f, 0x43, 0x48,
-	0x10, 0x03, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x65, 0x64, 0x2d, 0x61, 0x69, 0x2f, 0x64,
-	0x65, 0x74, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x65, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x70, 0x6b, 0x67, 0x2f, 0x61, 0x70, 0x69, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2a, 0x3f, 0x0a, 0x05, 0x53, 0x63, 0x61, 0x6c, 0x65, 0x12, 0x15,
+	0x0a, 0x11, 0x53, 0x43, 0x41, 0x4c, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
+	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x10, 0x0a, 0x0c, 0x53, 0x43, 0x41, 0x4c, 0x45, 0x5f, 0x4c,
+	0x49, 0x4e, 0x45, 0x41, 0x52, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x53, 0x43, 0x41, 0x4c, 0x45,
+	0x5f, 0x4c, 0x4f, 0x47, 0x10, 0x02, 0x2a, 0x54, 0x0a, 0x05, 0x58, 0x41, 0x78, 0x69, 0x73, 0x12,
+	0x16, 0x0a, 0x12, 0x58, 0x5f, 0x41, 0x58, 0x49, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43,
+	0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x10, 0x0a, 0x0c, 0x58, 0x5f, 0x41, 0x58, 0x49,
+	0x53, 0x5f, 0x42, 0x41, 0x54, 0x43, 0x48, 0x10, 0x01, 0x12, 0x0f, 0x0a, 0x0b, 0x58, 0x5f, 0x41,
+	0x58, 0x49, 0x53, 0x5f, 0x54, 0x49, 0x4d, 0x45, 0x10, 0x02, 0x12, 0x10, 0x0a, 0x0c, 0x58, 0x5f,
+	0x41, 0x58, 0x49, 0x53, 0x5f, 0x45, 0x50, 0x4f, 0x43, 0x48, 0x10, 0x03, 0x42, 0x35, 0x5a, 0x33,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x64, 0x65, 0x74, 0x65, 0x72,
+	0x6d, 0x69, 0x6e, 0x65, 0x64, 0x2d, 0x61, 0x69, 0x2f, 0x64, 0x65, 0x74, 0x65, 0x72, 0x6d, 0x69,
+	0x6e, 0x65, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x70,
+	0x69, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -7017,7 +6396,7 @@ func file_determined_api_v1_trial_proto_rawDescGZIP() []byte {
 }
 
 var file_determined_api_v1_trial_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_determined_api_v1_trial_proto_msgTypes = make([]protoimpl.MessageInfo, 87)
+var file_determined_api_v1_trial_proto_msgTypes = make([]protoimpl.MessageInfo, 78)
 var file_determined_api_v1_trial_proto_goTypes = []interface{}{
 	(Scale)(0),                                          // 0: determined.api.v1.Scale
 	(XAxis)(0),                                          // 1: determined.api.v1.XAxis
@@ -7101,78 +6480,69 @@ var file_determined_api_v1_trial_proto_goTypes = []interface{}{
 	(*ReportTrialValidationMetricsResponse)(nil),        // 79: determined.api.v1.ReportTrialValidationMetricsResponse
 	(*PostTrialRunnerMetadataRequest)(nil),              // 80: determined.api.v1.PostTrialRunnerMetadataRequest
 	(*PostTrialRunnerMetadataResponse)(nil),             // 81: determined.api.v1.PostTrialRunnerMetadataResponse
-	(*Step)(nil),                                        // 82: determined.api.v1.Step
-	(*MetricsNoPagingRequest)(nil),                      // 83: determined.api.v1.MetricsNoPagingRequest
-	(*MetricsNoPagingResponse)(nil),                     // 84: determined.api.v1.MetricsNoPagingResponse
-	(*MetricsLimitOffsetRequest)(nil),                   // 85: determined.api.v1.MetricsLimitOffsetRequest
-	(*MetricsLimitOffsetResponse)(nil),                  // 86: determined.api.v1.MetricsLimitOffsetResponse
-	(*MetricsKeysetRequest)(nil),                        // 87: determined.api.v1.MetricsKeysetRequest
-	(*MetricsKeysetResponse)(nil),                       // 88: determined.api.v1.MetricsKeysetResponse
-	(*MetricsStreamingRequest)(nil),                     // 89: determined.api.v1.MetricsStreamingRequest
-	(*MetricsStreamingResponse)(nil),                    // 90: determined.api.v1.MetricsStreamingResponse
-	(*TrialFilters_RankWithinExp)(nil),                  // 91: determined.api.v1.TrialFilters.RankWithinExp
-	(*UpdateTrialTagsRequest_Ids)(nil),                  // 92: determined.api.v1.UpdateTrialTagsRequest.Ids
-	(*DataPoint)(nil),                                   // 93: determined.api.v1.DataPoint
-	(*DataPointTime)(nil),                               // 94: determined.api.v1.DataPointTime
-	(*DataPointEpoch)(nil),                              // 95: determined.api.v1.DataPointEpoch
-	(MetricType)(0),                                     // 96: determined.api.v1.MetricType
-	(*trialv1.MetricsWorkload)(nil),                     // 97: determined.trial.v1.MetricsWorkload
-	(*trialv1.CheckpointWorkload)(nil),                  // 98: determined.trial.v1.CheckpointWorkload
-	(*commonv1.DoubleFieldFilter)(nil),                  // 99: determined.common.v1.DoubleFieldFilter
-	(OrderBy)(0),                                        // 100: determined.api.v1.OrderBy
-	(*commonv1.TimestampFieldFilter)(nil),               // 101: determined.common.v1.TimestampFieldFilter
-	(trialv1.State)(0),                                  // 102: determined.trial.v1.State
-	(*_struct.Struct)(nil),                              // 103: google.protobuf.Struct
-	(*timestamp.Timestamp)(nil),                         // 104: google.protobuf.Timestamp
-	(logv1.LogLevel)(0),                                 // 105: determined.log.v1.LogLevel
-	(checkpointv1.State)(0),                             // 106: determined.checkpoint.v1.State
-	(*checkpointv1.Checkpoint)(nil),                     // 107: determined.checkpoint.v1.Checkpoint
-	(*Pagination)(nil),                                  // 108: determined.api.v1.Pagination
-	(experimentv1.State)(0),                             // 109: determined.experiment.v1.State
-	(*trialv1.Trial)(nil),                               // 110: determined.trial.v1.Trial
-	(*trialv1.TrialProfilerMetricLabels)(nil),           // 111: determined.trial.v1.TrialProfilerMetricLabels
-	(*trialv1.TrialProfilerMetricsBatch)(nil),           // 112: determined.trial.v1.TrialProfilerMetricsBatch
-	(*trialv1.RendezvousInfo)(nil),                      // 113: determined.trial.v1.RendezvousInfo
-	(*experimentv1.TrialOperation)(nil),                 // 114: determined.experiment.v1.TrialOperation
-	(*experimentv1.CompleteValidateAfterOperation)(nil), // 115: determined.experiment.v1.CompleteValidateAfterOperation
-	(*trialv1.TrialEarlyExit)(nil),                      // 116: determined.trial.v1.TrialEarlyExit
-	(*trialv1.TrialMetrics)(nil),                        // 117: determined.trial.v1.TrialMetrics
-	(*trialv1.TrialRunnerMetadata)(nil),                 // 118: determined.trial.v1.TrialRunnerMetadata
+	(*TrialFilters_RankWithinExp)(nil),                  // 82: determined.api.v1.TrialFilters.RankWithinExp
+	(*UpdateTrialTagsRequest_Ids)(nil),                  // 83: determined.api.v1.UpdateTrialTagsRequest.Ids
+	(*DataPoint)(nil),                                   // 84: determined.api.v1.DataPoint
+	(*DataPointTime)(nil),                               // 85: determined.api.v1.DataPointTime
+	(*DataPointEpoch)(nil),                              // 86: determined.api.v1.DataPointEpoch
+	(MetricType)(0),                                     // 87: determined.api.v1.MetricType
+	(*trialv1.MetricsWorkload)(nil),                     // 88: determined.trial.v1.MetricsWorkload
+	(*trialv1.CheckpointWorkload)(nil),                  // 89: determined.trial.v1.CheckpointWorkload
+	(*commonv1.DoubleFieldFilter)(nil),                  // 90: determined.common.v1.DoubleFieldFilter
+	(OrderBy)(0),                                        // 91: determined.api.v1.OrderBy
+	(*commonv1.TimestampFieldFilter)(nil),               // 92: determined.common.v1.TimestampFieldFilter
+	(trialv1.State)(0),                                  // 93: determined.trial.v1.State
+	(*_struct.Struct)(nil),                              // 94: google.protobuf.Struct
+	(*timestamp.Timestamp)(nil),                         // 95: google.protobuf.Timestamp
+	(logv1.LogLevel)(0),                                 // 96: determined.log.v1.LogLevel
+	(checkpointv1.State)(0),                             // 97: determined.checkpoint.v1.State
+	(*checkpointv1.Checkpoint)(nil),                     // 98: determined.checkpoint.v1.Checkpoint
+	(*Pagination)(nil),                                  // 99: determined.api.v1.Pagination
+	(experimentv1.State)(0),                             // 100: determined.experiment.v1.State
+	(*trialv1.Trial)(nil),                               // 101: determined.trial.v1.Trial
+	(*trialv1.TrialProfilerMetricLabels)(nil),           // 102: determined.trial.v1.TrialProfilerMetricLabels
+	(*trialv1.TrialProfilerMetricsBatch)(nil),           // 103: determined.trial.v1.TrialProfilerMetricsBatch
+	(*trialv1.RendezvousInfo)(nil),                      // 104: determined.trial.v1.RendezvousInfo
+	(*experimentv1.TrialOperation)(nil),                 // 105: determined.experiment.v1.TrialOperation
+	(*experimentv1.CompleteValidateAfterOperation)(nil), // 106: determined.experiment.v1.CompleteValidateAfterOperation
+	(*trialv1.TrialEarlyExit)(nil),                      // 107: determined.trial.v1.TrialEarlyExit
+	(*trialv1.TrialMetrics)(nil),                        // 108: determined.trial.v1.TrialMetrics
+	(*trialv1.TrialRunnerMetadata)(nil),                 // 109: determined.trial.v1.TrialRunnerMetadata
 }
 var file_determined_api_v1_trial_proto_depIdxs = []int32{
-	93,  // 0: determined.api.v1.SummarizedMetric.data:type_name -> determined.api.v1.DataPoint
-	94,  // 1: determined.api.v1.SummarizedMetric.time:type_name -> determined.api.v1.DataPointTime
-	95,  // 2: determined.api.v1.SummarizedMetric.epochs:type_name -> determined.api.v1.DataPointEpoch
-	96,  // 3: determined.api.v1.SummarizedMetric.type:type_name -> determined.api.v1.MetricType
-	97,  // 4: determined.api.v1.WorkloadContainer.training:type_name -> determined.trial.v1.MetricsWorkload
-	97,  // 5: determined.api.v1.WorkloadContainer.validation:type_name -> determined.trial.v1.MetricsWorkload
-	98,  // 6: determined.api.v1.WorkloadContainer.checkpoint:type_name -> determined.trial.v1.CheckpointWorkload
-	99,  // 7: determined.api.v1.ColumnFilter.filter:type_name -> determined.common.v1.DoubleFieldFilter
+	84,  // 0: determined.api.v1.SummarizedMetric.data:type_name -> determined.api.v1.DataPoint
+	85,  // 1: determined.api.v1.SummarizedMetric.time:type_name -> determined.api.v1.DataPointTime
+	86,  // 2: determined.api.v1.SummarizedMetric.epochs:type_name -> determined.api.v1.DataPointEpoch
+	87,  // 3: determined.api.v1.SummarizedMetric.type:type_name -> determined.api.v1.MetricType
+	88,  // 4: determined.api.v1.WorkloadContainer.training:type_name -> determined.trial.v1.MetricsWorkload
+	88,  // 5: determined.api.v1.WorkloadContainer.validation:type_name -> determined.trial.v1.MetricsWorkload
+	89,  // 6: determined.api.v1.WorkloadContainer.checkpoint:type_name -> determined.trial.v1.CheckpointWorkload
+	90,  // 7: determined.api.v1.ColumnFilter.filter:type_name -> determined.common.v1.DoubleFieldFilter
 	2,   // 8: determined.api.v1.TrialSorter.namespace:type_name -> determined.api.v1.TrialSorter.Namespace
-	100, // 9: determined.api.v1.TrialSorter.order_by:type_name -> determined.api.v1.OrderBy
+	91,  // 9: determined.api.v1.TrialSorter.order_by:type_name -> determined.api.v1.OrderBy
 	8,   // 10: determined.api.v1.TrialFilters.validation_metrics:type_name -> determined.api.v1.ColumnFilter
 	8,   // 11: determined.api.v1.TrialFilters.training_metrics:type_name -> determined.api.v1.ColumnFilter
 	8,   // 12: determined.api.v1.TrialFilters.hparams:type_name -> determined.api.v1.ColumnFilter
 	9,   // 13: determined.api.v1.TrialFilters.tags:type_name -> determined.api.v1.TrialTag
-	91,  // 14: determined.api.v1.TrialFilters.rank_within_exp:type_name -> determined.api.v1.TrialFilters.RankWithinExp
-	101, // 15: determined.api.v1.TrialFilters.start_time:type_name -> determined.common.v1.TimestampFieldFilter
-	101, // 16: determined.api.v1.TrialFilters.end_time:type_name -> determined.common.v1.TimestampFieldFilter
-	102, // 17: determined.api.v1.TrialFilters.states:type_name -> determined.trial.v1.State
-	99,  // 18: determined.api.v1.TrialFilters.searcher_metric_value:type_name -> determined.common.v1.DoubleFieldFilter
+	82,  // 14: determined.api.v1.TrialFilters.rank_within_exp:type_name -> determined.api.v1.TrialFilters.RankWithinExp
+	92,  // 15: determined.api.v1.TrialFilters.start_time:type_name -> determined.common.v1.TimestampFieldFilter
+	92,  // 16: determined.api.v1.TrialFilters.end_time:type_name -> determined.common.v1.TimestampFieldFilter
+	93,  // 17: determined.api.v1.TrialFilters.states:type_name -> determined.trial.v1.State
+	90,  // 18: determined.api.v1.TrialFilters.searcher_metric_value:type_name -> determined.common.v1.DoubleFieldFilter
 	11,  // 19: determined.api.v1.QueryTrialsRequest.filters:type_name -> determined.api.v1.TrialFilters
 	10,  // 20: determined.api.v1.QueryTrialsRequest.sorter:type_name -> determined.api.v1.TrialSorter
-	102, // 21: determined.api.v1.AugmentedTrial.state:type_name -> determined.trial.v1.State
-	103, // 22: determined.api.v1.AugmentedTrial.hparams:type_name -> google.protobuf.Struct
-	103, // 23: determined.api.v1.AugmentedTrial.training_metrics:type_name -> google.protobuf.Struct
-	103, // 24: determined.api.v1.AugmentedTrial.validation_metrics:type_name -> google.protobuf.Struct
-	103, // 25: determined.api.v1.AugmentedTrial.tags:type_name -> google.protobuf.Struct
-	104, // 26: determined.api.v1.AugmentedTrial.start_time:type_name -> google.protobuf.Timestamp
-	104, // 27: determined.api.v1.AugmentedTrial.end_time:type_name -> google.protobuf.Timestamp
+	93,  // 21: determined.api.v1.AugmentedTrial.state:type_name -> determined.trial.v1.State
+	94,  // 22: determined.api.v1.AugmentedTrial.hparams:type_name -> google.protobuf.Struct
+	94,  // 23: determined.api.v1.AugmentedTrial.training_metrics:type_name -> google.protobuf.Struct
+	94,  // 24: determined.api.v1.AugmentedTrial.validation_metrics:type_name -> google.protobuf.Struct
+	94,  // 25: determined.api.v1.AugmentedTrial.tags:type_name -> google.protobuf.Struct
+	95,  // 26: determined.api.v1.AugmentedTrial.start_time:type_name -> google.protobuf.Timestamp
+	95,  // 27: determined.api.v1.AugmentedTrial.end_time:type_name -> google.protobuf.Timestamp
 	13,  // 28: determined.api.v1.QueryTrialsResponse.trials:type_name -> determined.api.v1.AugmentedTrial
 	9,   // 29: determined.api.v1.TrialPatch.add_tag:type_name -> determined.api.v1.TrialTag
 	9,   // 30: determined.api.v1.TrialPatch.remove_tag:type_name -> determined.api.v1.TrialTag
 	11,  // 31: determined.api.v1.UpdateTrialTagsRequest.filters:type_name -> determined.api.v1.TrialFilters
-	92,  // 32: determined.api.v1.UpdateTrialTagsRequest.trial:type_name -> determined.api.v1.UpdateTrialTagsRequest.Ids
+	83,  // 32: determined.api.v1.UpdateTrialTagsRequest.trial:type_name -> determined.api.v1.UpdateTrialTagsRequest.Ids
 	15,  // 33: determined.api.v1.UpdateTrialTagsRequest.patch:type_name -> determined.api.v1.TrialPatch
 	11,  // 34: determined.api.v1.TrialsCollection.filters:type_name -> determined.api.v1.TrialFilters
 	10,  // 35: determined.api.v1.TrialsCollection.sorter:type_name -> determined.api.v1.TrialSorter
@@ -7183,66 +6553,59 @@ var file_determined_api_v1_trial_proto_depIdxs = []int32{
 	11,  // 40: determined.api.v1.PatchTrialsCollectionRequest.filters:type_name -> determined.api.v1.TrialFilters
 	10,  // 41: determined.api.v1.PatchTrialsCollectionRequest.sorter:type_name -> determined.api.v1.TrialSorter
 	18,  // 42: determined.api.v1.PatchTrialsCollectionResponse.collection:type_name -> determined.api.v1.TrialsCollection
-	105, // 43: determined.api.v1.TrialLogsRequest.levels:type_name -> determined.log.v1.LogLevel
-	104, // 44: determined.api.v1.TrialLogsRequest.timestamp_before:type_name -> google.protobuf.Timestamp
-	104, // 45: determined.api.v1.TrialLogsRequest.timestamp_after:type_name -> google.protobuf.Timestamp
-	100, // 46: determined.api.v1.TrialLogsRequest.order_by:type_name -> determined.api.v1.OrderBy
-	104, // 47: determined.api.v1.TrialLogsResponse.timestamp:type_name -> google.protobuf.Timestamp
-	105, // 48: determined.api.v1.TrialLogsResponse.level:type_name -> determined.log.v1.LogLevel
+	96,  // 43: determined.api.v1.TrialLogsRequest.levels:type_name -> determined.log.v1.LogLevel
+	95,  // 44: determined.api.v1.TrialLogsRequest.timestamp_before:type_name -> google.protobuf.Timestamp
+	95,  // 45: determined.api.v1.TrialLogsRequest.timestamp_after:type_name -> google.protobuf.Timestamp
+	91,  // 46: determined.api.v1.TrialLogsRequest.order_by:type_name -> determined.api.v1.OrderBy
+	95,  // 47: determined.api.v1.TrialLogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	96,  // 48: determined.api.v1.TrialLogsResponse.level:type_name -> determined.log.v1.LogLevel
 	3,   // 49: determined.api.v1.GetTrialCheckpointsRequest.sort_by:type_name -> determined.api.v1.GetTrialCheckpointsRequest.SortBy
-	100, // 50: determined.api.v1.GetTrialCheckpointsRequest.order_by:type_name -> determined.api.v1.OrderBy
-	106, // 51: determined.api.v1.GetTrialCheckpointsRequest.states:type_name -> determined.checkpoint.v1.State
-	107, // 52: determined.api.v1.GetTrialCheckpointsResponse.checkpoints:type_name -> determined.checkpoint.v1.Checkpoint
-	108, // 53: determined.api.v1.GetTrialCheckpointsResponse.pagination:type_name -> determined.api.v1.Pagination
+	91,  // 50: determined.api.v1.GetTrialCheckpointsRequest.order_by:type_name -> determined.api.v1.OrderBy
+	97,  // 51: determined.api.v1.GetTrialCheckpointsRequest.states:type_name -> determined.checkpoint.v1.State
+	98,  // 52: determined.api.v1.GetTrialCheckpointsResponse.checkpoints:type_name -> determined.checkpoint.v1.Checkpoint
+	99,  // 53: determined.api.v1.GetTrialCheckpointsResponse.pagination:type_name -> determined.api.v1.Pagination
 	4,   // 54: determined.api.v1.GetExperimentTrialsRequest.sort_by:type_name -> determined.api.v1.GetExperimentTrialsRequest.SortBy
-	100, // 55: determined.api.v1.GetExperimentTrialsRequest.order_by:type_name -> determined.api.v1.OrderBy
-	109, // 56: determined.api.v1.GetExperimentTrialsRequest.states:type_name -> determined.experiment.v1.State
-	110, // 57: determined.api.v1.GetExperimentTrialsResponse.trials:type_name -> determined.trial.v1.Trial
-	108, // 58: determined.api.v1.GetExperimentTrialsResponse.pagination:type_name -> determined.api.v1.Pagination
-	110, // 59: determined.api.v1.GetTrialResponse.trial:type_name -> determined.trial.v1.Trial
-	100, // 60: determined.api.v1.GetTrialWorkloadsRequest.order_by:type_name -> determined.api.v1.OrderBy
+	91,  // 55: determined.api.v1.GetExperimentTrialsRequest.order_by:type_name -> determined.api.v1.OrderBy
+	100, // 56: determined.api.v1.GetExperimentTrialsRequest.states:type_name -> determined.experiment.v1.State
+	101, // 57: determined.api.v1.GetExperimentTrialsResponse.trials:type_name -> determined.trial.v1.Trial
+	99,  // 58: determined.api.v1.GetExperimentTrialsResponse.pagination:type_name -> determined.api.v1.Pagination
+	101, // 59: determined.api.v1.GetTrialResponse.trial:type_name -> determined.trial.v1.Trial
+	91,  // 60: determined.api.v1.GetTrialWorkloadsRequest.order_by:type_name -> determined.api.v1.OrderBy
 	5,   // 61: determined.api.v1.GetTrialWorkloadsRequest.filter:type_name -> determined.api.v1.GetTrialWorkloadsRequest.FilterOption
-	96,  // 62: determined.api.v1.GetTrialWorkloadsRequest.metric_type:type_name -> determined.api.v1.MetricType
+	87,  // 62: determined.api.v1.GetTrialWorkloadsRequest.metric_type:type_name -> determined.api.v1.MetricType
 	7,   // 63: determined.api.v1.GetTrialWorkloadsResponse.workloads:type_name -> determined.api.v1.WorkloadContainer
-	108, // 64: determined.api.v1.GetTrialWorkloadsResponse.pagination:type_name -> determined.api.v1.Pagination
-	111, // 65: determined.api.v1.GetTrialProfilerMetricsRequest.labels:type_name -> determined.trial.v1.TrialProfilerMetricLabels
-	112, // 66: determined.api.v1.GetTrialProfilerMetricsResponse.batch:type_name -> determined.trial.v1.TrialProfilerMetricsBatch
-	111, // 67: determined.api.v1.GetTrialProfilerAvailableSeriesResponse.labels:type_name -> determined.trial.v1.TrialProfilerMetricLabels
-	112, // 68: determined.api.v1.PostTrialProfilerMetricsBatchRequest.batches:type_name -> determined.trial.v1.TrialProfilerMetricsBatch
-	96,  // 69: determined.api.v1.SummarizeTrialRequest.metric_type:type_name -> determined.api.v1.MetricType
+	99,  // 64: determined.api.v1.GetTrialWorkloadsResponse.pagination:type_name -> determined.api.v1.Pagination
+	102, // 65: determined.api.v1.GetTrialProfilerMetricsRequest.labels:type_name -> determined.trial.v1.TrialProfilerMetricLabels
+	103, // 66: determined.api.v1.GetTrialProfilerMetricsResponse.batch:type_name -> determined.trial.v1.TrialProfilerMetricsBatch
+	102, // 67: determined.api.v1.GetTrialProfilerAvailableSeriesResponse.labels:type_name -> determined.trial.v1.TrialProfilerMetricLabels
+	103, // 68: determined.api.v1.PostTrialProfilerMetricsBatchRequest.batches:type_name -> determined.trial.v1.TrialProfilerMetricsBatch
+	87,  // 69: determined.api.v1.SummarizeTrialRequest.metric_type:type_name -> determined.api.v1.MetricType
 	0,   // 70: determined.api.v1.SummarizeTrialRequest.scale:type_name -> determined.api.v1.Scale
-	110, // 71: determined.api.v1.SummarizeTrialResponse.trial:type_name -> determined.trial.v1.Trial
+	101, // 71: determined.api.v1.SummarizeTrialResponse.trial:type_name -> determined.trial.v1.Trial
 	6,   // 72: determined.api.v1.SummarizeTrialResponse.metrics:type_name -> determined.api.v1.SummarizedMetric
-	110, // 73: determined.api.v1.ComparableTrial.trial:type_name -> determined.trial.v1.Trial
+	101, // 73: determined.api.v1.ComparableTrial.trial:type_name -> determined.trial.v1.Trial
 	6,   // 74: determined.api.v1.ComparableTrial.metrics:type_name -> determined.api.v1.SummarizedMetric
-	96,  // 75: determined.api.v1.CompareTrialsRequest.metric_type:type_name -> determined.api.v1.MetricType
+	87,  // 75: determined.api.v1.CompareTrialsRequest.metric_type:type_name -> determined.api.v1.MetricType
 	0,   // 76: determined.api.v1.CompareTrialsRequest.scale:type_name -> determined.api.v1.Scale
 	1,   // 77: determined.api.v1.CompareTrialsRequest.x_axis:type_name -> determined.api.v1.XAxis
 	49,  // 78: determined.api.v1.CompareTrialsResponse.trials:type_name -> determined.api.v1.ComparableTrial
-	113, // 79: determined.api.v1.AllocationRendezvousInfoResponse.rendezvous_info:type_name -> determined.trial.v1.RendezvousInfo
-	103, // 80: determined.api.v1.AllocationAllGatherRequest.data:type_name -> google.protobuf.Struct
-	103, // 81: determined.api.v1.AllocationAllGatherResponse.data:type_name -> google.protobuf.Struct
-	103, // 82: determined.api.v1.NotifyContainerRunningRequest.data:type_name -> google.protobuf.Struct
-	103, // 83: determined.api.v1.NotifyContainerRunningResponse.data:type_name -> google.protobuf.Struct
-	114, // 84: determined.api.v1.GetCurrentTrialSearcherOperationResponse.op:type_name -> determined.experiment.v1.TrialOperation
-	115, // 85: determined.api.v1.CompleteTrialSearcherValidationRequest.completed_operation:type_name -> determined.experiment.v1.CompleteValidateAfterOperation
-	116, // 86: determined.api.v1.ReportTrialSearcherEarlyExitRequest.early_exit:type_name -> determined.trial.v1.TrialEarlyExit
-	117, // 87: determined.api.v1.ReportTrialTrainingMetricsRequest.training_metrics:type_name -> determined.trial.v1.TrialMetrics
-	117, // 88: determined.api.v1.ReportTrialValidationMetricsRequest.validation_metrics:type_name -> determined.trial.v1.TrialMetrics
-	118, // 89: determined.api.v1.PostTrialRunnerMetadataRequest.metadata:type_name -> determined.trial.v1.TrialRunnerMetadata
-	104, // 90: determined.api.v1.Step.end_time:type_name -> google.protobuf.Timestamp
-	103, // 91: determined.api.v1.Step.metrics:type_name -> google.protobuf.Struct
-	82,  // 92: determined.api.v1.MetricsNoPagingResponse.steps:type_name -> determined.api.v1.Step
-	82,  // 93: determined.api.v1.MetricsLimitOffsetResponse.steps:type_name -> determined.api.v1.Step
-	108, // 94: determined.api.v1.MetricsLimitOffsetResponse.pagination:type_name -> determined.api.v1.Pagination
-	82,  // 95: determined.api.v1.MetricsKeysetResponse.steps:type_name -> determined.api.v1.Step
-	82,  // 96: determined.api.v1.MetricsStreamingResponse.steps:type_name -> determined.api.v1.Step
-	10,  // 97: determined.api.v1.TrialFilters.RankWithinExp.sorter:type_name -> determined.api.v1.TrialSorter
-	98,  // [98:98] is the sub-list for method output_type
-	98,  // [98:98] is the sub-list for method input_type
-	98,  // [98:98] is the sub-list for extension type_name
-	98,  // [98:98] is the sub-list for extension extendee
-	0,   // [0:98] is the sub-list for field type_name
+	104, // 79: determined.api.v1.AllocationRendezvousInfoResponse.rendezvous_info:type_name -> determined.trial.v1.RendezvousInfo
+	94,  // 80: determined.api.v1.AllocationAllGatherRequest.data:type_name -> google.protobuf.Struct
+	94,  // 81: determined.api.v1.AllocationAllGatherResponse.data:type_name -> google.protobuf.Struct
+	94,  // 82: determined.api.v1.NotifyContainerRunningRequest.data:type_name -> google.protobuf.Struct
+	94,  // 83: determined.api.v1.NotifyContainerRunningResponse.data:type_name -> google.protobuf.Struct
+	105, // 84: determined.api.v1.GetCurrentTrialSearcherOperationResponse.op:type_name -> determined.experiment.v1.TrialOperation
+	106, // 85: determined.api.v1.CompleteTrialSearcherValidationRequest.completed_operation:type_name -> determined.experiment.v1.CompleteValidateAfterOperation
+	107, // 86: determined.api.v1.ReportTrialSearcherEarlyExitRequest.early_exit:type_name -> determined.trial.v1.TrialEarlyExit
+	108, // 87: determined.api.v1.ReportTrialTrainingMetricsRequest.training_metrics:type_name -> determined.trial.v1.TrialMetrics
+	108, // 88: determined.api.v1.ReportTrialValidationMetricsRequest.validation_metrics:type_name -> determined.trial.v1.TrialMetrics
+	109, // 89: determined.api.v1.PostTrialRunnerMetadataRequest.metadata:type_name -> determined.trial.v1.TrialRunnerMetadata
+	10,  // 90: determined.api.v1.TrialFilters.RankWithinExp.sorter:type_name -> determined.api.v1.TrialSorter
+	91,  // [91:91] is the sub-list for method output_type
+	91,  // [91:91] is the sub-list for method input_type
+	91,  // [91:91] is the sub-list for extension type_name
+	91,  // [91:91] is the sub-list for extension extendee
+	0,   // [0:91] is the sub-list for field type_name
 }
 
 func init() { file_determined_api_v1_trial_proto_init() }
@@ -8166,114 +7529,6 @@ func file_determined_api_v1_trial_proto_init() {
 			}
 		}
 		file_determined_api_v1_trial_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Step); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsNoPagingRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsNoPagingResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[79].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsLimitOffsetRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[80].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsLimitOffsetResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[81].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsKeysetRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[82].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsKeysetResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[83].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsStreamingRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[84].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MetricsStreamingResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_determined_api_v1_trial_proto_msgTypes[85].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TrialFilters_RankWithinExp); i {
 			case 0:
 				return &v.state
@@ -8285,7 +7540,7 @@ func file_determined_api_v1_trial_proto_init() {
 				return nil
 			}
 		}
-		file_determined_api_v1_trial_proto_msgTypes[86].Exporter = func(v interface{}, i int) interface{} {
+		file_determined_api_v1_trial_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateTrialTagsRequest_Ids); i {
 			case 0:
 				return &v.state
@@ -8314,7 +7569,7 @@ func file_determined_api_v1_trial_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_determined_api_v1_trial_proto_rawDesc,
 			NumEnums:      6,
-			NumMessages:   87,
+			NumMessages:   78,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
