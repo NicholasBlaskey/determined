@@ -45,21 +45,36 @@ func echoCanGetTrial(c echo.Context, m *Master, trialID string) error {
 	return nil
 }
 
-func (m *Master) EchoMetricsStream(c echo.Context) error {
-	ids := c.QueryParam("trialIds")
+func (m *Master) parseAndRBACTrialIDs(c echo.Context, in string) ([]int, error) {
+	if len(in) == 0 {
+		return nil, echo.NewHTTPError(http.StatusBadRequest,
+			"expected at least one trial ID in the query param 'trialIds'")
+	}
 
-	fmt.Println(ids)
 	var trialIDs []int
-	for _, id := range strings.Split(ids, ",") {
+	for _, id := range strings.Split(in, ",") {
+		if err := echoCanGetTrial(c, m, id); err != nil {
+			return nil, err
+		}
+
 		trialID, err := strconv.Atoi(id)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf(
-				"could not parse trialIds parameter expected comma seperated ints got %s"), ids)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf(
+				"could not parse trialIds parameter expected comma separated ints got %s", in))
 		}
 		trialIDs = append(trialIDs, trialID)
 	}
 
-	rows, err := db.Bun().QueryContext(c.Request().Context(), `SELECT jsonb_build_object(
+	return trialIDs, nil
+}
+
+func (m *Master) streamTrainingMetrics(c echo.Context) error {
+	trialIDs, err := m.parseAndRBACTrialIDs(c, c.QueryParam("trialIds"))
+	if err != nil {
+		return err
+	}
+
+	err = streamQueryAsNDJSON(c, `SELECT jsonb_build_object(
 		'trialId', trial_id,
 		'endTime', end_time,
 		'metrics', metrics,
@@ -70,7 +85,37 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 		bun.In(trialIDs))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
-			errors.Wrap(err, "error querying for trial training metrics"))
+			errors.Wrap(err, "error streaming training metrics"))
+	}
+	return nil
+}
+
+func (m *Master) streamValidationMetrics(c echo.Context) error {
+	trialIDs, err := m.parseAndRBACTrialIDs(c, c.QueryParam("trialIds"))
+	if err != nil {
+		return err
+	}
+
+	err = streamQueryAsNDJSON(c, `SELECT jsonb_build_object(
+		'trialId', trial_id,
+		'endTime', end_time,
+		'metrics', metrics,
+		'totalBatches', total_batches,
+		'trialRunId', trial_run_id,
+		'id', id
+	) FROM validations WHERE trial_id IN (?) ORDER BY trial_id, trial_run_id, total_batches`,
+		bun.In(trialIDs))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrap(err, "error streaming training metrics"))
+	}
+	return nil
+}
+
+func streamQueryAsNDJSON(c echo.Context, query string, args ...any) error {
+	rows, err := db.Bun().QueryContext(c.Request().Context(), query, args...)
+	if err != nil {
+		return errors.Wrap(err, "error running query to stream")
 	}
 	defer rows.Close()
 
@@ -81,18 +126,19 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 		var b sql.RawBytes
 		err := rows.Scan(&b)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError,
-				errors.Wrap(err, "error scanning result for trial training metrics"))
+			return errors.Wrap(err, "error scanning results")
 		}
 
 		// TODO we do an O(n) copy everytime due to slice cap==len
-		// and we append a newline. This still appears faster than two calls to Write().
+		// when we append a newline. This still appears faster than two calls to Write().
 		_, err = c.Response().Write(append(b, '\n'))
 		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError,
-				errors.Wrap(err, "error writing response for trial training metrics"))
+			return errors.Wrap(err, "error writing response")
 		}
-		// break
+	}
+
+	if err := rows.Err(); err != nil {
+		return errors.Wrap(err, "error running query to stream")
 	}
 
 	return nil

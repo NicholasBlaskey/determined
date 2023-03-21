@@ -1,13 +1,14 @@
-import enum
-from typing import Any, Iterable, List, Optional, Dict
-import datetime
 import dataclasses
-import dateutil.parser
+import datetime
+import enum
 import json
+from typing import Any, Dict, Iterable, List, Optional
+
+import dateutil.parser
 
 from determined.common import api
 from determined.common.api import bindings, logs
-from determined.common.experimental import checkpoint, determined
+from determined.common.experimental import checkpoint
 
 
 class LogLevel(enum.Enum):
@@ -21,19 +22,33 @@ class LogLevel(enum.Enum):
     def _to_bindings(self) -> bindings.v1LogLevel:
         return bindings.v1LogLevel(self.value)
 
-@dataclasses.dataclass    
-class Metrics:
+
+@dataclasses.dataclass
+class TrainingMetrics:
     """
-    Specifies a metric report that the trial reported.
+    Specifies a training metric report that the trial reported.
     """
+
     trial_id: int
-    trial_run_id: int          
+    trial_run_id: int
     steps_completed: int
     end_time: datetime.datetime
     metrics: Dict[str, Any]
     batch_metrics: Optional[List[Dict[str, Any]]] = None
 
-    
+
+@dataclasses.dataclass
+class ValidationMetrics:
+    """
+    Specifies a validation metric report that the trial reported.
+    """
+
+    trial_id: int
+    trial_run_id: int
+    steps_completed: int
+    end_time: datetime.datetime
+    metrics: Dict[str, Any]
+
 
 class TrialReference:
     """
@@ -240,7 +255,7 @@ class TrialReference:
         return "Trial(id={})".format(self.id)
 
     # TODO is it suprising that we have this iterable that will hang onto this connection
-    def training_metrics(self) -> Iterable[Metrics]:
+    def training_metrics(self) -> Iterable[TrainingMetrics]:
         """
         Return the :class:`~determined.experimental.Checkpoint` instance with the best
         validation metric as defined by the ``sort_by`` and ``smaller_is_better``
@@ -257,10 +272,9 @@ class TrialReference:
                 this parameter is ignored. By default, the value of ``smaller_is_better``
                 from the experiment's configuration is used.
         """
-        return _stream_metrics(self._session, [self.id], is_training_or_else_validation=True)
-        
+        return _stream_training_metrics(self._session, [self.id])
 
-    def validation_metrics(self) -> Iterable[Metrics]:
+    def validation_metrics(self) -> Iterable[ValidationMetrics]:
         """
         Return the :class:`~determined.experimental.Checkpoint` instance with the best
         validation metric as defined by the ``sort_by`` and ``smaller_is_better``
@@ -277,12 +291,9 @@ class TrialReference:
                 this parameter is ignored. By default, the value of ``smaller_is_better``
                 from the experiment's configuration is used.
         """
-        return get_trial_validation_metrics(self.id)        
+        return _stream_validation_metrics(self._session, [self.id])
 
-    
 
-    
-    
 # This is to shorten line lengths of the TrialSortBy definition.
 _tsb = bindings.v1GetExperimentTrialsRequestSortBy
 
@@ -322,23 +333,37 @@ class TrialOrderBy(enum.Enum):
     def _to_bindings(self) -> bindings.v1OrderBy:
         return bindings.v1OrderBy(self.value)
 
-# TODO two methods
-def _stream_metrics(session: api.Session, trial_ids: List[int],
-                    is_training_or_else_validation: bool) -> Iterable[Metrics]:
-    metric_type = "validation"
-    if is_training_or_else_validation:
-        metric_type = "training"
-    
+
+def _stream_training_metrics(
+    session: api.Session, trial_ids: List[int]
+) -> Iterable[TrainingMetrics]:
     resp = session.get(
-        f"/trials/metrics/{metric_type}?trialIds={','.join(map(str, trial_ids))}", stream=True)
+        f"/trials/metrics/training?trialIds={','.join(map(str, trial_ids))}", stream=True
+    )
     for line in resp.iter_lines(chunk_size=1024 * 1024):
         json_line = json.loads(line)
-        yield Metrics(
+        yield TrainingMetrics(
             trial_id=json_line["trialId"],
             trial_run_id=json_line["trialRunId"],
             steps_completed=json_line["totalBatches"],
             end_time=dateutil.parser.parse(json_line["endTime"]),
             metrics=json_line["metrics"]["avg_metrics"],
-            batch_metrics=json_line["metrics"].get("batch_metrics", None)
-        )            
-    
+            batch_metrics=json_line["metrics"].get("batch_metrics", None),
+        )
+
+
+def _stream_validation_metrics(
+    session: api.Session, trial_ids: List[int]
+) -> Iterable[ValidationMetrics]:
+    resp = session.get(
+        f"/trials/metrics/validation?trialIds={','.join(map(str, trial_ids))}", stream=True
+    )
+    for line in resp.iter_lines(chunk_size=1024 * 1024):
+        json_line = json.loads(line)
+        yield ValidationMetrics(
+            trial_id=json_line["trialId"],
+            trial_run_id=json_line["trialRunId"],
+            steps_completed=json_line["totalBatches"],
+            end_time=dateutil.parser.parse(json_line["endTime"]),
+            metrics=json_line["metrics"]["validation_metrics"],
+        )

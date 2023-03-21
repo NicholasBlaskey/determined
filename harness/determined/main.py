@@ -1,23 +1,25 @@
-import time
-import json
-
-from common import api
 import common.experimental.determined as det
-from common.api import authentication, bindings, errors
-import matplotlib.pyplot as plt
 
-
-from determined.experimental import client
-
-#master_url = "127.0.0.1:8080"
-#client.login(master=master_url, user="determined", password="")
-#TrialReference()
+trial_id = 41
+# master_url = "127.0.0.1:8080"
+# client.login(master=master_url, user="determined", password="")
+# TrialReference()
 d = det.Determined()
-#t = d.get_trial(5)
-for i in d.get_trials_training_metrics([5]):
+
+print("det training metrics")
+for i in d.get_trials_training_metrics([trial_id]):
     print(i)
     break
-for i in det.Determined().get_trial(5).training_metrics():
+print("det trial training metrics")
+for i in det.Determined().get_trial(trial_id).training_metrics():
     print(i)
     break
-    
+
+print("det validation metrics")
+for i in d.get_trials_validation_metrics([trial_id]):
+    print(i)
+    break
+print("det trial validation metrics")
+for i in det.Determined().get_trial(trial_id).validation_metrics():
+    print(i)
+    break

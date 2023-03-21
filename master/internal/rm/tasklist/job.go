@@ -20,7 +20,6 @@ func ReduceToJobQInfo(reqs AllocReqs) map[model.JobID]*sproto.RMJobInfo {
 	isAdded := make(map[model.JobID]*sproto.RMJobInfo)
 	jobsAhead := 0
 	for _, req := range reqs {
-		fmt.Printf("%+v\n",  req)
 		if !req.IsUserVisible {
 			continue
 		}
