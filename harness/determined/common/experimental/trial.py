@@ -1,6 +1,9 @@
 import enum
 from typing import Any, Iterable, List, Optional, Dict
 import datetime
+import dataclasses
+import dateutil.parser
+import json
 
 from determined.common import api
 from determined.common.api import bindings, logs
@@ -18,26 +21,17 @@ class LogLevel(enum.Enum):
     def _to_bindings(self) -> bindings.v1LogLevel:
         return bindings.v1LogLevel(self.value)
 
+@dataclasses.dataclass    
 class Metrics:
     """
     Specifies a metric report that the trial reported.
     """
-
-    def __init__(
-            self,
-            trial_id: int,
-            trial_run_id: int,            
-            steps_completed: int,
-            end_time: datetime.datetime,            
-            metrics: Dict[str, Any],
-            batch_metrics: Optional[List[Dict[str, Any]]] = None,
-    ):
-        self.trial_id = trial_id
-        self.trial_run_id = trial_run_id        
-        self.steps_completed = steps_completed
-        self.end_time = end_time        
-        self.metrics = metrics
-        self.batch_metrics = batch_metrics
+    trial_id: int
+    trial_run_id: int          
+    steps_completed: int
+    end_time: datetime.datetime
+    metrics: Dict[str, Any]
+    batch_metrics: Optional[List[Dict[str, Any]]] = None
 
     
 
@@ -263,10 +257,7 @@ class TrialReference:
                 this parameter is ignored. By default, the value of ``smaller_is_better``
                 from the experiment's configuration is used.
         """
-        d = determined.Determined # TODO this is prob bad.
-        d._session = self._session
-        return d.get_trial_training_metrics(self.id)
-        
+        return _stream_metrics(self._session, [self.id], is_training_or_else_validation=True)
         
 
     def validation_metrics(self) -> Iterable[Metrics]:
@@ -330,3 +321,24 @@ class TrialOrderBy(enum.Enum):
 
     def _to_bindings(self) -> bindings.v1OrderBy:
         return bindings.v1OrderBy(self.value)
+
+# TODO two methods
+def _stream_metrics(session: api.Session, trial_ids: List[int],
+                    is_training_or_else_validation: bool) -> Iterable[Metrics]:
+    metric_type = "validation"
+    if is_training_or_else_validation:
+        metric_type = "training"
+    
+    resp = session.get(
+        f"/trials/metrics/{metric_type}?trialIds={','.join(map(str, trial_ids))}", stream=True)
+    for line in resp.iter_lines(chunk_size=1024 * 1024):
+        json_line = json.loads(line)
+        yield Metrics(
+            trial_id=json_line["trialId"],
+            trial_run_id=json_line["trialRunId"],
+            steps_completed=json_line["totalBatches"],
+            end_time=dateutil.parser.parse(json_line["endTime"]),
+            metrics=json_line["metrics"]["avg_metrics"],
+            batch_metrics=json_line["metrics"].get("batch_metrics", None)
+        )            
+    

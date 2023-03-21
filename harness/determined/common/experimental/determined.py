@@ -375,35 +375,16 @@ class Determined:
         except api.errors.NotFoundException:
             raise det.errors.EnterpriseOnlyError("API not found: oauth2/clients")
 
-    def get_trial_training_metrics(self, trial_ids: List[int]) -> Iterable[trial.Metrics]:
+    def get_trials_training_metrics(self, trial_ids: List[int]) -> Iterable[trial.Metrics]:
         """
         Get a list of labels used on any models, sorted from most-popular to least-popular.
+        Get training metrics for all trail IDs supplied sorted by 
+        trial_id, trial_run_id and steps_completed.
         """
-        resp = self._session.get(f"/trials/{trial_id}/metrics/training", stream=True)
-        for line in resp.iter_lines(chunk_size=1024 * 1024):
-            json_line = json.loads(line)
-            yield trial.Metrics(
-                trial_id=json_line["trialId"],
-                trial_run_id=json_line["trialRunId"],
-                steps_completed=json_line["stepsCompleted"],
-                metrics=json_line["metrics"]["avg_metrics"],
-                batch_metrics=json_line["metrics"].get("batch_metrics", None)
-            )            
-
-    def get_trial_validation_metrics(self, trial_ids: List[int]) -> Iterable[trial.Metrics]:    
-        """
-        Get a list of labels used on any models, sorted from most-popular to least-popular.
-        """
-        return bleh
-    '''
-        resp = self._session.get(f"/trials/{trial_id}/metrics/training", stream=True)
-        for line in resp.iter_lines(chunk_size=1024 * 1024):
-            json_line = json.loads(line)
-            yield Metrics(
-                trial_run_id=json_line["trialRunId"],
-                steps_completed=json_line["stepsCompleted"],
-                metrics=json_line["metrics"]["avg_metrics"],
-                batch_metrics=json_line["metrics"].get("batch_metrics", None)
-            )
-    '''
+        return trial._stream_metrics(self._session, trial_ids, is_training_or_else_validation=True)
         
+    def get_trials_validation_metrics(self, trial_ids: List[int]) -> Iterable[trial.Metrics]:    
+        """
+        Get a list of labels used on any models, sorted from most-popular to least-popular.
+        """
+        return trial._stream_metrics(self._session, trial_ids, is_training_or_else_validation=False) 

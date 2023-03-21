@@ -1154,8 +1154,10 @@ func (m *Master) Run(ctx context.Context) error {
 	trialsGroup.GET("/:trial_id", api.Route(m.getTrial))
 	trialsGroup.GET("/:trial_id/metrics", api.Route(m.getTrialMetrics))
 
-	trialsGroup.GET("/:trial_id/metrics/nopage", api.Route(m.EchoMetricsNoPaging))
-	trialsGroup.GET("/:trial_id/metrics/stream", m.EchoMetricsStream)
+	trialsGroup.GET("/metrics/training", m.EchoMetricsStream)
+	trialsGroup.GET("/metrics/validation", m.EchoMetricsStream)
+	// trialsGroup.GET("/:trial_id/metrics/nopage", api.Route(m.EchoMetricsNoPaging))
+	// trialsGroup.GET("/:trial_id/metrics/stream", m.EchoMetricsStream)
 
 	resourcesGroup := m.echo.Group("/resources")
 	resourcesGroup.GET("/allocation/raw", m.getRawResourceAllocation)

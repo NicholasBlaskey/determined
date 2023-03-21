@@ -14,6 +14,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/uptrace/bun"
+	//"github.com/lib/pq"
 	"github.com/pkg/errors"
 	//"github.com/uptrace/bun"
 	"google.golang.org/grpc/codes"
@@ -928,21 +930,18 @@ func (m *Master) EchoMetricsNoPaging(c echo.Context) (interface{}, error) {
 }
 
 func (m *Master) EchoMetricsStream(c echo.Context) error {
-	trialID, err := strconv.Atoi(c.Param("trial_id"))
-	if err != nil {
-		return err
-	}
+	ids := c.QueryParam("trialIds")
 
-	/*
-		size, err := strconv.Atoi(c.QueryParam("size"))
+	fmt.Println(ids)
+	var trialIDs []int
+	for _, id := range strings.Split(ids, ",") {
+		trialID, err := strconv.Atoi(id)
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf(
+				"could not parse trialIds parameter expected comma seperated ints got %s"), ids)
 		}
-		_ = size
-	*/
-
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	c.Response().WriteHeader(http.StatusOK)
+		trialIDs = append(trialIDs, trialID)
+	}
 
 	rows, err := db.Bun().QueryContext(c.Request().Context(), `SELECT jsonb_build_object(
 		'trialId', trial_id,
@@ -950,34 +949,32 @@ func (m *Master) EchoMetricsStream(c echo.Context) error {
 		'metrics', metrics,
 		'totalBatches', total_batches,
 		'trialRunId', trial_run_id,
-		'archived', archived,
 		'id', id
-	) FROM steps WHERE trial_id = ? ORDER BY total_batches`, trialID)
+	) FROM steps WHERE trial_id IN (?) ORDER BY trial_id, trial_run_id, total_batches`,
+		bun.In(trialIDs))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrap(err, "error querying for trial training metrics"))
 	}
 	defer rows.Close()
+
+	c.Response().Header().Set(echo.HeaderContentType, "application/x-ndjson")
+	c.Response().WriteHeader(http.StatusOK)
 
 	for rows.Next() {
 		var b sql.RawBytes
 		err := rows.Scan(&b)
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError,
+				errors.Wrap(err, "error scanning result for trial training metrics"))
 		}
-
-		/*
-			for i := 0; i < 5; i++ {
-				b = append(b, b...)
-			}
-
-			fmt.Println(len(b))
-		*/
 
 		// TODO we do an O(n) copy everytime due to slice cap==len
 		// and we append a newline. This still appears faster than two calls to Write().
 		_, err = c.Response().Write(append(b, '\n'))
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusInternalServerError,
+				errors.Wrap(err, "error writing response for trial training metrics"))
 		}
 		// break
 	}

@@ -14,6 +14,10 @@ from determined.experimental import client
 #TrialReference()
 d = det.Determined()
 #t = d.get_trial(5)
-for i in d.get_trial_training_metrics([5]):
+for i in d.get_trials_training_metrics([5]):
     print(i)
-
+    break
+for i in det.Determined().get_trial(5).training_metrics():
+    print(i)
+    break
+    
