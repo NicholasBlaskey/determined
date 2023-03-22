@@ -5,9 +5,12 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
@@ -97,6 +100,44 @@ func createTestTrialWithMetrics(
 	return trial, trainingMetrics, validationMetrics
 }
 
+func compareMetrics(
+	t *testing.T, trialID int, resp *httptest.ResponseRecorder, expected []*commonv1.Metrics,
+) {
+	defer resp.Result().Body.Close()
+	b, err := io.ReadAll(resp.Result().Body)
+	require.NoError(t, err)
+
+	split := strings.Split(string(b), "\n")
+	require.Equal(t, len(split)-1, len(expected)) // Extra newline in split.
+	require.Equal(t, split[len(split)-1], "")
+
+	for i, jsonString := range split[:len(split)-1] {
+		var actual map[string]any
+		require.NoError(t, json.Unmarshal([]byte(jsonString), &actual))
+
+		metrics := map[string]any{
+			"avg_metrics":   expected[i].AvgMetrics.AsMap(),
+			"batch_metrics": nil, // map[string]any{},
+		}
+		if expected[i].BatchMetrics != nil {
+			var batchMetrics []any
+			for _, b := range expected[i].BatchMetrics {
+				batchMetrics = append(batchMetrics, b.AsMap())
+			}
+			metrics["batch_metrics"] = batchMetrics
+		}
+
+		require.Equal(t, map[string]any{
+			"trialId":      float64(trialID),
+			"endTime":      actual["endTime"],
+			"metrics":      metrics,
+			"totalBatches": float64(i),
+			"trialRunId":   float64(0),
+			"id":           actual["id"],
+		}, actual)
+	}
+}
+
 func TestStreamTrainingMetrics(t *testing.T) {
 	api, curUser, ctx := setupAPITest(t, nil)
 
@@ -135,6 +176,13 @@ func TestStreamTrainingMetrics(t *testing.T) {
 	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusNotFound)
 
 	// One trial.
+	c = newTestEchoContext(curUser)
+	c.SetRequest(httptest.NewRequest(http.MethodGet,
+		endpoint+fmt.Sprintf("?trialIds=%d", trials[0].ID), nil))
+	resp := httptest.NewRecorder()
+	c.SetResponse(echo.NewResponse(resp, nil))
+	require.NoError(t, requestFunc(c))
+	compareMetrics(t, trials[0].ID, resp, trainingMetrics[0])
 
 	// Other trial.
 
