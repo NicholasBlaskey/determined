@@ -4,19 +4,141 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/labstack/echo/v4"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/proto/pkg/apiv1"
+	"github.com/determined-ai/determined/proto/pkg/commonv1"
+	"github.com/determined-ai/determined/proto/pkg/trialv1"
 )
 
 func trialNotFoundErrEcho(id int) error {
 	return echo.NewHTTPError(http.StatusNotFound, "trial not found: %d", id)
+}
+
+func createTestTrialWithMetrics(
+	ctx context.Context, t *testing.T, api *apiServer, curUser model.User, includeBatchMetrics bool,
+) (*model.Trial, []*commonv1.Metrics, []*commonv1.Metrics) {
+	var trainingMetrics, validationMetrics []*commonv1.Metrics
+	trial := createTestTrial(t, api, curUser)
+
+	for i := 0; i < 10; i++ {
+		trainMetrics := &commonv1.Metrics{
+			AvgMetrics: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"loss": {
+						Kind: &structpb.Value_NumberValue{
+							NumberValue: float64(i),
+						},
+					},
+				},
+			},
+		}
+		if includeBatchMetrics {
+			trainMetrics.BatchMetrics = []*structpb.Struct{
+				{
+					Fields: map[string]*structpb.Value{
+						"batch_loss": {
+							Kind: &structpb.Value_NumberValue{
+								NumberValue: float64(i),
+							},
+						},
+					},
+				},
+			}
+		}
+
+		_, err := api.ReportTrialTrainingMetrics(ctx,
+			&apiv1.ReportTrialTrainingMetricsRequest{
+				TrainingMetrics: &trialv1.TrialMetrics{
+					TrialId:        int32(trial.ID),
+					TrialRunId:     0,
+					StepsCompleted: int32(i),
+					Metrics:        trainMetrics,
+				},
+			})
+		require.NoError(t, err)
+		trainingMetrics = append(trainingMetrics, trainMetrics)
+
+		valMetrics := &commonv1.Metrics{
+			AvgMetrics: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"val_loss": {
+						Kind: &structpb.Value_NumberValue{
+							NumberValue: float64(i),
+						},
+					},
+				},
+			},
+		}
+		_, err = api.ReportTrialValidationMetrics(ctx,
+			&apiv1.ReportTrialValidationMetricsRequest{
+				ValidationMetrics: &trialv1.TrialMetrics{
+					TrialId:        int32(trial.ID),
+					TrialRunId:     0,
+					StepsCompleted: int32(i),
+					Metrics:        valMetrics,
+				},
+			})
+		require.NoError(t, err)
+		validationMetrics = append(validationMetrics, valMetrics)
+	}
+
+	return trial, trainingMetrics, validationMetrics
+}
+
+func TestStreamTrainingMetrics(t *testing.T) {
+	api, curUser, ctx := setupAPITest(t, nil)
+
+	var trials []*model.Trial
+	var trainingMetrics, validationMetrics [][]*commonv1.Metrics
+	for _, haveBatchMetrics := range []bool{false, true} {
+		trial, trainMetrics, valMetrics := createTestTrialWithMetrics(
+			ctx, t, api, curUser, haveBatchMetrics)
+		trials = append(trials, trial)
+		trainingMetrics = append(trainingMetrics, trainMetrics)
+		validationMetrics = append(validationMetrics, valMetrics)
+	}
+
+	endpoint := "/trials/metrics/training"
+	requestFunc := api.m.streamTrainingMetrics
+
+	// No trial IDs.
+	c := newTestEchoContext(curUser)
+	c.SetRequest(httptest.NewRequest(http.MethodGet, endpoint, nil))
+	err := requestFunc(c)
+	require.Error(t, err)
+	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusBadRequest)
+
+	// Not parsable trial IDs.
+	c = newTestEchoContext(curUser)
+	c.SetRequest(httptest.NewRequest(http.MethodGet, endpoint+"?trialIds=x", nil))
+	err = requestFunc(c)
+	require.Error(t, err)
+	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusBadRequest)
+
+	// Trial IDs not found.
+	c = newTestEchoContext(curUser)
+	c.SetRequest(httptest.NewRequest(http.MethodGet, endpoint+"?trialIds=-1", nil))
+	err = requestFunc(c)
+	require.Error(t, err)
+	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusNotFound)
+
+	// One trial.
+
+	// Other trial.
+
+	// Both trials.
 }
 
 func TestTrialAuthZEcho(t *testing.T) {
