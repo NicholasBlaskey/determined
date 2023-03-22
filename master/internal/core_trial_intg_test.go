@@ -101,17 +101,27 @@ func createTestTrialWithMetrics(
 }
 
 func compareMetrics(
-	t *testing.T, trialID int, resp *httptest.ResponseRecorder, expected []*commonv1.Metrics,
+	t *testing.T, trialIDs []int,
+	resp *httptest.ResponseRecorder, expected []*commonv1.Metrics, isValidation bool,
 ) {
-	defer resp.Result().Body.Close()
-	b, err := io.ReadAll(resp.Result().Body)
+	b, err := io.ReadAll(resp.Result().Body) // nolint: bodyclose
 	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, resp.Result().Body.Close())
+	}()
 
 	split := strings.Split(string(b), "\n")
 	require.Equal(t, len(split)-1, len(expected)) // Extra newline in split.
 	require.Equal(t, split[len(split)-1], "")
 
+	trialIndex := 0
+	totalBatches := 0
 	for i, jsonString := range split[:len(split)-1] {
+		if i != 0 && i%(len(expected)/len(trialIDs)) == 0 {
+			trialIndex++
+			totalBatches = 0
+		}
+
 		var actual map[string]any
 		require.NoError(t, json.Unmarshal([]byte(jsonString), &actual))
 
@@ -126,15 +136,21 @@ func compareMetrics(
 			}
 			metrics["batch_metrics"] = batchMetrics
 		}
+		if isValidation {
+			metrics = map[string]any{
+				"validation_metrics": expected[i].AvgMetrics.AsMap(),
+			}
+		}
 
 		require.Equal(t, map[string]any{
-			"trialId":      float64(trialID),
+			"trialId":      float64(trialIDs[trialIndex]),
 			"endTime":      actual["endTime"],
 			"metrics":      metrics,
-			"totalBatches": float64(i),
+			"totalBatches": float64(totalBatches),
 			"trialRunId":   float64(0),
 			"id":           actual["id"],
 		}, actual)
+		totalBatches++
 	}
 }
 
@@ -151,42 +167,65 @@ func TestStreamTrainingMetrics(t *testing.T) {
 		validationMetrics = append(validationMetrics, valMetrics)
 	}
 
-	endpoint := "/trials/metrics/training"
-	requestFunc := api.m.streamTrainingMetrics
+	cases := []struct {
+		endpoint     string
+		requestFunc  func(c echo.Context) error
+		metrics      [][]*commonv1.Metrics
+		isValidation bool
+	}{
+		{"/trials/metrics/validation", api.m.streamValidationMetrics, validationMetrics, true},
+		{"/trials/metrics/training", api.m.streamTrainingMetrics, trainingMetrics, false},
+	}
+	for _, curCase := range cases {
+		// No trial IDs.
+		c := newTestEchoContext(curUser)
+		c.SetRequest(httptest.NewRequest(http.MethodGet, curCase.endpoint, nil))
+		err := curCase.requestFunc(c)
+		require.Error(t, err)
+		require.Equal(t, err.(*echo.HTTPError).Code, http.StatusBadRequest)
 
-	// No trial IDs.
-	c := newTestEchoContext(curUser)
-	c.SetRequest(httptest.NewRequest(http.MethodGet, endpoint, nil))
-	err := requestFunc(c)
-	require.Error(t, err)
-	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusBadRequest)
+		// Not parsable trial IDs.
+		c = newTestEchoContext(curUser)
+		c.SetRequest(httptest.NewRequest(http.MethodGet, curCase.endpoint+"?trialIds=x", nil))
+		err = curCase.requestFunc(c)
+		require.Error(t, err)
+		require.Equal(t, err.(*echo.HTTPError).Code, http.StatusBadRequest)
 
-	// Not parsable trial IDs.
-	c = newTestEchoContext(curUser)
-	c.SetRequest(httptest.NewRequest(http.MethodGet, endpoint+"?trialIds=x", nil))
-	err = requestFunc(c)
-	require.Error(t, err)
-	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusBadRequest)
+		// Trial IDs not found.
+		c = newTestEchoContext(curUser)
+		c.SetRequest(httptest.NewRequest(http.MethodGet, curCase.endpoint+"?trialIds=-1", nil))
+		err = curCase.requestFunc(c)
+		require.Error(t, err)
+		require.Equal(t, err.(*echo.HTTPError).Code, http.StatusNotFound)
 
-	// Trial IDs not found.
-	c = newTestEchoContext(curUser)
-	c.SetRequest(httptest.NewRequest(http.MethodGet, endpoint+"?trialIds=-1", nil))
-	err = requestFunc(c)
-	require.Error(t, err)
-	require.Equal(t, err.(*echo.HTTPError).Code, http.StatusNotFound)
+		// One trial.
+		c = newTestEchoContext(curUser)
+		c.SetRequest(httptest.NewRequest(http.MethodGet,
+			curCase.endpoint+fmt.Sprintf("?trialIds=%d", trials[0].ID), nil))
+		resp := httptest.NewRecorder()
+		c.SetResponse(echo.NewResponse(resp, nil))
+		require.NoError(t, curCase.requestFunc(c))
+		compareMetrics(t, []int{trials[0].ID}, resp, curCase.metrics[0], curCase.isValidation)
 
-	// One trial.
-	c = newTestEchoContext(curUser)
-	c.SetRequest(httptest.NewRequest(http.MethodGet,
-		endpoint+fmt.Sprintf("?trialIds=%d", trials[0].ID), nil))
-	resp := httptest.NewRecorder()
-	c.SetResponse(echo.NewResponse(resp, nil))
-	require.NoError(t, requestFunc(c))
-	compareMetrics(t, trials[0].ID, resp, trainingMetrics[0])
+		// Other trial.
+		c = newTestEchoContext(curUser)
+		c.SetRequest(httptest.NewRequest(http.MethodGet,
+			curCase.endpoint+fmt.Sprintf("?trialIds=%d", trials[1].ID), nil))
+		resp = httptest.NewRecorder()
+		c.SetResponse(echo.NewResponse(resp, nil))
+		require.NoError(t, curCase.requestFunc(c))
+		compareMetrics(t, []int{trials[1].ID}, resp, curCase.metrics[1], curCase.isValidation)
 
-	// Other trial.
-
-	// Both trials.
+		// Both trials.
+		c = newTestEchoContext(curUser)
+		c.SetRequest(httptest.NewRequest(http.MethodGet,
+			curCase.endpoint+fmt.Sprintf("?trialIds=%d,%d", trials[1].ID, trials[0].ID), nil))
+		resp = httptest.NewRecorder()
+		c.SetResponse(echo.NewResponse(resp, nil))
+		require.NoError(t, curCase.requestFunc(c))
+		compareMetrics(t, []int{trials[0].ID, trials[1].ID}, resp,
+			append(curCase.metrics[0], curCase.metrics[1]...), curCase.isValidation)
+	}
 }
 
 func TestTrialAuthZEcho(t *testing.T) {
