@@ -27,6 +27,14 @@ class LogLevel(enum.Enum):
 class TrainingMetrics:
     """
     Specifies a training metric report that the trial reported.
+
+    Attributes:
+        trial_id
+        trial_run_id
+        steps_completed
+        end_time
+        metrics
+        batch_metrics
     """
 
     trial_id: int
@@ -41,6 +49,13 @@ class TrainingMetrics:
 class ValidationMetrics:
     """
     Specifies a validation metric report that the trial reported.
+
+    Attributes:
+        trial_id
+        trial_run_id
+        steps_completed
+        end_time
+        metrics
     """
 
     trial_id: int
@@ -257,39 +272,15 @@ class TrialReference:
     # TODO is it suprising that we have this iterable that will hang onto this connection
     def training_metrics(self) -> Iterable[TrainingMetrics]:
         """
-        Return the :class:`~determined.experimental.Checkpoint` instance with the best
-        validation metric as defined by the ``sort_by`` and ``smaller_is_better``
-        arguments.
-
-        Arguments:
-            sort_by (string, optional): The name of the validation metric to
-                order checkpoints by. If this parameter is unset the metric defined
-                in the related experiment configuration searcher field will be
-                used.
-
-            smaller_is_better (bool, optional): Whether to sort the
-                metric above in ascending or descending order. If ``sort_by`` is unset,
-                this parameter is ignored. By default, the value of ``smaller_is_better``
-                from the experiment's configuration is used.
+        Streams training metrics for this trial sorted by
+        trial_id, trial_run_id and steps_completed.
         """
         return _stream_training_metrics(self._session, [self.id])
 
     def validation_metrics(self) -> Iterable[ValidationMetrics]:
         """
-        Return the :class:`~determined.experimental.Checkpoint` instance with the best
-        validation metric as defined by the ``sort_by`` and ``smaller_is_better``
-        arguments.
-
-        Arguments:
-            sort_by (string, optional): The name of the validation metric to
-                order checkpoints by. If this parameter is unset the metric defined
-                in the related experiment configuration searcher field will be
-                used.
-
-            smaller_is_better (bool, optional): Whether to sort the
-                metric above in ascending or descending order. If ``sort_by`` is unset,
-                this parameter is ignored. By default, the value of ``smaller_is_better``
-                from the experiment's configuration is used.
+        Streams validation metrics for this trial sorted by
+        trial_id, trial_run_id and steps_completed.
         """
         return _stream_validation_metrics(self._session, [self.id])
 
