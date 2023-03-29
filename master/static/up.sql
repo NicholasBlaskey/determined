@@ -6,6 +6,7 @@ ALTER TABLE trials
     ADD COLUMN IF NOT EXISTS summary_metrics jsonb DEFAULT NULL,
     ADD COLUMN IF NOT EXISTS summary_metrics_timestamp timestamptz DEFAULT NULL;
 
+-- TODO filter by timestamp
 
 -- Invalidate summary_metrics_timestamp for trials that have a metric added since.
 
