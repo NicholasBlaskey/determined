@@ -50,7 +50,7 @@ FROM (
 		jsonb_object_keys(s.metrics->'avg_metrics') as name
 		FROM steps s
 	) names, steps
-	GROUP BY name, metric_type, trial_id
+	GROUP BY name, metric_type, trial_id -- FILTER TODO
 ) typed
 where metric_type is not null
 GROUP BY name, trial_id
@@ -84,7 +84,7 @@ latest_training AS (
           PARTITION BY s.trial_id
           ORDER BY s.end_time DESC
         ) AS rank
-      FROM steps s
+      FROM steps s -- FILTER TODO
     ) s, jsonb_each(s.metrics->'avg_metrics') unpacked
   WHERE s.rank = 1
 ),
@@ -129,7 +129,7 @@ FROM (
 		jsonb_object_keys(s.metrics->'validation_metrics') as name
 		FROM validations s
 	) names, validations
-	GROUP BY name, metric_type, trial_id
+	GROUP BY name, metric_type, trial_id -- FILTER TODO
 ) typed
 where metric_type is not null
 GROUP BY name, trial_id
@@ -163,7 +163,7 @@ latest_validation AS (
           PARTITION BY s.trial_id
           ORDER BY s.end_time DESC
         ) AS rank
-      FROM validations s
+      FROM validations s -- FILTER TODO
     ) s, jsonb_each(s.metrics->'validation_metrics') unpacked
   WHERE s.rank = 1
 ),
@@ -213,7 +213,7 @@ validation_training_combined_json as (
 	ON ttm.trial_id = vtm.trial_id
 )
 UPDATE trials SET
-    summary_metrics = vtcj.summary_metrics,
+    summary_metrics = vtcj.summary_metrics, 
     summary_metrics_timestamp = start_timestamp
 FROM validation_training_combined_json vtcj WHERE vtcj.trial_id = trials.id;
 

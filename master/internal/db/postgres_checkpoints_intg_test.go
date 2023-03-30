@@ -5,7 +5,11 @@ package db
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"math"
 	"math/rand"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -15,17 +19,153 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/determined-ai/determined/master/pkg/etc"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
+	"github.com/determined-ai/determined/proto/pkg/commonv1"
 	"github.com/determined-ai/determined/proto/pkg/modelv1"
+	"github.com/determined-ai/determined/proto/pkg/trialv1"
 )
 
 func sortUUIDSlice(uuids []uuid.UUID) {
 	sort.Slice(uuids, func(i, j int) bool {
 		return uuids[i].String() < uuids[j].String()
 	})
+}
+
+// JSON doesn't like NaN / inf so just replace strings with them.
+func correctFloats(m map[string]any) map[string]any {
+	for k, v := range m {
+		s, ok := v.(string)
+		if !ok {
+			continue
+		}
+
+		if s == "NaN" {
+			m[k] = math.NaN()
+		} else if s == "-inf" {
+			m[k] = math.Inf(1)
+		} else {
+			m[k] = math.Inf(-1)
+		}
+	}
+	return m
+}
+
+func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, valMetricsJSON string) {
+	var trainMetrics []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(trainMetricsJSON), &trainMetrics))
+	for i, m := range trainMetrics {
+		metrics, err := structpb.NewStruct(correctFloats(m))
+		require.NoError(t, err)
+		require.NoError(t, db.AddTrainingMetrics(context.TODO(), &trialv1.TrialMetrics{
+			TrialId:        int32(trial.ID),
+			TrialRunId:     0,
+			StepsCompleted: int32(i),
+			Metrics: &commonv1.Metrics{
+				AvgMetrics: metrics,
+			},
+		}))
+	}
+
+	var valMetrics []map[string]any
+	require.NoError(t, json.Unmarshal([]byte(valMetricsJSON), &valMetrics))
+	for i, m := range trainMetrics {
+		metrics, err := structpb.NewStruct(m)
+		require.NoError(t, err)
+		require.NoError(t, db.AddValidationMetrics(context.TODO(), &trialv1.TrialMetrics{
+			TrialId:        int32(trial.ID),
+			TrialRunId:     0,
+			StepsCompleted: int32(i),
+			Metrics: &commonv1.Metrics{
+				AvgMetrics: metrics,
+			},
+		}))
+	}
+
+	fmt.Println("REMOVE ME")
+}
+
+func runSummaryMigration(t *testing.T) {
+	const migrationPath = `../../static/up.sql`
+	bytes, err := os.ReadFile(migrationPath)
+	require.NoError(t, err)
+
+	fmt.Println(string(bytes))
+	_, err = Bun().Exec(string(bytes))
+	require.NoError(t, err)
+}
+
+func validateSummaryMetrics(t *testing.T, trialID int, expected map[string]summaryMetrics) {
+	var actualRaw map[string]any
+	err := Bun().NewSelect().Table("trials").
+		Column("summary_metrics").
+		Where("id = ?", trialID).
+		Scan(context.TODO(), &actualRaw)
+	require.NoError(t, err)
+
+	// TODO simply this conversion.
+	actual := make(map[string]summaryMetrics)
+	for m, v := range actualRaw {
+		fmt.Println("V", v)
+		a := v.(map[string]any)
+		actual[m] = summaryMetrics{
+			min:   a["min"].(float64),
+			max:   a["max"].(float64),
+			sum:   a["sum"].(float64),
+			count: a["count"].(int),
+			last:  a["last"],
+		}
+	}
+
+	require.Equal(t, actual, expected)
+}
+
+type summaryMetrics struct {
+	min   float64
+	max   float64
+	sum   float64
+	count int
+	last  any
+}
+
+func TestSummaryMetricsMigration(t *testing.T) {
+	require.NoError(t, etc.SetRootPath(RootFromDB))
+	db := MustResolveTestPostgres(t)
+	MustMigrateTestPostgres(t, db, MigrationsFromDB)
+	user := RequireMockUser(t, db)
+
+	exp := RequireMockExperiment(t, db, user)
+
+	/*
+		noMetrics := RequireMockTrial(t, db, exp)
+		addMetrics(t, db, noMetrics, `[{"loss":1.0}, {""}, {""}]`)
+	*/
+
+	numericMetrics := RequireMockTrial(t, db, exp)
+	addMetrics(t, db, numericMetrics,
+		`[{"a":1.0, "b":-0.5}, {"a":1.5,"b":0.0}, {"a":2.0}]`,
+		`[{"val_loss": 1.5}]`,
+	)
+	expectedNumericMetrics := map[string]summaryMetrics{
+		"a": {min: 1.0, max: 2.0, sum: 1.0 + 1.5 + 2.0, count: 3, last: 2.0},
+		"b": {min: -0.5, max: 0.0, sum: -0.5 + 0.0 + -0.5, count: 2, last: 0.0}, // HMM last?
+	}
+
+	runSummaryMigration(t)
+
+	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics)
+	/*
+				nonNumericMetrics := RequireMockTrial(t, db, exp)
+				mixedMetrics := RequireMockTrial(t, db, exp)
+				nanMetrics := RequireMockTrial(t, db, exp)
+
+		infMetrics
+	*/
+
+	// Add metrics.
 }
 
 func TestUpdateCheckpointSize(t *testing.T) {
