@@ -72,7 +72,7 @@ func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, va
 
 	var valMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(valMetricsJSON), &valMetrics))
-	for i, m := range trainMetrics {
+	for i, m := range valMetrics {
 		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
 		require.NoError(t, db.AddValidationMetrics(context.TODO(), &trialv1.TrialMetrics{
@@ -98,37 +98,55 @@ func runSummaryMigration(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func validateSummaryMetrics(t *testing.T, trialID int, expected map[string]summaryMetrics) {
-	var actualRaw map[string]any
-	err := Bun().NewSelect().Table("trials").
-		Column("summary_metrics").
-		Where("id = ?", trialID).
-		Scan(context.TODO(), &actualRaw)
+func validateSummaryMetrics(t *testing.T, trialID int,
+	expectedTrain map[string]summaryMetrics,
+	expectedVal map[string]summaryMetrics,
+) {
+	fmt.Println(trialID)
+
+	query := `SELECT name,
+summary_metrics->'avg_metrics'->name->>'max' AS max,
+summary_metrics->'avg_metrics'->name->>'min' AS min,
+summary_metrics->'avg_metrics'->name->>'sum' AS sum,
+summary_metrics->'avg_metrics'->name->>'last' AS last,
+summary_metrics->'avg_metrics'->name->>'count' AS count
+FROM trials
+CROSS JOIN jsonb_object_keys(summary_metrics->'avg_metrics') AS name
+WHERE id = ?;`
+
+	trainRows := []*summaryMetrics{}
+	err := Bun().NewRaw(query, trialID).Scan(context.TODO(), &trainRows)
 	require.NoError(t, err)
 
-	// TODO simply this conversion.
-	actual := make(map[string]summaryMetrics)
-	for m, v := range actualRaw {
-		fmt.Println("V", v)
-		a := v.(map[string]any)
-		actual[m] = summaryMetrics{
-			min:   a["min"].(float64),
-			max:   a["max"].(float64),
-			sum:   a["sum"].(float64),
-			count: a["count"].(int),
-			last:  a["last"],
-		}
+	actualTrain := make(map[string]summaryMetrics)
+	for _, v := range trainRows {
+		name := v.Name
+		v.Name = ""
+		actualTrain[name] = *v
 	}
+	require.Equal(t, expectedTrain, actualTrain)
 
-	require.Equal(t, actual, expected)
+	valRows := []*summaryMetrics{}
+	err = Bun().NewRaw(strings.ReplaceAll(query, "avg_metrics", "validation_metrics"), trialID).
+		Scan(context.TODO(), &valRows)
+	require.NoError(t, err)
+
+	actualVal := make(map[string]summaryMetrics)
+	for _, v := range valRows {
+		name := v.Name
+		v.Name = ""
+		actualVal[name] = *v
+	}
+	require.Equal(t, expectedVal, actualVal)
 }
 
 type summaryMetrics struct {
-	min   float64
-	max   float64
-	sum   float64
-	count int
-	last  any
+	Name  string
+	Min   float64
+	Max   float64
+	Sum   float64
+	Count int
+	Last  any
 }
 
 func TestSummaryMetricsMigration(t *testing.T) {
@@ -150,13 +168,16 @@ func TestSummaryMetricsMigration(t *testing.T) {
 		`[{"val_loss": 1.5}]`,
 	)
 	expectedNumericMetrics := map[string]summaryMetrics{
-		"a": {min: 1.0, max: 2.0, sum: 1.0 + 1.5 + 2.0, count: 3, last: 2.0},
-		"b": {min: -0.5, max: 0.0, sum: -0.5 + 0.0 + -0.5, count: 2, last: 0.0}, // HMM last?
+		"a": {Min: 1.0, Max: 2.0, Sum: 1.0 + 1.5 + 2.0, Count: 3, Last: "2"},
+		"b": {Min: -0.5, Max: 0.0, Sum: -0.5 + 0.0, Count: 2}, // empty last.
+	}
+	expectedNumericValMetrics := map[string]summaryMetrics{
+		"val_loss": {Min: 1.5, Max: 1.5, Sum: 1.5, Count: 1, Last: "1.5"},
 	}
 
 	runSummaryMigration(t)
 
-	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics)
+	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
 	/*
 				nonNumericMetrics := RequireMockTrial(t, db, exp)
 				mixedMetrics := RequireMockTrial(t, db, exp)
