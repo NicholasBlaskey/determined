@@ -49,8 +49,10 @@ FROM (
 		SELECT DISTINCT
 		jsonb_object_keys(s.metrics->'avg_metrics') as name
 		FROM steps s
+        JOIN trials ON s.trial_id = trials.id
+        WHERE trials.summary_metrics_timestamp IS NULL
 	) names, steps
-	GROUP BY name, metric_type, trial_id -- FILTER TODO
+	GROUP BY name, metric_type, trial_id
 ) typed
 where metric_type is not null
 GROUP BY name, trial_id
@@ -84,7 +86,9 @@ latest_training AS (
           PARTITION BY s.trial_id
           ORDER BY s.end_time DESC
         ) AS rank
-      FROM steps s -- FILTER TODO
+      FROM steps s
+      JOIN trials ON s.trial_id = trials.id
+      WHERE trials.summary_metrics_timestamp IS NULL
     ) s, jsonb_each(s.metrics->'avg_metrics') unpacked
   WHERE s.rank = 1
 ),
@@ -128,8 +132,10 @@ FROM (
 		SELECT DISTINCT
 		jsonb_object_keys(s.metrics->'validation_metrics') as name
 		FROM validations s
+        JOIN trials ON s.trial_id = trials.id
+        WHERE trials.summary_metrics_timestamp IS NULL
 	) names, validations
-	GROUP BY name, metric_type, trial_id -- FILTER TODO
+	GROUP BY name, metric_type, trial_id
 ) typed
 where metric_type is not null
 GROUP BY name, trial_id
@@ -163,7 +169,9 @@ latest_validation AS (
           PARTITION BY s.trial_id
           ORDER BY s.end_time DESC
         ) AS rank
-      FROM validations s -- FILTER TODO
+      FROM validations s
+      JOIN trials ON s.trial_id = trials.id
+      WHERE trials.summary_metrics_timestamp IS NULL
     ) s, jsonb_each(s.metrics->'validation_metrics') unpacked
   WHERE s.rank = 1
 ),
@@ -213,8 +221,20 @@ validation_training_combined_json as (
 	ON ttm.trial_id = vtm.trial_id
 )
 UPDATE trials SET
-    summary_metrics = vtcj.summary_metrics, 
-    summary_metrics_timestamp = start_timestamp
+    summary_metrics = vtcj.summary_metrics
 FROM validation_training_combined_json vtcj WHERE vtcj.trial_id = trials.id;
+
+
+-- Suppose we create a new trial? Well then it will get invalidated anyway
+-- Since as soon as we add a metric.
+UPDATE trials SET
+    summary_metrics_timestamp = start_timestamp;
+
+-- CAN we get away with a blanket update of metric timestamp?
+-- Like assuming we add a metric within query the next will be invalidated...?
+
+
+-- Also could perhaps move timestamp to trial level field. But right now
+-- we don't set empty to {}...
 
 END$$;

@@ -54,38 +54,84 @@ func correctFloats(m map[string]any) map[string]any {
 	return m
 }
 
+var stepsCompleted int32
+
 func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, valMetricsJSON string) {
 	var trainMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(trainMetricsJSON), &trainMetrics))
-	for i, m := range trainMetrics {
+	for _, m := range trainMetrics {
 		metrics, err := structpb.NewStruct(correctFloats(m))
 		require.NoError(t, err)
 		require.NoError(t, db.AddTrainingMetrics(context.TODO(), &trialv1.TrialMetrics{
 			TrialId:        int32(trial.ID),
 			TrialRunId:     0,
-			StepsCompleted: int32(i),
+			StepsCompleted: stepsCompleted,
 			Metrics: &commonv1.Metrics{
 				AvgMetrics: metrics,
 			},
 		}))
+		stepsCompleted++
 	}
 
 	var valMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(valMetricsJSON), &valMetrics))
-	for i, m := range valMetrics {
+	for _, m := range valMetrics {
 		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
 		require.NoError(t, db.AddValidationMetrics(context.TODO(), &trialv1.TrialMetrics{
 			TrialId:        int32(trial.ID),
 			TrialRunId:     0,
-			StepsCompleted: int32(i),
+			StepsCompleted: stepsCompleted - 1, // TODO
 			Metrics: &commonv1.Metrics{
 				AvgMetrics: metrics,
 			},
 		}))
+		stepsCompleted++
 	}
+}
 
-	fmt.Println("REMOVE ME")
+func addSomeMetricInPast(t *testing.T, trialID int) {
+	metric := struct {
+		bun.BaseModel `bun:"table:steps"`
+		TrialID       int
+		TrialRunID    int
+		Metrics       map[string]any
+		TotalBatches  int
+		EndTime       time.Time
+	}{
+		TrialID:    trialID,
+		TrialRunID: 1,
+		Metrics: map[string]any{
+			"avg_metrics": map[string]any{
+				"train_met_from_past": 1.0,
+			},
+		},
+		TotalBatches: 1,
+		EndTime:      time.Now().AddDate(0, 0, -1),
+	}
+	_, err := Bun().NewInsert().Model(&metric).Exec(context.TODO())
+	require.NoError(t, err)
+
+	valMetric := struct {
+		bun.BaseModel `bun:"table:validations"`
+		TrialID       int
+		TrialRunID    int
+		Metrics       map[string]any
+		TotalBatches  int
+		EndTime       time.Time
+	}{
+		TrialID:    trialID,
+		TrialRunID: 1,
+		Metrics: map[string]any{
+			"validation_metrics": map[string]any{
+				"val_met_from_past": 1.0,
+			},
+		},
+		TotalBatches: 1,
+		EndTime:      time.Now().AddDate(0, 0, -1),
+	}
+	_, err = Bun().NewInsert().Model(&valMetric).Exec(context.TODO())
+	require.NoError(t, err)
 }
 
 func runSummaryMigration(t *testing.T) {
@@ -157,10 +203,10 @@ func TestSummaryMetricsMigration(t *testing.T) {
 
 	exp := RequireMockExperiment(t, db, user)
 
-	/*
-		noMetrics := RequireMockTrial(t, db, exp)
-		addMetrics(t, db, noMetrics, `[{"loss":1.0}, {""}, {""}]`)
-	*/
+	noMetrics := RequireMockTrial(t, db, exp)
+	addMetrics(t, db, noMetrics, `[]`, `[]`)
+	expectedNoMetrics := make(map[string]summaryMetrics)
+	expectedNoValMetrics := make(map[string]summaryMetrics)
 
 	numericMetrics := RequireMockTrial(t, db, exp)
 	addMetrics(t, db, numericMetrics,
@@ -178,15 +224,30 @@ func TestSummaryMetricsMigration(t *testing.T) {
 	runSummaryMigration(t)
 
 	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-	/*
-				nonNumericMetrics := RequireMockTrial(t, db, exp)
-				mixedMetrics := RequireMockTrial(t, db, exp)
-				nanMetrics := RequireMockTrial(t, db, exp)
+	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
 
-		infMetrics
-	*/
+	// Add a metric with an older endtime to ensure metric isn't computed.
+	addSomeMetricInPast(t, noMetrics.ID)
 
-	// Add metrics.
+	// TODO should this be {} or NULL?
+	// I think difference is irrelevant??? We could add an update though?
+	// Personally like using {} over NULL but who knows.
+
+	// Verify metric is recomputed with new metrics added.
+	addMetrics(t, db, numericMetrics,
+		`[{"b":-1.0}]`,
+		`[{"val_loss": 3.0}]`,
+	)
+	expectedNumericMetrics = map[string]summaryMetrics{
+		"a": {Min: 1.0, Max: 2.0, Sum: 1.0 + 1.5 + 2.0, Count: 3},
+		"b": {Min: -1.0, Max: 0.0, Sum: -1.0 + -0.5 + 0.0, Count: 3, Last: "-1"},
+	}
+	expectedNumericValMetrics = map[string]summaryMetrics{
+		"val_loss": {Min: 1.5, Max: 3.0, Sum: 1.5 + 3.0, Count: 2, Last: "3"},
+	}
+	runSummaryMigration(t)
+	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
 }
 
 func TestUpdateCheckpointSize(t *testing.T) {
