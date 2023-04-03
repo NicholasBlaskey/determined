@@ -1327,9 +1327,13 @@ func (a *apiServer) ReportTrialTrainingMetrics(
 		expauth.AuthZProvider.Get().CanEditExperiment); err != nil {
 		return nil, err
 	}
+	fmt.Printf("%+v %+v\n",
+		req.TrainingMetrics.Metrics.AvgMetrics, req.TrainingMetrics.Metrics.AvgMetrics.AsMap())
+
 	if err := a.m.db.AddTrainingMetrics(ctx, req.TrainingMetrics); err != nil {
 		return nil, err
 	}
+
 	return &apiv1.ReportTrialTrainingMetricsResponse{}, nil
 }
 

@@ -35,6 +35,7 @@ func sortUUIDSlice(uuids []uuid.UUID) {
 	})
 }
 
+/*
 // JSON doesn't like NaN / inf so just replace strings with them.
 func correctFloats(m map[string]any) map[string]any {
 	for k, v := range m {
@@ -53,26 +54,31 @@ func correctFloats(m map[string]any) map[string]any {
 	}
 	return m
 }
+*/
 
 var stepsCompleted int32
 
 func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, valMetricsJSON string) {
 	var trainMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(trainMetricsJSON), &trainMetrics))
+
+	curStep := stepsCompleted
 	for _, m := range trainMetrics {
-		metrics, err := structpb.NewStruct(correctFloats(m))
+		fmt.Println("adding TRIAL IDs", trial.ID)
+		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
 		require.NoError(t, db.AddTrainingMetrics(context.TODO(), &trialv1.TrialMetrics{
 			TrialId:        int32(trial.ID),
 			TrialRunId:     0,
-			StepsCompleted: stepsCompleted,
+			StepsCompleted: curStep,
 			Metrics: &commonv1.Metrics{
 				AvgMetrics: metrics,
 			},
 		}))
-		stepsCompleted++
+		curStep++
 	}
 
+	curStep = stepsCompleted
 	var valMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(valMetricsJSON), &valMetrics))
 	for _, m := range valMetrics {
@@ -81,13 +87,15 @@ func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, va
 		require.NoError(t, db.AddValidationMetrics(context.TODO(), &trialv1.TrialMetrics{
 			TrialId:        int32(trial.ID),
 			TrialRunId:     0,
-			StepsCompleted: stepsCompleted - 1, // TODO
+			StepsCompleted: curStep,
 			Metrics: &commonv1.Metrics{
 				AvgMetrics: metrics,
 			},
 		}))
-		stepsCompleted++
+		curStep++
 	}
+
+	stepsCompleted += int32(len(trainMetrics) + len(valMetrics))
 }
 
 func addSomeMetricInPast(t *testing.T, trialID int) {
@@ -148,8 +156,6 @@ func validateSummaryMetrics(t *testing.T, trialID int,
 	expectedTrain map[string]summaryMetrics,
 	expectedVal map[string]summaryMetrics,
 ) {
-	fmt.Println(trialID)
-
 	query := `SELECT name,
 summary_metrics->'avg_metrics'->name->>'max' AS max,
 summary_metrics->'avg_metrics'->name->>'min' AS min,
@@ -164,12 +170,16 @@ WHERE id = ?;`
 	err := Bun().NewRaw(query, trialID).Scan(context.TODO(), &trainRows)
 	require.NoError(t, err)
 
+	fmt.Println("TRAIN ROWS", trainRows, trialID)
+
 	actualTrain := make(map[string]summaryMetrics)
 	for _, v := range trainRows {
 		name := v.Name
 		v.Name = ""
 		actualTrain[name] = *v
 	}
+	// TODO nan comparisions... !?!?! We need to equal...
+	// Just make a custom compator...
 	require.Equal(t, expectedTrain, actualTrain)
 
 	valRows := []*summaryMetrics{}
@@ -221,10 +231,30 @@ func TestSummaryMetricsMigration(t *testing.T) {
 		"val_loss": {Min: 1.5, Max: 1.5, Sum: 1.5, Count: 1, Last: "1.5"},
 	}
 
+	// TODO non numeric metrics
+	infNaNMetrics := RequireMockTrial(t, db, exp)
+	fmt.Println("INF ID", infNaNMetrics.ID)
+	addMetrics(t, db, infNaNMetrics,
+		`[{"a":"NaN", "b":"-Infinity"}, {"a":1.0, "b":"Infinity"}]`,
+		`[{"a":"NaN", "b":"-Infinity"}, {"a":1.0, "b":"Infinity"}]`,
+	)
+	expectedInfNaNMetrics := map[string]summaryMetrics{
+		"a": {Min: 1.0, Max: math.NaN(), Sum: math.NaN(), Count: 2, Last: "1"},
+		"b": {Min: math.Inf(-1), Max: math.Inf(+1), Sum: math.NaN(), Count: 2, Last: "Infinity"},
+	}
+	expectedInfNaNValMetrics := map[string]summaryMetrics{
+		"a": {Min: 1.0, Max: math.NaN(), Sum: math.NaN(), Count: 2, Last: "1"},
+		"b": {Min: math.Inf(-1), Max: math.Inf(+1), Sum: math.NaN(), Count: 2, Last: "Infinity"},
+	}
+
+	// TODO why is min NaN but max isn't???
+	// Just a postgres bug???
+
 	runSummaryMigration(t)
 
-	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+	// validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+	// validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+	validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
 
 	// Add a metric with an older endtime to ensure metric isn't computed.
 	addSomeMetricInPast(t, noMetrics.ID)

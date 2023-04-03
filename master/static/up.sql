@@ -6,7 +6,89 @@ ALTER TABLE trials
     ADD COLUMN IF NOT EXISTS summary_metrics jsonb DEFAULT NULL,
     ADD COLUMN IF NOT EXISTS summary_metrics_timestamp timestamptz DEFAULT NULL;
 
--- TODO filter by timestamp
+-- -- TODO
+-- WITH training_trial_metrics as (
+-- SELECT
+-- 	name,
+-- 	trial_id,
+-- 	sum(entries) FILTER (WHERE metric_type != 'number') as nonumbers
+-- FROM (
+-- 	SELECT
+-- 	name,
+--     CASE
+--         WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
+--         WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
+--         WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
+--         ELSE jsonb_typeof(steps.metrics->'avg_metrics'->name)
+--     END AS metric_type,
+-- 	trial_id,
+-- 	count(1) as entries
+-- 	FROM (
+-- 		SELECT DISTINCT
+-- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
+-- 		FROM steps s
+--         JOIN trials ON s.trial_id = trials.id
+--         WHERE trials.summary_metrics_timestamp IS NOT NULL
+-- 	) names, steps
+-- 	GROUP BY name, metric_type, trial_id
+-- ) typed
+-- where metric_type is not null
+-- GROUP BY name, trial_id
+-- ORDER BY trial_id, name
+-- ) SELECT * FROM training_trial_metrics;
+
+
+
+
+-- -- SOMEHOW we get string here...
+-- 	SELECT
+-- 	name,
+--     CASE
+--         WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
+--         WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
+--         WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
+--         ELSE jsonb_typeof(steps.metrics->'avg_metrics'->name)
+--     END AS metric_type,
+-- 	trial_id,
+-- 	count(1) as entries
+-- 	FROM (
+-- 		SELECT DISTINCT
+-- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
+-- 		FROM steps s
+--         JOIN trials ON s.trial_id = trials.id
+--         WHERE trials.summary_metrics_timestamp IS NOT NULL
+-- 	) names, steps
+-- 	GROUP BY name, metric_type, trial_id;
+
+-- 		SELECT DISTINCT
+-- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
+-- 		FROM steps s
+--         JOIN trials ON s.trial_id = trials.id
+--         WHERE trials.summary_metrics_timestamp IS NOT NULL;
+
+
+-- 	SELECT
+-- 	name,
+--     CASE
+--         WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
+--         WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
+--         WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
+--         ELSE jsonb_typeof(steps.metrics->'avg_metrics'->name)
+--     END AS metric_type,
+--     metrics->'avg_metrics'->name,        
+-- 	trial_id
+-- 	FROM (
+-- 		SELECT DISTINCT
+-- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
+-- 		FROM steps s
+--         JOIN trials ON s.trial_id = trials.id
+--         WHERE trials.summary_metrics_timestamp IS NOT NULL
+-- 	) names, steps;
+
+
+-- -- END TODO
+
+
 
 -- Invalidate summary_metrics_timestamp for trials that have a metric added since.
 
@@ -42,7 +124,12 @@ SELECT
 FROM (
 	SELECT
 	name,
-	jsonb_typeof(steps.metrics->'avg_metrics'->name) as metric_type,
+    CASE
+        WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
+        WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
+        WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
+        ELSE jsonb_typeof(metrics->'avg_metrics'->name)
+    END AS metric_type,
 	trial_id,
 	count(1) as entries
 	FROM (
@@ -125,7 +212,12 @@ SELECT
 FROM (
 	SELECT
 	name,
-	jsonb_typeof(validations.metrics->'validation_metrics'->name) as metric_type,
+    CASE
+        WHEN (metrics->'validation_metrics'->name)::text = '"Infinity"'::text THEN 'number'
+        WHEN (metrics->'validation_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
+        WHEN (metrics->'validation_metrics'->name)::text = '"NaN"'::text THEN 'number'
+        ELSE jsonb_typeof(metrics->'validation_metrics'->name)
+    END AS metric_type,
 	trial_id,
 	count(1) as entries
 	FROM (
