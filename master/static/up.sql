@@ -6,94 +6,15 @@ ALTER TABLE trials
     ADD COLUMN IF NOT EXISTS summary_metrics jsonb DEFAULT NULL,
     ADD COLUMN IF NOT EXISTS summary_metrics_timestamp timestamptz DEFAULT NULL;
 
--- -- TODO
--- WITH training_trial_metrics as (
--- SELECT
--- 	name,
--- 	trial_id,
--- 	sum(entries) FILTER (WHERE metric_type != 'number') as nonumbers
--- FROM (
--- 	SELECT
--- 	name,
---     CASE
---         WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
---         WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
---         WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
---         ELSE jsonb_typeof(steps.metrics->'avg_metrics'->name)
---     END AS metric_type,
--- 	trial_id,
--- 	count(1) as entries
--- 	FROM (
--- 		SELECT DISTINCT
--- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
--- 		FROM steps s
---         JOIN trials ON s.trial_id = trials.id
---         WHERE trials.summary_metrics_timestamp IS NOT NULL
--- 	) names, steps
--- 	GROUP BY name, metric_type, trial_id
--- ) typed
--- where metric_type is not null
--- GROUP BY name, trial_id
--- ORDER BY trial_id, name
--- ) SELECT * FROM training_trial_metrics;
+-- TODO should this be {} or NULL?
+-- I think difference is irrelevant??? We could add an update though?
+-- Personally like using {} over NULL but who knows.
+-- Let's just default to {}...
 
-
-
-
--- -- SOMEHOW we get string here...
--- 	SELECT
--- 	name,
---     CASE
---         WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
---         WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
---         WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
---         ELSE jsonb_typeof(steps.metrics->'avg_metrics'->name)
---     END AS metric_type,
--- 	trial_id,
--- 	count(1) as entries
--- 	FROM (
--- 		SELECT DISTINCT
--- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
--- 		FROM steps s
---         JOIN trials ON s.trial_id = trials.id
---         WHERE trials.summary_metrics_timestamp IS NOT NULL
--- 	) names, steps
--- 	GROUP BY name, metric_type, trial_id;
-
--- 		SELECT DISTINCT
--- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
--- 		FROM steps s
---         JOIN trials ON s.trial_id = trials.id
---         WHERE trials.summary_metrics_timestamp IS NOT NULL;
-
-
--- 	SELECT
--- 	name,
---     CASE
---         WHEN (metrics->'avg_metrics'->name)::text = '"Infinity"'::text THEN 'number'
---         WHEN (metrics->'avg_metrics'->name)::text = '"-Infinity"'::text THEN 'number'
---         WHEN (metrics->'avg_metrics'->name)::text = '"NaN"'::text THEN 'number'
---         ELSE jsonb_typeof(steps.metrics->'avg_metrics'->name)
---     END AS metric_type,
---     metrics->'avg_metrics'->name,        
--- 	trial_id
--- 	FROM (
--- 		SELECT DISTINCT
--- 		jsonb_object_keys(s.metrics->'avg_metrics') as name
--- 		FROM steps s
---         JOIN trials ON s.trial_id = trials.id
---         WHERE trials.summary_metrics_timestamp IS NOT NULL
--- 	) names, steps;
-
-
--- -- END TODO
 
 
 
 -- Invalidate summary_metrics_timestamp for trials that have a metric added since.
-
--- TODO test this aspect of the migration...
--- AND time it
 WITH max_training AS (
      SELECT trial_id, max(steps.end_time) AS last_reported_metric FROM steps
      JOIN trials ON trials.id = trial_id          -- TODO Does this join optimizie?
@@ -115,6 +36,7 @@ UPDATE trials SET summary_metrics_timestamp = NULL FROM max_validation WHERE
     max_validation.trial_id = trials.id AND
     summary_metrics_timestamp IS NOT NULL AND
     last_reported_metric > summary_metrics_timestamp;
+
 
 WITH training_trial_metrics as (
 SELECT
@@ -162,6 +84,16 @@ FROM training_numeric_trial_metrics ntm INNER JOIN steps
 ON steps.trial_id=ntm.trial_id
 WHERE steps.metrics->'avg_metrics'->name IS NOT NULL
 GROUP BY 1, 2
+UNION
+SELECT
+    name,
+    trial_id,
+    NULL AS count_agg,
+    NULL AS sum,
+    NULL AS min,
+    NULL AS max
+FROM training_trial_metrics
+WHERE nonumbers IS NOT null
 ),
 latest_training AS (
   SELECT s.trial_id,
@@ -250,6 +182,16 @@ FROM validation_numeric_trial_metrics ntm INNER JOIN validations
 ON validations.trial_id=ntm.trial_id
 WHERE validations.metrics->'validation_metrics'->name IS NOT NULL
 GROUP BY 1, 2
+UNION
+SELECT
+    name,
+    trial_id,
+    NULL AS count_agg,
+    NULL AS sum,
+    NULL AS min,
+    NULL AS max
+FROM validation_trial_metrics
+WHERE nonumbers IS NOT null
 ),
 latest_validation AS (
   SELECT s.trial_id,

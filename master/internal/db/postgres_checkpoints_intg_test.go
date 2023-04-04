@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"google.golang.org/protobuf/types/known/structpb"
+	"gopkg.in/yaml.v3" // Can't use ghodss/yaml since NaNs error.
 
 	"github.com/determined-ai/determined/master/pkg/etc"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -34,27 +35,6 @@ func sortUUIDSlice(uuids []uuid.UUID) {
 		return uuids[i].String() < uuids[j].String()
 	})
 }
-
-/*
-// JSON doesn't like NaN / inf so just replace strings with them.
-func correctFloats(m map[string]any) map[string]any {
-	for k, v := range m {
-		s, ok := v.(string)
-		if !ok {
-			continue
-		}
-
-		if s == "NaN" {
-			m[k] = math.NaN()
-		} else if s == "-inf" {
-			m[k] = math.Inf(1)
-		} else {
-			m[k] = math.Inf(-1)
-		}
-	}
-	return m
-}
-*/
 
 var stepsCompleted int32
 
@@ -152,6 +132,16 @@ func runSummaryMigration(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func nanEqual(t *testing.T, expected, actual map[string]summaryMetrics) {
+	e, err := yaml.Marshal(&expected)
+	require.NoError(t, err)
+
+	a, err := yaml.Marshal(&actual)
+	require.NoError(t, err)
+
+	require.Equal(t, string(e), string(a))
+}
+
 func validateSummaryMetrics(t *testing.T, trialID int,
 	expectedTrain map[string]summaryMetrics,
 	expectedVal map[string]summaryMetrics,
@@ -178,9 +168,7 @@ WHERE id = ?;`
 		v.Name = ""
 		actualTrain[name] = *v
 	}
-	// TODO nan comparisions... !?!?! We need to equal...
-	// Just make a custom compator...
-	require.Equal(t, expectedTrain, actualTrain)
+	nanEqual(t, expectedTrain, actualTrain)
 
 	valRows := []*summaryMetrics{}
 	err = Bun().NewRaw(strings.ReplaceAll(query, "avg_metrics", "validation_metrics"), trialID).
@@ -193,7 +181,7 @@ WHERE id = ?;`
 		v.Name = ""
 		actualVal[name] = *v
 	}
-	require.Equal(t, expectedVal, actualVal)
+	nanEqual(t, expectedVal, actualVal)
 }
 
 type summaryMetrics struct {
@@ -206,6 +194,8 @@ type summaryMetrics struct {
 }
 
 func TestSummaryMetricsMigration(t *testing.T) {
+	// TODO context...
+
 	require.NoError(t, etc.SetRootPath(RootFromDB))
 	db := MustResolveTestPostgres(t)
 	MustMigrateTestPostgres(t, db, MigrationsFromDB)
@@ -231,37 +221,48 @@ func TestSummaryMetricsMigration(t *testing.T) {
 		"val_loss": {Min: 1.5, Max: 1.5, Sum: 1.5, Count: 1, Last: "1.5"},
 	}
 
-	// TODO non numeric metrics
+	// Feels like we should report "val_loss"
+	nonNumericMetrics := RequireMockTrial(t, db, exp)
+	addMetrics(t, db, nonNumericMetrics,
+		`[{"a":"a", "b":-0.5}, {"a":"b", "b":0.3, "c":"test"}, {"a":"c", "b":[{"loss":5.0}]}]`,
+		`[{"val_loss": "c"}, {"val_gain": "d"}]`,
+	)
+	expectedNonNumericMetrics := map[string]summaryMetrics{
+		"a": {Last: "c"},
+		"b": {Last: `[{"loss": 5}]`},
+		"c": {},
+	}
+	expectedNonNumericValMetrics := map[string]summaryMetrics{
+		"val_loss": {},
+		"val_gain": {Last: "d"},
+	}
+
 	infNaNMetrics := RequireMockTrial(t, db, exp)
-	fmt.Println("INF ID", infNaNMetrics.ID)
 	addMetrics(t, db, infNaNMetrics,
 		`[{"a":"NaN", "b":"-Infinity"}, {"a":1.0, "b":"Infinity"}]`,
-		`[{"a":"NaN", "b":"-Infinity"}, {"a":1.0, "b":"Infinity"}]`,
+		`[{"a":1.0, "b":"Infinity"}, {"a":"NaN", "b":"-Infinity"}]`,
 	)
+	// Min is still 1.0 this is due to Postgres treating NaNs as greater than all other NaNs.
+	// https://www.postgresql.org/docs/current/datatype-numeric.html
 	expectedInfNaNMetrics := map[string]summaryMetrics{
 		"a": {Min: 1.0, Max: math.NaN(), Sum: math.NaN(), Count: 2, Last: "1"},
 		"b": {Min: math.Inf(-1), Max: math.Inf(+1), Sum: math.NaN(), Count: 2, Last: "Infinity"},
 	}
 	expectedInfNaNValMetrics := map[string]summaryMetrics{
-		"a": {Min: 1.0, Max: math.NaN(), Sum: math.NaN(), Count: 2, Last: "1"},
-		"b": {Min: math.Inf(-1), Max: math.Inf(+1), Sum: math.NaN(), Count: 2, Last: "Infinity"},
+		"a": {Min: 1.0, Max: math.NaN(), Sum: math.NaN(), Count: 2, Last: "NaN"},
+		"b": {Min: math.Inf(-1), Max: math.Inf(+1), Sum: math.NaN(), Count: 2, Last: "-Infinity"},
 	}
-
-	// TODO why is min NaN but max isn't???
-	// Just a postgres bug???
 
 	runSummaryMigration(t)
 
-	// validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-	// validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+	validateSummaryMetrics(t,
+		nonNumericMetrics.ID, expectedNonNumericMetrics, expectedNonNumericValMetrics)
+	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
 	validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
 
 	// Add a metric with an older endtime to ensure metric isn't computed.
 	addSomeMetricInPast(t, noMetrics.ID)
-
-	// TODO should this be {} or NULL?
-	// I think difference is irrelevant??? We could add an update though?
-	// Personally like using {} over NULL but who knows.
 
 	// Verify metric is recomputed with new metrics added.
 	addMetrics(t, db, numericMetrics,
@@ -278,6 +279,14 @@ func TestSummaryMetricsMigration(t *testing.T) {
 	runSummaryMigration(t)
 	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
 	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+
+	/*
+			validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+		validateSummaryMetrics(t,
+			nonNumericMetrics.ID, expectedNonNumericMetrics, expectedNonNumericValMetrics)
+		validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+		validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
+	*/
 }
 
 func TestUpdateCheckpointSize(t *testing.T) {
