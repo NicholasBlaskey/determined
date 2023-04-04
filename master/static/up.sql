@@ -12,8 +12,6 @@ ALTER TABLE trials
 -- Let's just default to {}...
 
 
-
-
 -- Invalidate summary_metrics_timestamp for trials that have a metric added since.
 WITH max_training AS (
      SELECT trial_id, max(steps.end_time) AS last_reported_metric FROM steps
@@ -61,6 +59,8 @@ FROM (
         JOIN trials ON s.trial_id = trials.id
         WHERE trials.summary_metrics_timestamp IS NULL
 	) names, steps
+    JOIN trials ON trial_id = trials.id
+    WHERE trials.summary_metrics_timestamp IS NULL
 	GROUP BY name, metric_type, trial_id
 ) typed
 where metric_type is not null
@@ -159,6 +159,8 @@ FROM (
         JOIN trials ON s.trial_id = trials.id
         WHERE trials.summary_metrics_timestamp IS NULL
 	) names, validations
+    JOIN trials ON trial_id = trials.id
+    WHERE trials.summary_metrics_timestamp IS NULL
 	GROUP BY name, metric_type, trial_id
 ) typed
 where metric_type is not null

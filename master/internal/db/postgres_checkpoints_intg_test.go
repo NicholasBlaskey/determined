@@ -276,17 +276,14 @@ func TestSummaryMetricsMigration(t *testing.T) {
 	expectedNumericValMetrics = map[string]summaryMetrics{
 		"val_loss": {Min: 1.5, Max: 3.0, Sum: 1.5 + 3.0, Count: 2, Last: "3"},
 	}
-	runSummaryMigration(t)
-	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
 
-	/*
-			validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-		validateSummaryMetrics(t,
-			nonNumericMetrics.ID, expectedNonNumericMetrics, expectedNonNumericValMetrics)
-		validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
-		validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
-	*/
+	runSummaryMigration(t)
+
+	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+	validateSummaryMetrics(t,
+		nonNumericMetrics.ID, expectedNonNumericMetrics, expectedNonNumericValMetrics)
+	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+	validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
 }
 
 func TestUpdateCheckpointSize(t *testing.T) {
