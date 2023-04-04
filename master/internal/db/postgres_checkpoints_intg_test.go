@@ -6,7 +6,6 @@ package db
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"math/rand"
 	"os"
@@ -38,16 +37,17 @@ func sortUUIDSlice(uuids []uuid.UUID) {
 
 var stepsCompleted int32
 
-func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, valMetricsJSON string) {
+func addMetrics(ctx context.Context,
+	t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, valMetricsJSON string,
+) {
 	var trainMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(trainMetricsJSON), &trainMetrics))
 
 	curStep := stepsCompleted
 	for _, m := range trainMetrics {
-		fmt.Println("adding TRIAL IDs", trial.ID)
 		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
-		require.NoError(t, db.AddTrainingMetrics(context.TODO(), &trialv1.TrialMetrics{
+		require.NoError(t, db.AddTrainingMetrics(ctx, &trialv1.TrialMetrics{
 			TrialId:        int32(trial.ID),
 			TrialRunId:     0,
 			StepsCompleted: curStep,
@@ -64,7 +64,7 @@ func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, va
 	for _, m := range valMetrics {
 		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
-		require.NoError(t, db.AddValidationMetrics(context.TODO(), &trialv1.TrialMetrics{
+		require.NoError(t, db.AddValidationMetrics(ctx, &trialv1.TrialMetrics{
 			TrialId:        int32(trial.ID),
 			TrialRunId:     0,
 			StepsCompleted: curStep,
@@ -78,7 +78,7 @@ func addMetrics(t *testing.T, db *PgDB, trial *model.Trial, trainMetricsJSON, va
 	stepsCompleted += int32(len(trainMetrics) + len(valMetrics))
 }
 
-func addSomeMetricInPast(t *testing.T, trialID int) {
+func addSomeMetricInPast(ctx context.Context, t *testing.T, trialID int) {
 	metric := struct {
 		bun.BaseModel `bun:"table:steps"`
 		TrialID       int
@@ -97,7 +97,7 @@ func addSomeMetricInPast(t *testing.T, trialID int) {
 		TotalBatches: 1,
 		EndTime:      time.Now().AddDate(0, 0, -1),
 	}
-	_, err := Bun().NewInsert().Model(&metric).Exec(context.TODO())
+	_, err := Bun().NewInsert().Model(&metric).Exec(ctx)
 	require.NoError(t, err)
 
 	valMetric := struct {
@@ -118,7 +118,7 @@ func addSomeMetricInPast(t *testing.T, trialID int) {
 		TotalBatches: 1,
 		EndTime:      time.Now().AddDate(0, 0, -1),
 	}
-	_, err = Bun().NewInsert().Model(&valMetric).Exec(context.TODO())
+	_, err = Bun().NewInsert().Model(&valMetric).Exec(ctx)
 	require.NoError(t, err)
 }
 
@@ -127,7 +127,6 @@ func runSummaryMigration(t *testing.T) {
 	bytes, err := os.ReadFile(migrationPath)
 	require.NoError(t, err)
 
-	fmt.Println(string(bytes))
 	_, err = Bun().Exec(string(bytes))
 	require.NoError(t, err)
 }
@@ -142,7 +141,7 @@ func nanEqual(t *testing.T, expected, actual map[string]summaryMetrics) {
 	require.Equal(t, string(e), string(a))
 }
 
-func validateSummaryMetrics(t *testing.T, trialID int,
+func validateSummaryMetrics(ctx context.Context, t *testing.T, trialID int,
 	expectedTrain map[string]summaryMetrics,
 	expectedVal map[string]summaryMetrics,
 ) {
@@ -157,10 +156,8 @@ CROSS JOIN jsonb_object_keys(summary_metrics->'avg_metrics') AS name
 WHERE id = ?;`
 
 	trainRows := []*summaryMetrics{}
-	err := Bun().NewRaw(query, trialID).Scan(context.TODO(), &trainRows)
+	err := Bun().NewRaw(query, trialID).Scan(ctx, &trainRows)
 	require.NoError(t, err)
-
-	fmt.Println("TRAIN ROWS", trainRows, trialID)
 
 	actualTrain := make(map[string]summaryMetrics)
 	for _, v := range trainRows {
@@ -172,7 +169,7 @@ WHERE id = ?;`
 
 	valRows := []*summaryMetrics{}
 	err = Bun().NewRaw(strings.ReplaceAll(query, "avg_metrics", "validation_metrics"), trialID).
-		Scan(context.TODO(), &valRows)
+		Scan(ctx, &valRows)
 	require.NoError(t, err)
 
 	actualVal := make(map[string]summaryMetrics)
@@ -194,7 +191,7 @@ type summaryMetrics struct {
 }
 
 func TestSummaryMetricsMigration(t *testing.T) {
-	// TODO context...
+	ctx := context.Background()
 
 	require.NoError(t, etc.SetRootPath(RootFromDB))
 	db := MustResolveTestPostgres(t)
@@ -204,12 +201,12 @@ func TestSummaryMetricsMigration(t *testing.T) {
 	exp := RequireMockExperiment(t, db, user)
 
 	noMetrics := RequireMockTrial(t, db, exp)
-	addMetrics(t, db, noMetrics, `[]`, `[]`)
+	addMetrics(ctx, t, db, noMetrics, `[]`, `[]`)
 	expectedNoMetrics := make(map[string]summaryMetrics)
 	expectedNoValMetrics := make(map[string]summaryMetrics)
 
 	numericMetrics := RequireMockTrial(t, db, exp)
-	addMetrics(t, db, numericMetrics,
+	addMetrics(ctx, t, db, numericMetrics,
 		`[{"a":1.0, "b":-0.5}, {"a":1.5,"b":0.0}, {"a":2.0}]`,
 		`[{"val_loss": 1.5}]`,
 	)
@@ -223,7 +220,7 @@ func TestSummaryMetricsMigration(t *testing.T) {
 
 	// Feels like we should report "val_loss"
 	nonNumericMetrics := RequireMockTrial(t, db, exp)
-	addMetrics(t, db, nonNumericMetrics,
+	addMetrics(ctx, t, db, nonNumericMetrics,
 		`[{"a":"a", "b":-0.5}, {"a":"b", "b":0.3, "c":"test"}, {"a":"c", "b":[{"loss":5.0}]}]`,
 		`[{"val_loss": "c"}, {"val_gain": "d"}]`,
 	)
@@ -238,7 +235,7 @@ func TestSummaryMetricsMigration(t *testing.T) {
 	}
 
 	infNaNMetrics := RequireMockTrial(t, db, exp)
-	addMetrics(t, db, infNaNMetrics,
+	addMetrics(ctx, t, db, infNaNMetrics,
 		`[{"a":"NaN", "b":"-Infinity"}, {"a":1.0, "b":"Infinity"}]`,
 		`[{"a":1.0, "b":"Infinity"}, {"a":"NaN", "b":"-Infinity"}]`,
 	)
@@ -255,17 +252,20 @@ func TestSummaryMetricsMigration(t *testing.T) {
 
 	runSummaryMigration(t)
 
-	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-	validateSummaryMetrics(t,
+	validateSummaryMetrics(ctx, t,
+		numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+	validateSummaryMetrics(ctx, t,
 		nonNumericMetrics.ID, expectedNonNumericMetrics, expectedNonNumericValMetrics)
-	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
-	validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
+	validateSummaryMetrics(ctx, t,
+		noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+	validateSummaryMetrics(ctx, t,
+		infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
 
 	// Add a metric with an older endtime to ensure metric isn't computed.
-	addSomeMetricInPast(t, noMetrics.ID)
+	addSomeMetricInPast(ctx, t, noMetrics.ID)
 
 	// Verify metric is recomputed with new metrics added.
-	addMetrics(t, db, numericMetrics,
+	addMetrics(ctx, t, db, numericMetrics,
 		`[{"b":-1.0}]`,
 		`[{"val_loss": 3.0}]`,
 	)
@@ -279,11 +279,14 @@ func TestSummaryMetricsMigration(t *testing.T) {
 
 	runSummaryMigration(t)
 
-	validateSummaryMetrics(t, numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
-	validateSummaryMetrics(t,
+	validateSummaryMetrics(ctx, t,
+		numericMetrics.ID, expectedNumericMetrics, expectedNumericValMetrics)
+	validateSummaryMetrics(ctx, t,
 		nonNumericMetrics.ID, expectedNonNumericMetrics, expectedNonNumericValMetrics)
-	validateSummaryMetrics(t, noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
-	validateSummaryMetrics(t, infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
+	validateSummaryMetrics(ctx, t,
+		noMetrics.ID, expectedNoMetrics, expectedNoValMetrics)
+	validateSummaryMetrics(ctx, t,
+		infNaNMetrics.ID, expectedInfNaNMetrics, expectedInfNaNValMetrics)
 }
 
 func TestUpdateCheckpointSize(t *testing.T) {

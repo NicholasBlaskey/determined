@@ -1,16 +1,10 @@
--- We need to declare start_timestamp to avoid missing metrics
--- happening while this migration runs.
+-- We need to declare start_timestamp before this migration starts
+-- to avoid missing metrics reported while this migration runs in background cases.
 DO $$ DECLARE start_timestamp timestamptz := NOW(); BEGIN
 
 ALTER TABLE trials
-    ADD COLUMN IF NOT EXISTS summary_metrics jsonb DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS summary_metrics jsonb NOT NULL DEFAULT '{}',
     ADD COLUMN IF NOT EXISTS summary_metrics_timestamp timestamptz DEFAULT NULL;
-
--- TODO should this be {} or NULL?
--- I think difference is irrelevant??? We could add an update though?
--- Personally like using {} over NULL but who knows.
--- Let's just default to {}...
-
 
 -- Invalidate summary_metrics_timestamp for trials that have a metric added since.
 WITH max_training AS (
@@ -260,17 +254,7 @@ UPDATE trials SET
     summary_metrics = vtcj.summary_metrics
 FROM validation_training_combined_json vtcj WHERE vtcj.trial_id = trials.id;
 
-
--- Suppose we create a new trial? Well then it will get invalidated anyway
--- Since as soon as we add a metric.
 UPDATE trials SET
     summary_metrics_timestamp = start_timestamp;
-
--- CAN we get away with a blanket update of metric timestamp?
--- Like assuming we add a metric within query the next will be invalidated...?
-
-
--- Also could perhaps move timestamp to trial level field. But right now
--- we don't set empty to {}...
 
 END$$;
