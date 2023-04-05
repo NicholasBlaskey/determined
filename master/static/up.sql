@@ -36,13 +36,13 @@ UPDATE trials SET summary_metrics_timestamp = NULL FROM max_validation WHERE
 -- 7.25 ms with all metrics incrementally done.
 -- trials needing summary metrics calculated
 --   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 10000;
---   1 => .8s
+--   1 => .8s, 1.4s
 --   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 9990;
---   10 => 8.7s
+--   10 => 8.7s, 13.8s
 --   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 9900;
---   100 => 109.9s
+--   100 => 109.9s, 180.8s
 --   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 9000;
---   1000 =>  2249.3s
+--   1000 =>  2249.3s, 2362.7s
 --   UPDATE trials SET summary_metrics_timestamp = null;
 --   10000 (all) => 166.667 minutes
 --   
