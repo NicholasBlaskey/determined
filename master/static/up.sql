@@ -7,6 +7,9 @@ ALTER TABLE trials
     ADD COLUMN IF NOT EXISTS summary_metrics_timestamp timestamptz DEFAULT NULL;
 
 -- Invalidate summary_metrics_timestamp for trials that have a metric added since.
+
+
+-- 250,000,000 rows in steps => 155 seconds?
 WITH max_training AS (
      SELECT trial_id, max(steps.end_time) AS last_reported_metric FROM steps
      JOIN trials ON trials.id = trial_id          -- TODO Does this join optimizie?
@@ -18,6 +21,7 @@ UPDATE trials SET summary_metrics_timestamp = NULL FROM max_training WHERE
     summary_metrics_timestamp IS NOT NULL AND
     last_reported_metric > summary_metrics_timestamp;
 
+-- 2,500,000 rows in validation => 1 second
 WITH max_validation AS (
      SELECT trial_id, max(validations.end_time) AS last_reported_metric FROM validations
      JOIN trials ON trials.id = trial_id          -- TODO Does this join optimizie?
@@ -29,8 +33,21 @@ UPDATE trials SET summary_metrics_timestamp = NULL FROM max_validation WHERE
     summary_metrics_timestamp IS NOT NULL AND
     last_reported_metric > summary_metrics_timestamp;
 
+-- 7.25 ms with all metrics incrementally done.
+-- trials needing summary metrics calculated
+--   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 10000;
+--   1 => .8s
+--   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 9990;
+--   10 => 8.7s
+--   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 9900;
+--   100 => 109.9s
+--   UPDATE trials SET summary_metrics_timestamp = null WHERE id >= 9000;
+--   1000 =>  2249.3s
+--   UPDATE trials SET summary_metrics_timestamp = null;
+--   10000 (all) => 166.667 minutes
+--   
 
-WITH training_trial_metrics as (
+EXPLAIN ANALYZE WITH training_trial_metrics as (
 SELECT
 	name,
 	trial_id,

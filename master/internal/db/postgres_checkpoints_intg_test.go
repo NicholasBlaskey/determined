@@ -10,7 +10,9 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 	"unsafe"
@@ -28,6 +30,117 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/modelv1"
 	"github.com/determined-ai/determined/proto/pkg/trialv1"
 )
+
+func genTrial(
+	ctx context.Context, t *testing.T, db *PgDB, exp *model.Experiment, numMetrics, numSteps int,
+) {
+	type step struct {
+		bun.BaseModel `bun:"table:steps"`
+		TrialID       int
+		TrialRunID    int
+		Metrics       map[string]any
+		TotalBatches  int
+		EndTime       time.Time
+	}
+
+	trialID := RequireMockTrial(t, db, exp).ID
+	metrics := make([]step, 0, numSteps)
+
+	endTime := time.Now()
+	for i := 0; i < numSteps; i++ {
+		m := make(map[string]float64, numMetrics)
+		for j := 0; j < numMetrics; j++ {
+			m[strconv.Itoa(j)] = rand.Float64()
+		}
+
+		metrics = append(metrics, step{
+			TrialID:    trialID,
+			TrialRunID: 1,
+			Metrics: map[string]any{
+				"avg_metrics": m,
+			},
+			TotalBatches: i,
+			EndTime:      endTime,
+		})
+	}
+
+	_, err := Bun().NewInsert().Model(&metrics).Exec(ctx)
+	require.NoError(t, err)
+
+	type val struct {
+		bun.BaseModel `bun:"table:validations"`
+		TrialID       int
+		TrialRunID    int
+		Metrics       map[string]any
+		TotalBatches  int
+		EndTime       time.Time
+	}
+
+	vals := make([]val, 0, numSteps)
+	for i := 0; i < numSteps/100; i++ {
+		m := make(map[string]float64, numMetrics)
+		for j := 0; j < numMetrics; j++ {
+			m[strconv.Itoa(j)] = rand.Float64()
+		}
+
+		vals = append(vals, val{
+			TrialID:    trialID,
+			TrialRunID: 1,
+			Metrics: map[string]any{
+				"validation_metrics": m,
+			},
+			TotalBatches: i,
+			EndTime:      endTime,
+		})
+	}
+
+	_, err = Bun().NewInsert().Model(&vals).Exec(ctx)
+	require.NoError(t, err)
+}
+
+func TestGenLargeDB(t *testing.T) {
+	numTrials := 10000
+	numSteps := 25000
+	numMetrics := 5
+	numWorkers := 10
+
+	ctx := context.Background()
+	require.NoError(t, etc.SetRootPath(RootFromDB))
+	db := MustResolveTestPostgres(t)
+	user := RequireMockUser(t, db)
+	exp := RequireMockExperiment(t, db, user)
+
+	mu := sync.Mutex{}
+	c := 0
+
+	start := time.Now()
+	trialsPerPercent := numTrials/100 + 1
+	// fmt.Println(numTrials)
+	// require.Equal(t, 0, trialsPerPercent)
+
+	// 1m16 seconds for 1 workers => too long
+	// 47 seconds for 10 workers => 1.3 hours
+	// 1m1 for 25 workers
+	var wg sync.WaitGroup
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < numTrials/numWorkers; j++ {
+				genTrial(ctx, t, db, exp, numMetrics, numSteps)
+
+				mu.Lock()
+				c++
+				if c%trialsPerPercent == 0 {
+					t.Logf("%d%% done in %v", c/trialsPerPercent, time.Now().Sub(start))
+					start = time.Now()
+				}
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+}
 
 func sortUUIDSlice(uuids []uuid.UUID) {
 	sort.Slice(uuids, func(i, j int) bool {
