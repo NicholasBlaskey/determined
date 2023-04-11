@@ -3,13 +3,16 @@ package db
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/determined-ai/determined/master/internal/api"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -509,26 +512,87 @@ VALUES
 			}
 
 		} else {
-			if _, err = tx.ExecContext(ctx, `
-		SELECT * FROM trials WHERE id = $1 FOR UPDATE; 
-	`, m.TrialId); err != nil {
+			var summaryMetrics model.JSONObj
+			err := tx.QueryRowContext(ctx, `
+		SELECT summary_metrics FROM trials WHERE id = $1 FOR UPDATE; 
+	`, m.TrialId).Scan(&summaryMetrics)
+			if err != nil {
 				return errors.Wrap(err, "locking the row with this trial id using select for update")
 			}
-			if _, err := tx.ExecContext(ctx, `
-UPDATE trials SET total_batches = GREATEST(total_batches, $2)
-WHERE id = $1;
-`, m.TrialId, m.StepsCompleted); err != nil {
-				return errors.Wrap(err, "updating trial total batches")
+
+			if _, ok := summaryMetrics["avg_metrics"]; !ok {
+				summaryMetrics["avg_metrics"] = model.JSONObj{}
 			}
 
-			// TODO summary metrics incremental.
-			if err := db.fullTrialSummaryMetricsRecompute(ctx, tx, int(m.TrialId)); err != nil {
-				return errors.Wrap(err, "error on rollback compute of summary metrics")
+			summaryMetrics = calculateNewSummaryMetrics(
+				summaryMetrics["avg_metrics"].(model.JSONObj),
+				m.Metrics.AvgMetrics,
+			)
+
+			fmt.Println("SUMMARY mets", summaryMetrics)
+
+			// TODO clear summary metrics timestamp in tests.
+			if _, err := tx.ExecContext(ctx, `
+UPDATE trials SET total_batches = GREATEST(total_batches, $2),
+summary_metrics = $3, summary_metrics_timestamp = NOW()
+WHERE id = $1;
+`, m.TrialId, m.StepsCompleted, summaryMetrics); err != nil {
+				return errors.Wrap(err, "updating trial total batches")
 			}
 
 		}
 		return nil
 	})
+}
+
+func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.Struct) model.JSONObj {
+	// Calculate numeric metrics.
+	for metricName, metric := range metrics.Fields {
+		metricValue, providedNumeric := metric.AsInterface().(float64)
+		if !providedNumeric {
+			continue
+		}
+
+		if summaryMetric, ok := summaryMetrics[metricName].(model.JSONObj); ok {
+			notNumeric := false
+			for _, agg := range []string{"min", "max", "sum"} {
+				if _, ok := summaryMetric[agg].(float64); !ok {
+					notNumeric = true
+					break
+				}
+			}
+			_, countIsInt := summaryMetric["count"].(int)
+			if notNumeric || !countIsInt {
+				continue
+			}
+
+			summaryMetric["min"] = math.Min(summaryMetric["min"].(float64), metricValue)
+			summaryMetric["max"] = math.Max(summaryMetric["max"].(float64), metricValue)
+			summaryMetric["sum"] = summaryMetric["sum"].(float64) + metricValue
+			summaryMetric["count"] = summaryMetric["count"].(int) + 1
+		} else {
+			summaryMetrics[metricName] = model.JSONObj{
+				"max":   metricValue,
+				"min":   metricValue,
+				"sum":   metricValue,
+				"count": 1,
+			}
+		}
+	}
+
+	// Add last value for all metrics provided.
+	for metricName, sumMetric := range summaryMetrics {
+		metric, ok := sumMetric.(model.JSONObj)
+		if !ok {
+			log.Errorf("summary metric %+v is not a map", sumMetric) // Should not happen.
+			continue
+		}
+
+		// TODO this serialization don't look right...
+		metric["last"] = metrics.Fields[metricName]
+	}
+
+	return summaryMetrics
 }
 
 // AddValidationMetrics adds a completed validation to the database with the given
