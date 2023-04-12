@@ -436,16 +436,19 @@ func (db *PgDB) addTrialMetrics(
 ) (err error) {
 	trialMetricTables := []string{"raw_steps", "raw_validations"}
 	targetTable := "raw_steps"
+	metricsJSONPath := "avg_metrics"
 	metricsBody := map[string]interface{}{
 		"avg_metrics":   m.Metrics.AvgMetrics,
 		"batch_metrics": m.Metrics.BatchMetrics,
 	}
 	if isValidation {
+		metricsJSONPath = "validation_metrics"
 		targetTable = "raw_validations"
 		metricsBody = map[string]interface{}{
 			"validation_metrics": m.Metrics.AvgMetrics,
 		}
 	}
+
 	return db.withTransaction("add training metrics", func(tx *sqlx.Tx) error {
 		if err := checkTrialRunID(ctx, tx, m.TrialId, m.TrialRunId); err != nil {
 			return err
@@ -511,19 +514,21 @@ VALUES
 				return errors.Wrap(err, "error on rollback compute of summary metrics")
 			}
 		} else {
-			if _, ok := summaryMetrics["avg_metrics"]; !ok {
-				summaryMetrics["avg_metrics"] = model.JSONObj{}
+			fmt.Println("PRE", summaryMetrics)
+			if _, ok := summaryMetrics[metricsJSONPath]; !ok {
+				summaryMetrics[metricsJSONPath] = map[string]any{}
 			}
-			summaryMetrics = calculateNewSummaryMetrics(
-				summaryMetrics["avg_metrics"].(model.JSONObj),
+			summaryMetrics[metricsJSONPath] = calculateNewSummaryMetrics(
+				summaryMetrics[metricsJSONPath].(map[string]any),
 				m.Metrics.AvgMetrics,
 			)
 
+			fmt.Println(summaryMetrics)
 			if _, err := tx.ExecContext(ctx, `
 UPDATE trials SET total_batches = GREATEST(total_batches, $2),
-summary_metrics = $3, summary_metrics_timestamp = $4
+summary_metrics = $3, summary_metrics_timestamp = NOW()
 WHERE id = $1;
-`, m.TrialId, m.StepsCompleted); err != nil {
+`, m.TrialId, m.StepsCompleted, summaryMetrics); err != nil {
 				return errors.Wrap(err, "updating trial total batches")
 			}
 		}
@@ -556,51 +561,128 @@ func (db *PgDB) AddValidationMetrics(
 	return db.addTrialMetrics(ctx, m, true)
 }
 
+// postgres stores NaNs such that they are greater than every other number.
+// This means that our min should treat non nans are smaller than NaNs.
+// TODO this behaviour is kinda insane. I suppose that this should probaly be changed
+// from the migration side. It should be consistant though.
+func postgresMin(a, b float64) float64 {
+	if math.IsNaN(a) {
+		return b
+	}
+	if math.IsNaN(b) {
+		return a
+	}
+	return math.Min(a, b)
+}
+
+func stringToSpecialFloats(s string) (float64, bool) {
+	if s == "Infinity" {
+		return math.Inf(1), true
+	} else if s == "-Infinity" {
+		return math.Inf(-1), true
+	} else if s == "NaN" {
+		return math.NaN(), true
+	} else {
+		return 0.0, false
+	}
+}
+
+func replaceSpecialFloatsWithString(v any) any {
+	if f, ok := v.(float64); ok {
+		if math.IsNaN(f) {
+			return "NaN"
+		} else if math.IsInf(f, 1.0) {
+			return "Infinity"
+		} else if math.IsInf(f, -1.0) {
+			return "-Infinity"
+		}
+	}
+	return v
+}
+
 func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.Struct) model.JSONObj {
 	// Calculate numeric metrics.
 	for metricName, metric := range metrics.Fields {
+		// Add an empty map for any non numeric metrics.
 		metricValue, providedNumeric := metric.AsInterface().(float64)
 		if !providedNumeric {
-			continue
+			if s, isString := metric.AsInterface().(string); isString {
+				if f, ok := stringToSpecialFloats(s); ok {
+					metricValue = f
+					providedNumeric = true
+				}
+			}
+
+			if !providedNumeric {
+				summaryMetrics[metricName] = map[string]any{}
+				continue
+			}
 		}
 
-		if summaryMetric, ok := summaryMetrics[metricName].(model.JSONObj); ok {
+		{
+			summaryMetric, ok := summaryMetrics[metricName].(map[string]any)
+			fmt.Println(metricName, "ASSUME THIS is always false?", summaryMetric, ok)
+			fmt.Printf("Summary metrics %v %v\n\n", summaryMetrics, metrics.AsMap())
+		}
+
+		// If we haven't seen the metric before just add it.
+		if summaryMetric, ok := summaryMetrics[metricName].(map[string]any); !ok {
+			summaryMetrics[metricName] = map[string]any{
+				"max":   replaceSpecialFloatsWithString(metricValue),
+				"min":   replaceSpecialFloatsWithString(metricValue),
+				"sum":   replaceSpecialFloatsWithString(metricValue),
+				"count": 1,
+			}
+		} else {
+			// If the metric has had a non numeric value in the past just add empty map.
 			notNumeric := false
-			for _, agg := range []string{"min", "max", "sum"} {
-				if _, ok := summaryMetric[agg].(float64); !ok {
+			for _, agg := range []string{"min", "max", "sum", "count"} {
+				switch v := summaryMetric[agg].(type) {
+				case float64:
+				case string:
+					fmt.Println("STRINMG CASE", v)
+					if v == "Infinity" {
+						summaryMetric[agg] = math.Inf(1)
+					} else if v == "-Infinity" {
+						summaryMetric[agg] = math.Inf(-1)
+					} else if v == "NaN" {
+						summaryMetric[agg] = math.NaN()
+					}
+				default:
+					fmt.Println("DEFAULT CASE", v)
 					notNumeric = true
 					break
 				}
 			}
-			_, countIsInt := summaryMetric["count"].(int)
-			if notNumeric || !countIsInt {
+			if notNumeric {
+				summaryMetrics[metricName] = map[string]any{}
 				continue
 			}
 
-			summaryMetric["min"] = math.Min(summaryMetric["min"].(float64), metricValue)
-			summaryMetric["max"] = math.Max(summaryMetric["max"].(float64), metricValue)
-			summaryMetric["sum"] = summaryMetric["sum"].(float64) + metricValue
-			summaryMetric["count"] = summaryMetric["count"].(int) + 1
-		} else {
-			summaryMetrics[metricName] = model.JSONObj{
-				"max":   metricValue,
-				"min":   metricValue,
-				"sum":   metricValue,
-				"count": 1,
-			}
+			// This is where we get into some weird stuff ...
+			summaryMetric["min"] = replaceSpecialFloatsWithString(
+				postgresMin(summaryMetric["min"].(float64), metricValue))
+			summaryMetric["max"] = replaceSpecialFloatsWithString(
+				math.Max(summaryMetric["max"].(float64), metricValue))
+			summaryMetric["sum"] = replaceSpecialFloatsWithString(
+				summaryMetric["sum"].(float64) + metricValue)
+			// Go parsing odditity treats JSON whole numbers as floats.
+			// Can this bite us?
+			summaryMetric["count"] = int(summaryMetric["count"].(float64)) + 1
 		}
 	}
 
 	// Add last value for all metrics provided.
 	for metricName, sumMetric := range summaryMetrics {
-		metric, ok := sumMetric.(model.JSONObj)
+		metric, ok := sumMetric.(map[string]any)
 		if !ok {
-			log.Errorf("summary metric %+v is not a map", sumMetric) // Should not happen.
+			// Should not happen.
+			log.Errorf("summary metric %T %+v is not a map", sumMetric, sumMetric)
 			continue
 		}
 
 		// TODO this serialization don't look right...
-		metric["last"] = metrics.Fields[metricName]
+		metric["last"] = replaceSpecialFloatsWithString(metrics.Fields[metricName])
 	}
 
 	return summaryMetrics
