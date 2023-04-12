@@ -514,7 +514,6 @@ VALUES
 				return errors.Wrap(err, "error on rollback compute of summary metrics")
 			}
 		} else {
-			fmt.Println("PRE", summaryMetrics)
 			if _, ok := summaryMetrics[metricsJSONPath]; !ok {
 				summaryMetrics[metricsJSONPath] = map[string]any{}
 			}
@@ -523,7 +522,6 @@ VALUES
 				m.Metrics.AvgMetrics,
 			)
 
-			fmt.Println(summaryMetrics)
 			if _, err := tx.ExecContext(ctx, `
 UPDATE trials SET total_batches = GREATEST(total_batches, $2),
 summary_metrics = $3, summary_metrics_timestamp = NOW()
@@ -561,46 +559,45 @@ func (db *PgDB) AddValidationMetrics(
 	return db.addTrialMetrics(ctx, m, true)
 }
 
-// postgres stores NaNs such that they are greater than every other number.
-// This means that our min should treat non nans are smaller than NaNs.
-// TODO this behaviour is kinda insane. I suppose that this should probaly be changed
-// from the migration side. It should be consistant though.
-func postgresMin(a, b float64) float64 {
-	if math.IsNaN(a) {
-		return b
-	}
-	if math.IsNaN(b) {
-		return a
-	}
-	return math.Min(a, b)
-}
+const (
+	// InfPostgresString how we store infinity in JSONB in postgres.
+	InfPostgresString = "Infinity"
+	// NegInfPostgresString how we store -infinity in JSONB in postgres.
+	NegInfPostgresString = "-Infinity"
+	// NaNPostgresString how we store NaN in JSONB in postgres.
+	NaNPostgresString = "NaN"
+)
 
 func stringToSpecialFloats(s string) (float64, bool) {
-	if s == "Infinity" {
-		return math.Inf(1), true
-	} else if s == "-Infinity" {
-		return math.Inf(-1), true
-	} else if s == "NaN" {
+	switch s {
+	case NaNPostgresString:
 		return math.NaN(), true
-	} else {
+	case InfPostgresString:
+		return math.Inf(1), true
+	case NegInfPostgresString:
+		return math.Inf(-1), true
+	default:
 		return 0.0, false
 	}
 }
 
 func replaceSpecialFloatsWithString(v any) any {
 	if f, ok := v.(float64); ok {
-		if math.IsNaN(f) {
-			return "NaN"
-		} else if math.IsInf(f, 1.0) {
-			return "Infinity"
-		} else if math.IsInf(f, -1.0) {
-			return "-Infinity"
+		switch {
+		case math.IsNaN(f):
+			return NaNPostgresString
+		case math.IsInf(f, 1.0):
+			return InfPostgresString
+		case math.IsInf(f, -1.0):
+			return NegInfPostgresString
 		}
 	}
 	return v
 }
 
-func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.Struct) model.JSONObj {
+func calculateNewSummaryMetrics(
+	summaryMetrics model.JSONObj, metrics *structpb.Struct,
+) model.JSONObj {
 	// Calculate numeric metrics.
 	for metricName, metric := range metrics.Fields {
 		// Add an empty map for any non numeric metrics.
@@ -619,12 +616,6 @@ func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.
 			}
 		}
 
-		{
-			summaryMetric, ok := summaryMetrics[metricName].(map[string]any)
-			fmt.Println(metricName, "ASSUME THIS is always false?", summaryMetric, ok)
-			fmt.Printf("Summary metrics %v %v\n\n", summaryMetrics, metrics.AsMap())
-		}
-
 		// If we haven't seen the metric before just add it.
 		if summaryMetric, ok := summaryMetrics[metricName].(map[string]any); !ok {
 			summaryMetrics[metricName] = map[string]any{
@@ -634,22 +625,19 @@ func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.
 				"count": 1,
 			}
 		} else {
-			// If the metric has had a non numeric value in the past just add empty map.
+			// Check if the metric had a non numeric value in the past.
 			notNumeric := false
 			for _, agg := range []string{"min", "max", "sum", "count"} {
 				switch v := summaryMetric[agg].(type) {
 				case float64:
 				case string:
-					fmt.Println("STRINMG CASE", v)
-					if v == "Infinity" {
-						summaryMetric[agg] = math.Inf(1)
-					} else if v == "-Infinity" {
-						summaryMetric[agg] = math.Inf(-1)
-					} else if v == "NaN" {
-						summaryMetric[agg] = math.NaN()
+					f, ok := stringToSpecialFloats(v)
+					if !ok {
+						notNumeric = true
+						continue
 					}
+					summaryMetric[agg] = f
 				default:
-					fmt.Println("DEFAULT CASE", v)
 					notNumeric = true
 					break
 				}
@@ -659,15 +647,13 @@ func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.
 				continue
 			}
 
-			// This is where we get into some weird stuff ...
 			summaryMetric["min"] = replaceSpecialFloatsWithString(
-				postgresMin(summaryMetric["min"].(float64), metricValue))
+				math.Min(summaryMetric["min"].(float64), metricValue))
 			summaryMetric["max"] = replaceSpecialFloatsWithString(
 				math.Max(summaryMetric["max"].(float64), metricValue))
 			summaryMetric["sum"] = replaceSpecialFloatsWithString(
 				summaryMetric["sum"].(float64) + metricValue)
 			// Go parsing odditity treats JSON whole numbers as floats.
-			// Can this bite us?
 			summaryMetric["count"] = int(summaryMetric["count"].(float64)) + 1
 		}
 	}
@@ -681,7 +667,6 @@ func calculateNewSummaryMetrics(summaryMetrics model.JSONObj, metrics *structpb.
 			continue
 		}
 
-		// TODO this serialization don't look right...
 		metric["last"] = replaceSpecialFloatsWithString(metrics.Fields[metricName])
 	}
 
