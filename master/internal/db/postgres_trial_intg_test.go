@@ -31,49 +31,72 @@ import (
 	"github.com/determined-ai/determined/master/pkg/model"
 )
 
-// TODO remove this.. think we can just delete?
-var stepsCompleted int32
-
 func addMetrics(ctx context.Context,
-	t *testing.T, db *PgDB, trialID int, trainMetricsJSON, valMetricsJSON string,
+	t *testing.T, db *PgDB, trialID int, trainMetricsJSON, valMetricsJSON string, archive bool,
 ) {
 	var trainMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(trainMetricsJSON), &trainMetrics))
 
-	curStep := stepsCompleted
-	for _, m := range trainMetrics {
-		// TODO don't update summary metrics???
+	trialRunID := 0
+	for i, m := range trainMetrics {
+		if archive && i == len(trainMetrics)-1 {
+			// Add step that will be archived.
+			metrics, err := structpb.NewStruct(map[string]any{"archive_metric_dont_appear": "3.14"})
+			require.NoError(t, err)
+			require.NoError(t, db.AddTrainingMetrics(ctx, &trialv1.TrialMetrics{
+				TrialId:        int32(trialID),
+				TrialRunId:     int32(trialRunID),
+				StepsCompleted: int32(i) + 1,
+				Metrics: &commonv1.Metrics{
+					AvgMetrics: metrics,
+				},
+			}))
+			trialRunID++
+			require.NoError(t, db.UpdateTrialRunID(trialID, trialRunID))
+		}
+
 		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
 		require.NoError(t, db.AddTrainingMetrics(ctx, &trialv1.TrialMetrics{
 			TrialId:        int32(trialID),
-			TrialRunId:     0,
-			StepsCompleted: curStep,
+			TrialRunId:     int32(trialRunID),
+			StepsCompleted: int32(i) + 1,
 			Metrics: &commonv1.Metrics{
 				AvgMetrics: metrics,
 			},
 		}))
-		curStep++
 	}
 
-	curStep = stepsCompleted
 	var valMetrics []map[string]any
 	require.NoError(t, json.Unmarshal([]byte(valMetricsJSON), &valMetrics))
-	for _, m := range valMetrics {
+	for i, m := range valMetrics {
+		if archive && i == len(valMetrics)-1 {
+			// Add step that will be archived.
+			metrics, err := structpb.NewStruct(map[string]any{"archive_metric_dont_appear": "3.14"})
+			require.NoError(t, err)
+			require.NoError(t, db.AddValidationMetrics(ctx, &trialv1.TrialMetrics{
+				TrialId:        int32(trialID),
+				TrialRunId:     int32(trialRunID),
+				StepsCompleted: int32(i + len(trainMetrics)),
+				Metrics: &commonv1.Metrics{
+					AvgMetrics: metrics,
+				},
+			}))
+			trialRunID++
+			require.NoError(t, db.UpdateTrialRunID(trialID, trialRunID))
+		}
+
 		metrics, err := structpb.NewStruct(m)
 		require.NoError(t, err)
 		require.NoError(t, db.AddValidationMetrics(ctx, &trialv1.TrialMetrics{
 			TrialId:        int32(trialID),
-			TrialRunId:     0,
-			StepsCompleted: curStep,
+			TrialRunId:     int32(trialRunID),
+			StepsCompleted: int32(i + len(trainMetrics)),
 			Metrics: &commonv1.Metrics{
 				AvgMetrics: metrics,
 			},
 		}))
-		curStep++
 	}
-
-	stepsCompleted += int32(len(trainMetrics) + len(valMetrics))
 }
 
 func addMetricCustomTime(ctx context.Context, t *testing.T, trialID int, endTime time.Time) {
@@ -179,20 +202,20 @@ WHERE id = ?;`
 }
 
 func generateSummaryMetricsTestCases(
-	ctx context.Context, t *testing.T, db *PgDB,
+	ctx context.Context, t *testing.T, db *PgDB, archive bool,
 ) ([]int, []map[string]summaryMetrics, []map[string]summaryMetrics) {
 	user := RequireMockUser(t, db)
 	exp := RequireMockExperiment(t, db, user)
 
 	noMetrics := RequireMockTrial(t, db, exp).ID
-	addMetrics(ctx, t, db, noMetrics, `[]`, `[]`)
+	addMetrics(ctx, t, db, noMetrics, `[]`, `[]`, archive)
 	expectedNoMetrics := make(map[string]summaryMetrics)
 	expectedNoValMetrics := make(map[string]summaryMetrics)
 
 	numericMetrics := RequireMockTrial(t, db, exp).ID
 	addMetrics(ctx, t, db, numericMetrics,
 		`[{"a":1.0, "b":-0.5}, {"a":1.5,"b":0.0}, {"a":2.0}]`,
-		`[{"val_loss": 1.5}]`,
+		`[{"val_loss": 1.5}]`, archive,
 	)
 	expectedNumericMetrics := map[string]summaryMetrics{
 		"a": {Min: 1.0, Max: 2.0, Sum: 1.0 + 1.5 + 2.0, Count: 3, Last: "2"},
@@ -205,7 +228,7 @@ func generateSummaryMetricsTestCases(
 	nonNumericMetrics := RequireMockTrial(t, db, exp).ID
 	addMetrics(ctx, t, db, nonNumericMetrics,
 		`[{"a":"a", "b":-0.5}, {"a":1.67, "b":0.3, "c":"test"}, {"a":"c", "b":[{"loss":5.0}]}]`,
-		`[{"val_loss": "c"}, {"val_gain": "d"}]`,
+		`[{"val_loss": "c"}, {"val_gain": "d"}]`, archive,
 	)
 	expectedNonNumericMetrics := map[string]summaryMetrics{
 		"a": {Last: "c"},
@@ -220,7 +243,7 @@ func generateSummaryMetricsTestCases(
 	infNaNMetrics := RequireMockTrial(t, db, exp).ID
 	addMetrics(ctx, t, db, infNaNMetrics,
 		`[{"a":"NaN", "b":"-Infinity"}, {"a":1.0, "b":"Infinity"}]`,
-		`[{"a":1.0, "b":"Infinity"}, {"a":"NaN", "b":"-Infinity"}]`,
+		`[{"a":1.0, "b":"Infinity"}, {"a":"NaN", "b":"-Infinity"}]`, archive,
 	)
 	expectedInfNaNMetrics := map[string]summaryMetrics{
 		"a": {Min: math.NaN(), Max: math.NaN(), Sum: math.NaN(), Count: 2, Last: "1"},
@@ -262,35 +285,31 @@ func TestSummaryMetricsInsert(t *testing.T) {
 	require.NoError(t, etc.SetRootPath(RootFromDB))
 	db := MustResolveTestPostgres(t)
 	MustMigrateTestPostgres(t, db, MigrationsFromDB)
-	trialIDs, expectedTrain, expectedVal := generateSummaryMetricsTestCases(ctx, t, db)
+	trialIDs, expectedTrain, expectedVal := generateSummaryMetricsTestCases(ctx, t, db, false)
 
 	for i := 0; i < len(trialIDs); i++ {
 		validateSummaryMetrics(ctx, t, trialIDs[i], expectedTrain[i], expectedVal[i])
 	}
 }
 
-/*
 func TestSummaryMetricsInsertRollback(t *testing.T) {
 	ctx := context.Background()
 	require.NoError(t, etc.SetRootPath(RootFromDB))
 	db := MustResolveTestPostgres(t)
 	MustMigrateTestPostgres(t, db, MigrationsFromDB)
-	trialIDs, expectedTrain, expectedVal := generateSummaryMetricsTestCases(ctx, t, db, false)
-
-	runSummaryMigration(t)
+	trialIDs, expectedTrain, expectedVal := generateSummaryMetricsTestCases(ctx, t, db, true)
 
 	for i := 0; i < len(trialIDs); i++ {
 		validateSummaryMetrics(ctx, t, trialIDs[i], expectedTrain[i], expectedVal[i])
 	}
 }
-*/
 
 func TestSummaryMetricsMigration(t *testing.T) {
 	ctx := context.Background()
 	require.NoError(t, etc.SetRootPath(RootFromDB))
 	db := MustResolveTestPostgres(t)
 	MustMigrateTestPostgres(t, db, MigrationsFromDB)
-	trialIDs, expectedTrain, expectedVal := generateSummaryMetricsTestCases(ctx, t, db)
+	trialIDs, expectedTrain, expectedVal := generateSummaryMetricsTestCases(ctx, t, db, false)
 
 	_, err := Bun().NewUpdate().Table("trials").
 		Set("summary_metrics = '{}'").
@@ -310,12 +329,6 @@ func TestSummaryMetricsMigration(t *testing.T) {
 
 	// Verify metric is recomputed with new metrics added.
 	addMetricCustomTime(ctx, t, trialIDs[1], time.Now())
-	/*
-		addMetrics(ctx, t, db, trialIDs[1],
-			`[{"b":-1.0}]`,
-			`[{"val_loss": 3.0}]`,
-		)
-	*/
 	expectedTrain[1] = map[string]summaryMetrics{
 		"a": {Min: 1.0, Max: 2.0, Sum: 1.0 + 1.5 + 2.0, Count: 3},
 		"b": {Min: -1.0, Max: 0.0, Sum: -1.0 + -0.5 + 0.0, Count: 3, Last: "-1"},
