@@ -447,7 +447,6 @@ func (db *PgDB) addTrialMetrics(
 			"validation_metrics": m.Metrics.AvgMetrics,
 		}
 	}
-
 	return db.withTransaction("add training metrics", func(tx *sqlx.Tx) error {
 		if err := checkTrialRunID(ctx, tx, m.TrialId, m.TrialRunId); err != nil {
 			return err
@@ -479,7 +478,6 @@ WHERE trial_id = $1
 			}
 		}
 
-		// TODO do we need to lock before the rollback?
 		var summaryMetrics model.JSONObj
 		err := tx.QueryRowContext(ctx, `
 		SELECT summary_metrics FROM trials WHERE id = $1 FOR UPDATE;
