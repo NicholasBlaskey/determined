@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -32,7 +33,7 @@ func (i *MaybeInt) UnmarshalJSON(data []byte) error {
 
 	var temp int
 	if err := json.Unmarshal(data, &temp); err != nil {
-		return err
+		return fmt.Errorf("error unmarshaling MaybeInt from JSON: %w", err)
 	}
 	i.Value = &temp
 	return nil

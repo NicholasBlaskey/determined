@@ -2,6 +2,7 @@ package union
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -73,7 +74,11 @@ func MarshalEx(v interface{}, allowEmptyUnion bool) ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(data)
+	b, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling JSON after extension processing: %w", err)
+	}
+	return b, nil
 }
 
 // Marshal marshals the provided union type into a JSON byte array.
@@ -85,9 +90,12 @@ func Marshal(v interface{}) ([]byte, error) {
 func marshalToMap(v interface{}) (map[string]interface{}, error) {
 	bytes, err := json.Marshal(v)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error marshaling in marshalToMap: %w", err)
 	}
 	data := make(map[string]interface{})
-	err = json.Unmarshal(bytes, &data)
-	return data, err
+
+	if err := json.Unmarshal(bytes, &data); err != nil {
+		return nil, fmt.Errorf("error unmarshaling in marshalToMap: %w", err)
+	}
+	return data, nil
 }

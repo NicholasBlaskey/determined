@@ -466,7 +466,7 @@ func (a *apiServer) GetProjectsByUserActivity(
 	`, curUser.ID, limit).
 		Scan(ctx, &p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting projects by user activity: %w", err)
 	}
 
 	projects := model.ProjectsToProto(p)

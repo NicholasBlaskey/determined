@@ -325,7 +325,7 @@ func constructTrialLogsFilters(req *apiv1.TrialLogsRequest) ([]api.Filter, error
 
 	if req.TimestampBefore != nil {
 		if err := req.TimestampBefore.CheckValid(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error timestamp before in log filter is not valid: %w", err)
 		}
 		filters = append(filters, api.Filter{
 			Field:     "timestamp",
@@ -336,7 +336,7 @@ func constructTrialLogsFilters(req *apiv1.TrialLogsRequest) ([]api.Filter, error
 
 	if req.TimestampAfter != nil {
 		if err := req.TimestampAfter.CheckValid(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error timestamp after in log filter is not valid: %w", err)
 		}
 		filters = append(filters, api.Filter{
 			Field:     "timestamp",

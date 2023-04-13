@@ -62,7 +62,7 @@ func loadMultiExperimentActionResults(results []ExperimentActionResult,
 	for ref, actorResp := range resps {
 		originalID, err := strconv.ParseInt(ref.Address().Local(), 10, 32)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error parsing experiment ID from address: %w", err)
 		}
 		if actorResp == nil {
 			results = append(results, ExperimentActionResult{
@@ -427,7 +427,7 @@ func DeleteExperiments(ctx context.Context, system *actor.System,
 			Model(&acceptedExperiments).
 			Exec(ctx)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("error bulk updating experiment states to delete: %w", err)
 		}
 
 		for _, exp := range acceptedExperiments {
@@ -520,7 +520,7 @@ func ArchiveExperiments(ctx context.Context, system *actor.System,
 			Model(&acceptedIDs).
 			Exec(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error bulk archiving experiments: %w", err)
 		}
 
 		for _, acceptID := range acceptedIDs {
@@ -613,7 +613,7 @@ func UnarchiveExperiments(ctx context.Context, system *actor.System,
 			Model(&acceptedIDs).
 			Exec(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error bulk unarchiving experiments: %w", err)
 		}
 
 		for _, acceptID := range acceptedIDs {
@@ -690,7 +690,7 @@ func MoveExperiments(ctx context.Context, system *actor.System,
 	if len(validIDs) > 0 {
 		tx, err := db.Bun().BeginTx(ctx, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error starting transaction for bulk move experiments: %w", err)
 		}
 		defer func() {
 			txErr := tx.Rollback()
@@ -705,7 +705,8 @@ func MoveExperiments(ctx context.Context, system *actor.System,
 			Where("e.experiment_id IN (?)", bun.In(validIDs)).
 			Exec(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(
+				"error updating metrics name project_id for bulk move experiments: %w", err)
 		}
 		err = db.RemoveProjectHyperparameters(ctx, tx, validIDs)
 		if err != nil {
@@ -725,7 +726,7 @@ func MoveExperiments(ctx context.Context, system *actor.System,
 			Model(&acceptedIDs).
 			Exec(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error updating project_id for bulk move experiments: %w", err)
 		}
 
 		for _, acceptID := range acceptedIDs {

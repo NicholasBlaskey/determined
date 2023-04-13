@@ -609,7 +609,7 @@ func runPagedBunExperimentsQuery(
 	// Count number of items without any limits or offsets.
 	total, err := query.Count(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error counting row results for query: %w", err)
 	}
 
 	// Calculate end and start indexes.

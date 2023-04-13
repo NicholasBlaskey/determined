@@ -43,5 +43,5 @@ func (g *Group) Cancel() {
 // Close the group by canceling it and waiting for it.
 func (g *Group) Close() error {
 	g.cancel()
-	return g.Wait()
+	return g.Wait() //nolint: wrapcheck
 }

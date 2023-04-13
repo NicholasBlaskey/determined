@@ -207,7 +207,7 @@ func (m *Master) getRawResourceAllocation(c echo.Context) error {
 		"experiment_id", "kind", "username", "labels", "slots", "start_time", "end_time", "seconds",
 	}
 	if err := csvWriter.Write(header); err != nil {
-		return err
+		return fmt.Errorf("error writing raw resource allocation csv header: %s", err)
 	}
 
 	for _, entry := range resp.ResourceEntries {
@@ -221,7 +221,7 @@ func (m *Master) getRawResourceAllocation(c echo.Context) error {
 			fmt.Sprintf("%f", entry.Seconds),
 		}
 		if err := csvWriter.Write(fields); err != nil {
-			return err
+			return fmt.Errorf("error writing raw resource allocation csv header: %s", err)
 		}
 	}
 	csvWriter.Flush()
@@ -417,9 +417,8 @@ func (m *Master) getResourceAllocations(c echo.Context) error {
 		Join("LEFT JOIN image_pull_times ip ON a.allocation_id = ip.allocation_id").
 		Order("a.start_time").
 		Rows(c.Request().Context())
-
-	if err != nil && rows.Err() != nil {
-		return err
+	if err != nil {
+		return fmt.Errorf("error getting resource allocations: %w", err)
 	}
 	defer rows.Close()
 
@@ -476,6 +475,11 @@ func (m *Master) getResourceAllocations(c echo.Context) error {
 			return err
 		}
 	}
+
+	if rows.Err() != nil {
+		return fmt.Errorf("error getting resource allocations rows: %w", err)
+	}
+
 	csvWriter.Flush()
 	return nil
 }
