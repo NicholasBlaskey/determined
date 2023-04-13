@@ -3,6 +3,7 @@ package detect
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os/exec"
 	"sort"
@@ -71,7 +72,7 @@ func parseRocmSmi(jsonData []byte) ([]RocmDevice, error) {
 	parsed := map[string]RocmDevice{}
 	err := json.Unmarshal(jsonData, &parsed)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing RocmSmi JSON: %w", err)
 	}
 
 	result := []RocmDevice{}

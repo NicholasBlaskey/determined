@@ -63,6 +63,9 @@ linters-settings:
   forbidigo:
     forbid:
         - 'fmt\.Print.*'
+  wrapcheck:
+    ignorePackageGlobs:
+      - github.com/determined-ai/determined/*
 
 linters:
   enable-all: true
@@ -112,7 +115,6 @@ linters:
     - tparallel
     - varnamelen
     - wastedassign
-    - wrapcheck
 
     # Below here are new linters from upgrading to 1.51.1.
     - nonamedreturns

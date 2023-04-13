@@ -288,12 +288,12 @@ func mockLogAcceptor(t *testing.T, port int) (chan model.TaskLog, func()) {
 	e.POST("/task-logs", func(ctx echo.Context) error {
 		body, err := io.ReadAll(ctx.Request().Body)
 		if err != nil {
-			return err
+			return fmt.Errorf("reading body: %w", err)
 		}
 
 		var logs []model.TaskLog
 		if err = json.Unmarshal(body, &logs); err != nil {
-			return err
+			return fmt.Errorf("json unmarshal: %s", err)
 		}
 
 		for _, l := range logs {
