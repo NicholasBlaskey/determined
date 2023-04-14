@@ -179,7 +179,10 @@ func tarArchive(prefix string, ar Archive, writer io.Writer) error {
 		}
 	}
 
-	return w.Close()
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("error closing tar archive: %w", err)
+	}
+	return nil
 }
 
 // ToIOReader converts the files in an Archive to an io.Reader bytes buffer.

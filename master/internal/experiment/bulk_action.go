@@ -155,7 +155,7 @@ func FilterToExperimentIds(ctx context.Context, filters *apiv1.BulkExperimentFil
 	query = queryBulkExperiments(query, filters)
 
 	if err := query.Scan(ctx); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting experiment IDs from filters: %w", err)
 	}
 	return experimentIDList, nil
 }
@@ -193,8 +193,10 @@ func editableExperimentIds(ctx context.Context, inputExpIDs []int32,
 		return nil, err
 	}
 
-	err = query.Scan(ctx)
-	return expIDs, err
+	if err = query.Scan(ctx); err != nil {
+		return nil, fmt.Errorf("error getting editable experiment IDs: %w", err)
+	}
+	return expIDs, nil
 }
 
 // ToAPIResults converts ExperimentActionResult type with error object to error strings.
@@ -380,7 +382,7 @@ func DeleteExperiments(ctx context.Context, system *actor.System,
 	}
 
 	if err = query.Scan(ctx); err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error getting experiment IDs to delete: %w", err)
 	}
 
 	var results []ExperimentActionResult
@@ -476,7 +478,7 @@ func ArchiveExperiments(ctx context.Context, system *actor.System,
 
 	err = query.Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting archivable experiments: %w", err)
 	}
 
 	var results []ExperimentActionResult
@@ -569,7 +571,7 @@ func UnarchiveExperiments(ctx context.Context, system *actor.System,
 
 	err = query.Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting unarchivable experiments: %w", err)
 	}
 
 	var results []ExperimentActionResult
@@ -660,7 +662,7 @@ func MoveExperiments(ctx context.Context, system *actor.System,
 	}
 	err = getQ.Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting movable experiments: %w", err)
 	}
 
 	var results []ExperimentActionResult
@@ -736,7 +738,7 @@ func MoveExperiments(ctx context.Context, system *actor.System,
 			})
 		}
 		if err = tx.Commit(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error committing transcation for bulk move experiments: %w", err)
 		}
 	}
 	return results, nil

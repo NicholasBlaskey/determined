@@ -32,7 +32,7 @@ func (g *Group) Go(f func(ctx context.Context) error) {
 
 // Wait for all child processes of the group to complete.
 func (g *Group) Wait() error {
-	return g.inner.Wait()
+	return g.inner.Wait() //nolint: wrapcheck
 }
 
 // Cancel the group, without waiting for it to exit.

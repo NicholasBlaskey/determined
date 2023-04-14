@@ -328,12 +328,12 @@ func (a *apiServer) PostWorkspace(
 		var bytes []byte
 		bytes, err = req.CheckpointStorageConfig.MarshalJSON()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error marshaling requested checkpoint storage config: %w", err)
 		}
 		var sc expconf.CheckpointStorageConfig
 		w.CheckpointStorageConfig = &sc
 		if err = w.CheckpointStorageConfig.UnmarshalJSON(bytes); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error unmarshaling requested checkpoint storage config: %w", err)
 		}
 		if err = schemas.IsComplete(w.CheckpointStorageConfig); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, err.Error())
@@ -457,7 +457,7 @@ func (a *apiServer) PatchWorkspace(
 			return nil,
 				status.Errorf(codes.AlreadyExists, "avoid names equal to other workspaces (case-insensitive)")
 		}
-		return nil, err
+		return nil, fmt.Errorf("error patching workspace id %d: %w", req.Id, err)
 	}
 
 	// TODO(ilia): Avoid second refetch.

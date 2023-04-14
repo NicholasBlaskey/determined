@@ -876,7 +876,7 @@ func (a *apiServer) streamMetrics(ctx context.Context,
 			Order("trial_id", "trial_run_id", "total_batches").
 			Limit(size).
 			Scan(ctx, &res); err != nil {
-			return err
+			return fmt.Errorf("error getting trial metric reports: %w", err)
 		}
 
 		if len(res) > 0 {
@@ -886,7 +886,7 @@ func (a *apiServer) streamMetrics(ctx context.Context,
 			}
 
 			if err := ctx.Err(); err != nil {
-				return err
+				return fmt.Errorf("context done for stream metrics: %w", err)
 			}
 			if err := sendFunc(res); err != nil {
 				return err

@@ -82,6 +82,8 @@ linters-settings:
       - google.golang.org/grpc/status
       - github.com/labstack/echo/*
       - github.com/hashicorp/go-multierror
+      - github.com/cenkalti/backoff/v4
+      - encoding/json
 linters:
   enable-all: true
   disable:

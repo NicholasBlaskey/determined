@@ -49,7 +49,7 @@ func (w *websocketReadWriter) Read(buf []byte) (int, error) {
 
 func (w *websocketReadWriter) Write(buf []byte) (int, error) {
 	if err := w.ws.WriteMessage(websocket.BinaryMessage, buf); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error writing websocket binary message: %w", err)
 	}
 	return len(buf), nil
 }

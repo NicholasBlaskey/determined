@@ -63,7 +63,7 @@ func (e ExperimentConfigV0) Value() (driver.Value, error) {
 
 	byts, err := json.Marshal(e)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error marshaling experiment config: %w", err)
 	}
 
 	return byts, nil
@@ -133,7 +133,11 @@ func (d *Name) SetString(s string) {
 
 // MarshalJSON marshals makes the Name container transparent to marshaling.
 func (d Name) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.RawString)
+	b, err := json.Marshal(d.RawString)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling Name: %w", err)
+	}
+	return b, nil
 }
 
 // UnmarshalJSON marshals makes the Name container transparent to unmarshaling.
