@@ -2,7 +2,6 @@ package union
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -33,12 +32,12 @@ func Unmarshal(data []byte, v interface{}) error {
 
 		if fieldVal := value.Elem().Field(field.index); !fieldVal.IsNil() {
 			if err := json.Unmarshal(data, fieldVal.Interface()); err != nil {
-				return fmt.Errorf("error unmarshaling field value: %w", err)
+				return err
 			}
 		} else {
 			nested := reflect.New(field.field.Type.Elem())
 			if err := json.Unmarshal(data, nested.Interface()); err != nil {
-				return fmt.Errorf("error unmarshaling nested field value: %w", err)
+				return err
 			}
 			fieldVal.Set(nested)
 		}
@@ -84,7 +83,7 @@ func parseFields(elem reflect.Type) map[string]bool {
 func checkFields(fields map[string]bool, bytes []byte) error {
 	data := make(map[string]interface{})
 	if err := json.Unmarshal(bytes, &data); err != nil {
-		return fmt.Errorf("error unmarshaling checkingFields: %w", err)
+		return err
 	}
 	for key := range data {
 		if _, ok := fields[key]; !ok {

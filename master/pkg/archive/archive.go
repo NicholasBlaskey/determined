@@ -134,18 +134,14 @@ type UnixTime struct {
 // MarshalJSON marshals a UnixTime as seconds since the epoch.
 func (t UnixTime) MarshalJSON() ([]byte, error) {
 	ts := t.Unix()
-	b, err := json.Marshal(ts)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling UnixTime to JSON: %w", err)
-	}
-	return b, nil
+	return json.Marshal(ts)
 }
 
 // UnmarshalJSON unmarshals seconds since the epoch into a UnixTime.
 func (t *UnixTime) UnmarshalJSON(data []byte) error {
 	var ts int64
 	if err := json.Unmarshal(data, &ts); err != nil {
-		return fmt.Errorf("error unmarshaling UnixTime from JSON: %w", err)
+		return err
 	}
 	t.Time = time.Unix(ts, 0)
 	return nil

@@ -66,6 +66,12 @@ linters-settings:
   wrapcheck:
     ignorePackageGlobs:
       - github.com/determined-ai/determined/*
+      - github.com/santhosh-tekuri/jsonschema/v2
+      - google.golang.org/grpc/status
+      - github.com/labstack/echo/*
+      - github.com/hashicorp/go-multierror
+      - github.com/cenkalti/backoff/v4
+      - encoding/json
 
 linters:
   enable-all: true

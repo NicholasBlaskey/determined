@@ -442,7 +442,7 @@ func registryToString(reg types.AuthConfig) (string, error) {
 	}
 	bs, err := json.Marshal(reg)
 	if err != nil {
-		return "", fmt.Errorf("error marshaling docker registry auth to JSON: %w", err)
+		return "", err
 	}
 
 	return base64.URLEncoding.EncodeToString(bs), nil

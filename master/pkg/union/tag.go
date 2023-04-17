@@ -2,7 +2,6 @@ package union
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -29,7 +28,7 @@ func getTagValue(data []byte, tag string) (string, bool, error) {
 	// Parse the raw JSON blob into a map.
 	var parsed map[string]interface{}
 	if err := json.Unmarshal(data, &parsed); err != nil {
-		return "", false, fmt.Errorf("error unmarshaling JSON while getting tag value: %w", err)
+		return "", false, err
 	}
 
 	// Look for the key tag in the map.

@@ -293,7 +293,7 @@ func mockLogAcceptor(t *testing.T, port int) (chan model.TaskLog, func()) {
 
 		var logs []model.TaskLog
 		if err = json.Unmarshal(body, &logs); err != nil {
-			return fmt.Errorf("json unmarshal: %s", err)
+			return err
 		}
 
 		for _, l := range logs {
