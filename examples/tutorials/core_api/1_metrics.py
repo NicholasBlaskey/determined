@@ -8,6 +8,8 @@ import logging
 import sys
 import time
 
+from datetime import datetime
+
 # NEW: import determined
 import determined as det
 
@@ -22,7 +24,7 @@ def main(core_context, increment_by):
         # NEW: report training metrics.
         if steps_completed % 10 == 0:
             core_context.train.report_training_metrics(
-                steps_completed=steps_completed, metrics={"x": x}
+                steps_completed=steps_completed, metrics={"x": x, "date": datetime.now()}
             )
     # NEW: report a "validation" metric at the end.
     core_context.train.report_validation_metrics(steps_completed=steps_completed, metrics={"x": x})

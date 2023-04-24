@@ -9,6 +9,8 @@ The methods `train_batch` and `evaluate_batch` define the forward pass
 for training and evaluation respectively.
 """
 
+from datetime import datetime
+
 from typing import Any, Dict, Sequence, Tuple, Union, cast
 
 import data
@@ -91,7 +93,7 @@ class MNistTrial(PyTorchTrial):
         self.context.backward(loss)
         self.context.step_optimizer(self.optimizer)
 
-        return {"loss": loss}
+        return {"loss": loss, "date": datetime.now()}
 
     def evaluate_batch(self, batch: TorchData) -> Dict[str, Any]:
         batch = cast(Tuple[torch.Tensor, torch.Tensor], batch)
@@ -103,4 +105,5 @@ class MNistTrial(PyTorchTrial):
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(labels.view_as(pred)).sum().item() / len(data)
 
-        return {"validation_loss": validation_loss, "accuracy": accuracy}
+        print(datetime.now())
+        return {"validation_loss": validation_loss, "accuracy": accuracy, "date": datetime.now()}

@@ -2042,7 +2042,6 @@ func (a *apiServer) SearchExperiments(
 		With("v", validationsQuery).
 		Model(&trials).
 		ModelTableExpr("(?) AS trial", trialsInnerQuery).Scan(ctx)
-
 	if err != nil {
 		return nil, err
 	}

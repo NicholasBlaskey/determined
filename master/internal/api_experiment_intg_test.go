@@ -1195,3 +1195,21 @@ func TestAuthZGetExperimentAndCanDoActions(t *testing.T) {
 		require.Equal(t, expectedErr, apiErr)
 	}
 }
+
+func TestSearchExperiments(t *testing.T) {
+	api, _, ctx := setupAPITest(t, nil)
+	pid := int32(1)
+	_ = pid
+
+	s := time.Now()
+	resp, err := api.SearchExperiments(ctx, &apiv1.SearchExperimentsRequest{
+		ProjectId: &pid,
+		Limit:     200,
+	})
+	require.NoError(t, err)
+
+	for _, e := range resp.Experiments {
+		fmt.Println(e.BestTrial)
+	}
+	require.Nil(t, time.Now().Sub(s).String())
+}
