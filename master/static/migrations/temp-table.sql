@@ -94,8 +94,8 @@ SELECT
     END AS type,
     end_time AS end_time
 FROM (
-    SELECT trial_id, (jsonb_each(metrics->'avg_metrics')).key, (jsonb_each(metrics->'avg_metrics')).value, end_time
-    FROM steps
+    SELECT trial_id, (jsonb_each(metrics->'validation_metrics')).key, (jsonb_each(metrics->'validation_metrics')).value, end_time
+    FROM validations
 ) AS subquery;
 
 -- Numeric aggregates.
@@ -135,9 +135,9 @@ FROM (
             PARTITION BY s.trial_id
             ORDER BY s.end_time DESC
         ) as rank
-    FROM steps s
+    FROM validations s
     JOIN trials ON s.trial_id = trials.id
-) s, jsonb_each(s.metrics->'avg_metrics') unpacked
+) s, jsonb_each(s.metrics->'validation_metrics') unpacked
 WHERE s.rank = 1;
 
 -- Summary metrics.
@@ -172,4 +172,4 @@ LEFT JOIN metric_latest ON
      numeric_aggs.name = metric_latest.name) sub
 GROUP BY trial_id;
 
-COMMIT;
+ROLLBACK;
