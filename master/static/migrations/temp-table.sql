@@ -56,12 +56,16 @@ CREATE TEMPORARY TABLE metric_types (
   type TEXT
 );
 
+CREATE INDEX metric_types_idx ON metric_types (trial_id, name);
+
 CREATE TEMPORARY TABLE metric_latest (
   id SERIAL,
   trial_id INT,
   name TEXT,
   value jsonb
 );
+
+CREATE INDEX metric_latest_idx ON metric_latest (trial_id, name);
 
 CREATE TEMPORARY TABLE validation_summary_metrics (
   id SERIAL,
@@ -172,4 +176,4 @@ LEFT JOIN metric_latest ON
      numeric_aggs.name = metric_latest.name) sub
 GROUP BY trial_id;
 
-ROLLBACK;
+COMMIT;
