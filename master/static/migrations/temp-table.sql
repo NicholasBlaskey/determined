@@ -1,4 +1,11 @@
+-- This is the training version of the migration.
 BEGIN;
+
+DROP TABLE IF EXISTS metric_values;
+DROP TABLE IF EXISTS numeric_aggs;
+DROP TABLE IF EXISTS metric_types;
+DROP TABLE IF EXISTS metric_latest;
+DROP TABLE IF EXISTS validation_summary_metrics;
 
 CREATE OR REPLACE FUNCTION safe_sum_accumulate(float8, float8, OUT float8)
   RETURNS float8 AS $$
@@ -98,8 +105,8 @@ SELECT
     END AS type,
     end_time AS end_time
 FROM (
-    SELECT trial_id, (jsonb_each(metrics->'validation_metrics')).key, (jsonb_each(metrics->'validation_metrics')).value, end_time
-    FROM validations
+    SELECT trial_id, (jsonb_each(metrics->'avg_metrics')).key, (jsonb_each(metrics->'avg_metrics')).value, end_time
+    FROM steps
 ) AS subquery;
 
 -- Numeric aggregates.
@@ -139,9 +146,9 @@ FROM (
             PARTITION BY s.trial_id
             ORDER BY s.end_time DESC
         ) as rank
-    FROM validations s
+    FROM steps s
     JOIN trials ON s.trial_id = trials.id
-) s, jsonb_each(s.metrics->'validation_metrics') unpacked
+) s, jsonb_each(s.metrics->'avg_metrics') unpacked
 WHERE s.rank = 1;
 
 -- Summary metrics.
@@ -176,4 +183,4 @@ LEFT JOIN metric_latest ON
      numeric_aggs.name = metric_latest.name) sub
 GROUP BY trial_id;
 
-COMMIT;
+ROLLBACK;
