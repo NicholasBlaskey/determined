@@ -243,7 +243,6 @@ func (t *trial) create(ctx *actor.Context) error {
 	m := model.NewTrial(
 		t.state,
 		t.jobID,
-		t.taskID,
 		t.searcher.Create.RequestID,
 		t.experimentID,
 		model.JSONObj(t.searcher.Create.Hparams),
@@ -256,7 +255,7 @@ func (t *trial) create(ctx *actor.Context) error {
 		return err
 	}
 
-	err = t.db.AddTrial(m)
+	err = db.AddTrial(context.TODO(), m, t.taskID)
 	if err != nil {
 		return errors.Wrap(err, "failed to save trial to database")
 	}
