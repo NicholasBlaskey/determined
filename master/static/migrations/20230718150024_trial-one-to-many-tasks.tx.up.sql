@@ -6,9 +6,7 @@ CREATE TABLE trial_id_task_id (
     PRIMARY KEY(trial_id, task_id)
 );
 
-CREATE INDEX idx_trial_id_task_id ON trial_id_task_id USING btree (trial_id);
-
-CREATE INDEX idx_trial_id_task_id_task_id ON trial_id_task_id USING btree (task_id);
+CREATE INDEX idx_task_id_trial_id ON trial_id_task_id USING btree (task_id, trial_id);
 
 INSERT INTO trial_id_task_id(trial_id, task_id)
     SELECT id, task_id FROM trials;
