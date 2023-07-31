@@ -83,9 +83,6 @@ workloads AS (
                             JOIN
                                 trial_id_task_id on checkpoints_v2.task_id = trial_id_task_id.task_id
                             UNION ALL
-                            -- TODO does multiple tasks per trial break this?
-                            -- Worry being much more time could occur between allocations
-                            -- within the same trial?
                             SELECT
                                 'imagepulling' AS kind,
                                 trial_id_task_id.trial_id,
