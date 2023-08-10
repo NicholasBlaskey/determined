@@ -145,6 +145,25 @@ func (t *trial) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
 		if t.idSet {
+			// TODO(nick): wrong in restore
+			// Is jobSubmissionTime sensiable? Probaly should be updated to continue time.
+			// It might actually be.
+			// TODO do this in a trnascation.
+			fmt.Println("JOB ID", t.jobID)
+			err := t.addTask()
+			if err != nil {
+				return err
+			}
+			fmt.Println("LOG HERE for adding trial ID")
+			if _, err := db.Bun().
+				NewInsert().
+				Model(&model.TrialTaskID{TrialID: t.id, TaskID: t.taskID}).
+				Exec(context.TODO()); err != nil {
+				return fmt.Errorf("adding trial ID task ID relationship: %w", err)
+			}
+			// COMMIT
+
+			// recover(). We do want to reset state + trial restarts probaly.
 			if err := t.recover(); err != nil {
 				return fmt.Errorf("recovering trial in prestart: %w", err)
 			}
@@ -246,6 +265,7 @@ func (t *trial) create(ctx *actor.Context) error {
 		int64(t.searcher.Create.TrialSeed),
 	)
 
+	// TODO this needs to happen in a transcation. Or does it?
 	err := t.addTask()
 	if err != nil {
 		return err

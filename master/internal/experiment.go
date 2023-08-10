@@ -110,6 +110,7 @@ type (
 		rm                  rm.ResourceManager
 		searcher            *searcher.Searcher
 		warmStartCheckpoint *model.Checkpoint
+		continueFromTrialID *int
 
 		taskSpec      *tasks.TaskSpec
 		generatedKeys ssh.PrivateAndPublicKeys
@@ -694,10 +695,18 @@ func (e *experiment) processOperations(
 			config := schemas.Copy(e.activeConfig)
 			state := trialSearcherState{Create: op, Complete: true}
 			e.TrialSearcherState[op.RequestID] = state
-			ctx.ActorOf(op.RequestID, newTrial(
+
+			t := newTrial(
 				e.logCtx, trialTaskID(e.ID, op.RequestID), e.JobID, e.StartTime, e.ID, e.State,
 				state, e.rm, e.db, config, checkpoint, e.taskSpec, e.generatedKeys, false,
-			))
+			)
+			if e.continueFromTrialID != nil {
+				t.id = *e.continueFromTrialID
+				t.idSet = true
+				t.taskID += t.taskID + "revived" // TODO ID thing...
+			}
+
+			ctx.ActorOf(op.RequestID, t)
 		case searcher.ValidateAfter:
 			state := e.TrialSearcherState[op.RequestID]
 			state.Op = op
