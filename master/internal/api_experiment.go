@@ -1313,6 +1313,11 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
 	}
 
+	providedConfig, err := expconf.ParseAnyExperimentConfigYAML([]byte(req.OverrideConfig))
+	if err != nil {
+		return nil, fmt.Errorf("parsing override config: %w", err)
+	}
+
 	// DO a lock update on state.
 	// ASSERT single searcher.
 
@@ -1325,12 +1330,9 @@ func (a *apiServer) ContinueExperiment(
 		return nil, fmt.Errorf("loading active config for experiment %d: %w", req.Id, err)
 	}
 
-	// TODO merge active config with supplied config.
-	mergedConfig := activeConfig
-
-	// TODO update original config
-	// mergedConfig -> string
-	// Or don't update it>?
+	// TODO we are doing a double parse and unmarshal here, kinda messy but go with it for now.
+	// Provided config in this API call overrides the active config the experiment ran with.
+	mergedConfig := schemas.Merge(providedConfig, activeConfig)
 
 	bytes, err := mergedConfig.Value() // TODO better way to do this
 	if err != nil {
@@ -1388,7 +1390,7 @@ func (a *apiServer) ContinueExperiment(
 	// where do we set warm start checkpoint ID. newExperiment
 	// where do we persist the trial?
 
-	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec)
+	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec, true)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create experiment: %s", err)
 	}
@@ -1539,7 +1541,7 @@ func (a *apiServer) CreateExperiment(
 		}
 	}
 
-	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec)
+	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec, false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create experiment: %s", err)
 	}

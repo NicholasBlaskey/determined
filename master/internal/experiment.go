@@ -138,6 +138,7 @@ func newExperiment(
 	expModel *model.Experiment,
 	activeConfig expconf.ExperimentConfig,
 	taskSpec *tasks.TaskSpec,
+	isContinued bool,
 ) (*experiment, []command.LaunchWarning, error) {
 	resources := activeConfig.Resources()
 	workspaceModel, err := workspace.WorkspaceByProjectID(context.TODO(), expModel.ProjectID)
@@ -183,7 +184,10 @@ func newExperiment(
 	checkpoint, err := checkpointFromTrialIDOrUUID(
 		m.db, activeConfig.Searcher().SourceTrialID(), activeConfig.Searcher().SourceCheckpointUUID())
 	if err != nil {
-		return nil, launchWarnings, err
+		fmt.Println("ERR != nil", err, errMissingCheckpoint, isContinued)
+		if !(isContinued && errors.Is(err, errMissingCheckpoint)) {
+			return nil, launchWarnings, err
+		}
 	}
 
 	if expModel.ID == 0 {
@@ -846,6 +850,8 @@ func (e *experiment) Restore(experimentSnapshot json.RawMessage) error {
 	return nil
 }
 
+var errMissingCheckpoint = fmt.Errorf("getting source trial checkpoint")
+
 func checkpointFromTrialIDOrUUID(
 	db *db.PgDB, trialID *int, checkpointUUIDStr *string,
 ) (*model.Checkpoint, error) {
@@ -856,10 +862,12 @@ func checkpointFromTrialIDOrUUID(
 	if trialID != nil {
 		checkpoint, err = db.LatestCheckpointForTrial(*trialID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get checkpoint for source trial %d", *trialID)
+			return nil, fmt.Errorf("getting latest checkpoint from source trial %d: %w",
+				*trialID, err)
 		}
 		if checkpoint == nil {
-			return nil, errors.Errorf("no checkpoint found for source trial %d", *trialID)
+			return nil, fmt.Errorf("no checkpoint found for source trial %d: %w",
+				*trialID, errMissingCheckpoint)
 		}
 	} else if checkpointUUIDStr != nil {
 		checkpointUUID, err := uuid.Parse(*checkpointUUIDStr)
