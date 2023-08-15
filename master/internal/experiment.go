@@ -707,7 +707,7 @@ func (e *experiment) processOperations(
 			if e.continueFromTrialID != nil {
 				t.id = *e.continueFromTrialID
 				t.idSet = true
-				t.taskID += t.taskID + "revived" // TODO ID thing...
+				t.taskID += t.taskID + "revived" + model.TaskID(uuid.New().String()) // TODO ID thing...
 			}
 
 			ctx.ActorOf(op.RequestID, t)

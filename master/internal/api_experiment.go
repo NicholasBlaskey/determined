@@ -1398,21 +1398,29 @@ func (a *apiServer) ContinueExperiment(
 	// updateExperiment state
 	// updateTrial state?
 
-	// TODO get trial
-	e.continueFromTrialID = activeConfig.RawSearcher.RawSourceTrialID
-	_, created := a.m.system.ActorOf(exputil.ExperimentsAddr.Child(e.ID), e)
-	if !created {
-		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
-	}
 	// Persist job. Feels somewhat strange doing this here.
 	job := model.Job{
 		JobID:   e.JobID,
 		JobType: model.JobTypeExperiment,
 		OwnerID: e.OwnerID,
 	}
-	_, err = db.Bun().NewInsert().Model(&job).Exec(ctx)
-	if err != nil {
+	if _, err := db.Bun().NewInsert().Model(&job).Exec(ctx); err != nil {
 		return nil, fmt.Errorf("adding new job for experiment: %w", err)
+	}
+
+	// Zero out trial restarts. We do somewhat lose information about how many times
+	// the previous failed but I don't think anyone cares.
+	if _, err := db.Bun().NewUpdate().Model(&model.Trial{}).
+		Set("restarts = 0").
+		Where("id = ?", trialsResp.Trials[0].Id).
+		Exec(ctx); err != nil {
+		return nil, fmt.Errorf("zeroing out trial restarts: %w", err)
+	}
+
+	e.continueFromTrialID = activeConfig.RawSearcher.RawSourceTrialID
+	_, created := a.m.system.ActorOf(exputil.ExperimentsAddr.Child(e.ID), e)
+	if !created {
+		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
 	}
 
 	// bugs
@@ -1439,9 +1447,12 @@ func (a *apiServer) ContinueExperiment(
 	//   should exit immediately
 	//
 	// FAILURE cases.
-	// 4. transient failure
+	// 4.x transient failure
 	//    should rerun and have sucess
 	// 5. failure failure should rerun trial restarts
+	//
+	// MiSC
+	// 6. trial time? (lets just more and more add test cases)
 	//
 	// Broke restarts...
 	//
