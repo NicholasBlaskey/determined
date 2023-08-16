@@ -1,10 +1,13 @@
 
 import pytest
 
+import time
 
+from determined.common.api import authentication, bindings, certs
 from determined.common.api.bindings import experimentv1State
 from tests import experiment as exp
 from tests import config as conf
+from tests import api_utils
 
 from .test_groups import det_cmd
 
@@ -63,8 +66,67 @@ def test_continue_max_restart() -> None:
     assert count_times_ran() == 8
     assert get_trial_restarts() == 1
 
+@pytest.mark.e2e_cpu
+def test_continue_trial_time() -> None:
+    exp_id = exp.create_experiment(
+        conf.fixtures_path("no_op/single-medium-train-step.yaml"),
+        conf.fixtures_path("no_op"),
+        ["--config", "hyperparameters.metrics_sigma=-1.0"], # TODO why does this fail on continue?
+    )
+    exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
+
+    sess = api_utils.determined_test_session()
+    def exp_start_end_time():
+        e = bindings.get_GetExperiment(sess, experimentId=exp_id).experiment
+        return e.startTime, e.endTime
+    def trial_start_end_time():
+        experiment_trials = exp.experiment_trials(exp_id)
+        assert len(experiment_trials) == 1
+        return experiment_trials[0].trial.startTime, experiment_trials[0].trial.endTime
     
-    # TODO assert
-    # that
-    # 
-    # in logs aka we continue logs...
+
+    exp_orig_start, exp_orig_end = exp_start_end_time()
+    trial_orig_start, trial_orig_end = trial_start_end_time()
+
+    # This is technically a race. So maybe do IN PROGRESS then completed? IDK Oh it isn't a race
+    # We might be good.
+    det_cmd(["e", "continue", str(exp_id)], check=True)
+    exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
+
+    exp_new_start, exp_new_end = exp_start_end_time()
+    trial_new_start, trial_new_end = trial_start_end_time()
+
+    # I don't love this behaviour.
+    assert exp_orig_start == exp_new_start
+    assert trial_orig_start == trial_new_start
+    
+    assert exp_new_end > exp_orig_end
+    assert trial_new_end > trial_orig_end
+
+    # Task times are updated.
+    experiment_trials = exp.experiment_trials(exp_id)
+    assert len(experiment_trials) == 1
+    taskIds = experiment_trials[0].trial.taskIds
+    assert len(taskIds) == 2
+    
+    task = bindings.get_GetTask(sess, taskId=taskIds[1]).task
+    assert task.startTime > exp_orig_end
+    assert task.endTime > task.startTime
+
+
+@pytest.mark.e2e_cpu
+def test_continue_batches() -> None:
+    exp_id = exp.create_experiment(
+        conf.fixtures_path("mnist_pytorch/failable.yaml"),
+        conf.fixtures_path("mnist_pytorch"),
+        ["--config", "environment.environment_variables=['FAIL_AT_BATCH=101']"],
+         # TODO why does this fail on continue?
+    )
+    exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
+
+
+    # TODO checkpoint at 101
+    # REMOVE the 101 fail at environemtn variable (CAN we do that???) (override to 0?)
+    #
+    # Then like just see what we do... based on metrics. Really we just want intutive behaviour
+    # Like really the searcher should be as good as we can be...

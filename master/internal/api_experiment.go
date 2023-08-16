@@ -1381,6 +1381,7 @@ func (a *apiServer) ContinueExperiment(
 	// How do we convert units? Is this even possible probaly not
 	// Or do we just default to keep trainig
 	// TODO remove this.
+	fmt.Println(activeConfig.RawSearcher.RawSingleConfig.RawMaxLength.Unit)
 	if activeConfig.RawSearcher.RawSingleConfig.RawMaxLength.Units <= 0 {
 		return nil, status.Errorf(codes.FailedPrecondition,
 			"trial won't train anymore so not continuing")
@@ -1423,6 +1424,20 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
 	}
 
+	// TODO unhack name
+	// Lets just make max_length a warning.
+	// Something like
+	//
+	// You haven't submitted an updated searcher config.
+	// The trial has trained for 8 epochs already and originally was training for 22 epochs.
+	// This trial will attempt trian for an additional 22 epochs for a total of 30.
+	// If this is not what you expect rerun this command with an additional CLI argument of
+	// `--config.searcher.max_length.epochs=23`.
+	// Run for original + additional length? [Y\n]
+
+	//
+	//
+	// TODO make these into test cases
 	// bugs
 	// a. 1. keeps training for awhile
 	//   searcher.max_length.batches=937 where do we obey this when we decide to stop?
@@ -1434,13 +1449,30 @@ func (a *apiServer) ContinueExperiment(
 	//   persisting GC task 2520.df8c3766-3265-4fd7-8328-560bba6a1da3:
 	//   adding task: ERROR:
 	//   insert or update on table \"tasks\" violates foreign key constraint \"tasks_job_id_fkey\"
+	//
+	// d. continung a sucess experiment gets error
+	/*
+		[2023-08-16T16:35:05.571540Z] 8d6e7976 ||   File "/run/determined/pythonuserbase/lib/python3.8/site-packages/determined/layers/_workload_sequencer.py", line 456, in workloads
+		[2023-08-16T16:35:05.571678Z] 8d6e7976 ||     for wkld, response_fn in wlsq:
+		[2023-08-16T16:35:05.571679Z] 8d6e7976 ||   File "/run/determined/pythonuserbase/lib/python3.8/site-packages/determined/layers/_workload_sequencer.py", line 427, in __iter__
+		[2023-08-16T16:35:05.571811Z] 8d6e7976 ||     assert op._completed, "logic error; op was never completed"
+		[2023-08-16T16:35:05.571812Z] 8d6e7976 || AssertionError: logic error; op was never completed
+		[2023-08-16T16:35:06.295679Z] 8d6e7976 || ERROR: crashed: resources failed with non-zero exit code: container failed with non-zero exit code: 1 (exit code 1)
+		[2023-08-16T16:35:06.300150Z]          || ERROR: Trial 401 (Experiment 117) was terminated: allocation failed: resources failed with non-zero exit code: container failed with non-zero exit code: 1 (exit code 1)
+	*/
+	//
+	// TODO make sure submitted config also has a searcher of NOT.
+	// Could be intergration test too.
 
 	// TASK ID ~1
 	// break hmm?
 
+	// I dunno about these test cases...
 	// Let's do test cases...
+	// REPORT some metrics
 	// 1. continuing an compelted exp with same config
 	//   should exit immediately since it trained for batches
+	//
 	// 2. continuing an completed exp with larger train time
 	//   should train for the longer time
 	// 3. continung an completed exp with shorter train time
@@ -1449,17 +1481,17 @@ func (a *apiServer) ContinueExperiment(
 	// FAILURE cases.
 	// 4.x transient failure
 	//    should rerun and have sucess
-	// 5. failure failure should rerun trial restarts
+	// 5.x failure failure should rerun trial restarts
 	//
 	// MiSC
-	// 6. trial time? (lets just more and more add test cases)
+	// 6.x trial time? (lets just more and more add test cases)
+	// 7. continuing medium train step on sucess...
 	//
-	// Broke restarts...
-	//
-	// YES?
 	// why does searcher create despite being paused???
 	// Is this how normal experiments work?
-
+	//
+	// trial_run_id is intresting, we want to make sure that it is good. I think we are tho
+	//
 	//_ = launchWarnings // TODO delete
 
 	fmt.Println("Has activated gone through?")

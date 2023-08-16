@@ -441,6 +441,8 @@ func (t *trial) buildTaskSpecifier(ctx *actor.Context) (*tasks.TrialSpec, error)
 		return nil, errors.Wrap(err, "failed to save trial run ID")
 	}
 
+	// what is the deal with this? It is super subitle.
+	// If latestCheckpoint is != nil then we get stepsCompleted.
 	var stepsCompleted int
 	latestCheckpoint, err := t.db.LatestCheckpointForTrial(t.id)
 	switch {

@@ -184,7 +184,6 @@ func newExperiment(
 	checkpoint, err := checkpointFromTrialIDOrUUID(
 		m.db, activeConfig.Searcher().SourceTrialID(), activeConfig.Searcher().SourceCheckpointUUID())
 	if err != nil {
-		fmt.Println("ERR != nil", err, errMissingCheckpoint, isContinued)
 		if !(isContinued && errors.Is(err, errMissingCheckpoint)) {
 			return nil, launchWarnings, err
 		}
