@@ -155,8 +155,6 @@ def test_continue_batches() -> None:
     exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
     assert_exited_at(5)
 
-    # We don't want to checkpoint any of this...
-    
     second_metric_ids = []
     metrics = get_metric_list()
     assert len(metrics) == 5
@@ -166,18 +164,20 @@ def test_continue_batches() -> None:
         second_metric_ids.append(m.id)
         assert m.totalBatches == i
         i += 1
-        
-    
 
     # We lose one metric since we are continuing from first checkpoint.
     # We correctly stop at total_batches.
+    det_cmd(["e", "continue", str(exp_id),
+             "--config", "environment.environment_variables=['FAIL_AT_BATCH=-1']"], check=True)
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
-
-    # Our validations will get invalidated when rerun.
-    # TODO get validations
-
-    # TODO checkpoint at 101
-    # REMOVE the 101 fail at environemtn variable (CAN we do that???) (override to 0?)
-    #
-    # Then like just see what we do... based on metrics. Really we just want intutive behaviour
-    # Like really the searcher should be as good as we can be...
+    metrics = get_metric_list()
+    assert len(metrics) == 8
+    i = 1
+    for m in metrics:
+        if m.totalBatches <= 3:
+            assert m.id in second_metric_ids
+        else:
+            assert m.id not in second_metric_ids
+        assert m.totalBatches == i
+        i += 1
