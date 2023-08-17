@@ -116,14 +116,65 @@ def test_continue_trial_time() -> None:
 
 @pytest.mark.e2e_cpu
 def test_continue_batches() -> None:
+    # Experiment fails before first checkpoint.
     exp_id = exp.create_experiment(
         conf.fixtures_path("mnist_pytorch/failable.yaml"),
         conf.fixtures_path("mnist_pytorch"),
-        ["--config", "environment.environment_variables=['FAIL_AT_BATCH=101']"],
+        ["--config", "environment.environment_variables=['FAIL_AT_BATCH=2']"],
          # TODO why does this fail on continue?
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
 
+    sess = api_utils.determined_test_session()
+    trials = exp.experiment_trials(exp_id)
+    assert len(trials) == 1
+    trial_id = trials[0].trial.id
+    
+    def assert_exited_at(batch_idx):
+        assert f"failed at this batch {batch_idx}" in "\n".join(exp.trial_logs(trial_id))
+    assert_exited_at(2)
+
+    def get_metric_list():
+        resp_list = bindings.get_GetValidationMetrics(sess, trialIds=[trial_id])
+        return [metric for resp in resp_list for metric in resp.metrics]
+    metrics = get_metric_list()
+    assert len(metrics) == 2
+
+    first_metric_ids = []
+    i = 1
+    for m in metrics:
+        first_metric_ids.append(m.id)
+        assert m.totalBatches == i
+        i += 1
+
+    # Experiment has to start over since we didn't checkpoint.
+    # We must invalidate all previous reported metrics.
+    # This time experiment makes it a validation after the first checkpoint.
+    det_cmd(["e", "continue", str(exp_id),
+             "--config", "environment.environment_variables=['FAIL_AT_BATCH=5']"], check=True)
+    exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
+    assert_exited_at(5)
+
+    # We don't want to checkpoint any of this...
+    
+    second_metric_ids = []
+    metrics = get_metric_list()
+    assert len(metrics) == 5
+    i = 1
+    for m in metrics:
+        assert m.id not in first_metric_ids # Invalidated first metrics.
+        second_metric_ids.append(m.id)
+        assert m.totalBatches == i
+        i += 1
+        
+    
+
+    # We lose one metric since we are continuing from first checkpoint.
+    # We correctly stop at total_batches.
+
+
+    # Our validations will get invalidated when rerun.
+    # TODO get validations
 
     # TODO checkpoint at 101
     # REMOVE the 101 fail at environemtn variable (CAN we do that???) (override to 0?)
