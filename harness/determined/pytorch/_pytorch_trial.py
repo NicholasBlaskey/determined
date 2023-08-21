@@ -96,6 +96,7 @@ class TrainUnit:
         raise ValueError("invalid values")
 
     def should_stop(self, step_num: int) -> bool:
+        print("PRITNING value / step_num", self.value, step_num)
         if isinstance(self.value, int):
             return self._divides(step_num)
         if isinstance(self.value, collections.Container):
