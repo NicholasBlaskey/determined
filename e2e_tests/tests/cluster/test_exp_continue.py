@@ -114,6 +114,8 @@ def test_continue_trial_time() -> None:
     assert task.endTime > task.startTime
 
 
+# TODO continue core API sucess
+    
 @pytest.mark.e2e_cpu
 def test_continue_batches() -> None:
     # Experiment fails before first checkpoint.
@@ -181,3 +183,32 @@ def test_continue_batches() -> None:
             assert m.id not in second_metric_ids
         assert m.totalBatches == i
         i += 1
+
+@pytest.mark.e2e_cpu
+def test_continue_completed_searcher() -> None:
+    exp_id = exp.create_experiment(
+        conf.fixtures_path("mnist_pytorch/failable.yaml"),
+        conf.fixtures_path("mnist_pytorch"),
+        ["--config", "searcher.max_length.batches=3"],
+    )
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
+    
+    sess = api_utils.determined_test_session()
+    trials = exp.experiment_trials(exp_id)
+    assert len(trials) == 1
+    trial_id = trials[0].trial.id
+    
+    def max_total_batches():
+        resp_list = bindings.get_GetValidationMetrics(sess, trialIds=[trial_id])
+        return max([metric for resp in resp_list for metric in resp.metrics],
+                   key=lambda x: x.totalBatches).totalBatches
+    assert max_total_batches() == 3
+
+    
+    # Train for less time.
+    det_cmd(["e", "continue", str(exp_id),
+             # This merging feels really bad. TODO fix this. SOMETHING is wrong
+             "--config", "searcher.max_length.batches=2"
+             "--confing", "searcher.name=single"], check=True)
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
+    assert max_total_batches() == 3
