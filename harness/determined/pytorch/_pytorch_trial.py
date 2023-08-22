@@ -108,9 +108,12 @@ class TrainUnit:
         ), "_divides can only be called on int types."
         # Treat <= 0 values as always step
         if self.value < 1:
+            print("DVIDES < 1 return true")
             return True
         if steps == 0:
+            print("steps == 0 return false")
             return False
+        print(f"steps {steps} % self.value {self.value} == 0", steps % self.value == 0)
         return steps % self.value == 0
 
 
@@ -715,6 +718,8 @@ class _PyTorchTrialController:
 
             # Batch complete: check if any training periods have been reached and exit if any
             for step in train_boundaries:
+                print("STEP for step in train_boundraries",
+                      step.step_type, step.unit.value, step.limit_reached)
                 if isinstance(step.unit, Batch):
                     if step.unit.should_stop(batch_idx + 1):
                         step.limit_reached = True

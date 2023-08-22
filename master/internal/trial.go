@@ -453,6 +453,7 @@ func (t *trial) buildTaskSpecifier(ctx *actor.Context) (*tasks.TrialSpec, error)
 	default:
 		stepsCompleted = latestCheckpoint.StepsCompleted
 	}
+	fmt.Println("STEPS COMPLETED!!!", stepsCompleted, latestCheckpoint, err)
 
 	return &tasks.TrialSpec{
 		Base: *t.taskSpec,

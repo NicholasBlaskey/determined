@@ -184,9 +184,11 @@ func newExperiment(
 	checkpoint, err := checkpointFromTrialIDOrUUID(
 		m.db, activeConfig.Searcher().SourceTrialID(), activeConfig.Searcher().SourceCheckpointUUID())
 	if err != nil {
-		if !(isContinued && errors.Is(err, errMissingCheckpoint)) {
-			return nil, launchWarnings, err
-		}
+		return nil, launchWarnings, err
+		// TODO do we even need this? I like litterally don't think we do...
+		// if !(isContinued && errors.Is(err, errMissingCheckpoint)) {
+		// return nil, launchWarnings, err
+		//}
 	}
 
 	if expModel.ID == 0 {

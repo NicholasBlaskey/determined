@@ -390,9 +390,6 @@ class WorkloadSequencer(workload.Source):
             
             for op in self.core_context.searcher.operations(core.SearcherMode.ChiefOnly):
                 print(op, op.length)
-                # Send bug to ryan
-                # 
-                
                 # major TODO
                 # This isn't the right way to write this code.
                 # But the idea is we are okay with not training at all when

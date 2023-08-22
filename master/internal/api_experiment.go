@@ -1336,7 +1336,7 @@ func (a *apiServer) ContinueExperiment(
 	}
 
 	// DO a lock update on state.
-	// ASSERT single searcher.
+	// TODO ASSERT single searcher.
 
 	// TODO rbac stuff. LAME
 	_ = user
@@ -1384,7 +1384,8 @@ func (a *apiServer) ContinueExperiment(
 	// Overwrite config ??? or allow this???
 	// Maybe check and error if it is a different trial?
 	// Or maybe don't? and just not set it if it is a different trial
-	activeConfig.RawSearcher.RawSourceTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
+	// TODO I don't think we need this!
+	// activeConfig.RawSearcher.RawSourceTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
 
 	// TODO adjust searcher to only train for this much more?
 	// The searcher itself doesn't seem to have a way to handle this.
@@ -1435,7 +1436,7 @@ func (a *apiServer) ContinueExperiment(
 		return nil, fmt.Errorf("zeroing out trial restarts: %w", err)
 	}
 
-	e.continueFromTrialID = activeConfig.RawSearcher.RawSourceTrialID
+	e.continueFromTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
 	_, created := a.m.system.ActorOf(exputil.ExperimentsAddr.Child(e.ID), e)
 	if !created {
 		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
@@ -1490,7 +1491,7 @@ func (a *apiServer) ContinueExperiment(
 	// 1.x need fix continuing an compelted exp with same config
 	//   should exit immediately since it trained for batches
 	//
-	// 2. TODO this continuing an completed exp with larger train time
+	// 2.x TODO this continuing an completed exp with larger train time
 	//   should train for the longer time
 	// 3.x need fix continung an completed exp with shorter train time
 	//   should exit immediately
@@ -1502,7 +1503,7 @@ func (a *apiServer) ContinueExperiment(
 	//
 	// MiSC
 	// 6.x trial time? (lets just more and more add test cases)
-	// 7. continuing medium train step on sucess...
+	// 7.x continuing medium train step on sucess...
 	//
 	// why does searcher create despite being paused???
 	// Is this how normal experiments work?
