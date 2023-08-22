@@ -117,9 +117,8 @@ func (s TrialSpec) ToTaskSpec() TaskSpec {
 		"DET_TRIAL_SEED":        strconv.FormatUint(uint64(s.TrialSeed), 10),
 		"DET_EXPERIMENT_CONFIG": jsonify(s.ExperimentConfig),
 		"DET_HPARAMS":           jsonify(s.HParams),
-		// AHH DET_STEPS_COMPLETED.
-		"DET_STEPS_COMPLETED": strconv.Itoa(s.StepsCompleted),
-		"DET_TASK_TYPE":       string(model.TaskTypeTrial),
+		"DET_STEPS_COMPLETED":   strconv.Itoa(s.StepsCompleted),
+		"DET_TASK_TYPE":         string(model.TaskTypeTrial),
 	}
 	if s.LatestCheckpoint != nil && s.LatestCheckpoint.UUID != nil {
 		envVars["DET_LATEST_CHECKPOINT"] = s.LatestCheckpoint.UUID.String()

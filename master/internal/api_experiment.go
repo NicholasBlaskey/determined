@@ -1313,19 +1313,13 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
 	}
 
-	// This is gross but an annoying item is a user can't specify just
-	// searcher.max_length.batches = 2. They would also need
-	// searcher.name = "single", which all experiments will always be here.
-
-	// This presumably will be ok.
-
-	fmt.Println("OVERRRIDE COFNIG", req.OverrideConfig)
-
-	// Fails to parse...
-	// Do we have an override???
+	// TODO rbac stuff.
 
 	providedConfig, err := expconf.ParseAnyExperimentConfigYAML([]byte(req.OverrideConfig))
 	if err != nil {
+		// Add a helpful error message if a user just submits
+		// searcher.max_length.batches = 2. They would also need
+		// searcher.name = "single", which all experiments will always be here.
 		if strings.Contains(err.Error(), `unknown field "max_length"`) {
 			return nil, status.Errorf(codes.InvalidArgument,
 				`unknown field "max_length", you might also need to specify searcher.name=single`)
@@ -1335,39 +1329,32 @@ func (a *apiServer) ContinueExperiment(
 			fmt.Errorf("parsing override config: %w", err).Error())
 	}
 
-	// DO a lock update on state.
+	// TODO lock update on state.
+
 	// TODO ASSERT single searcher.
 
-	// TODO rbac stuff. LAME
 	_ = user
 
-	// active config -- TODO
 	activeConfig, err := a.m.db.ActiveExperimentConfig(int(req.Id))
 	if err != nil {
 		return nil, fmt.Errorf("loading active config for experiment %d: %w", req.Id, err)
 	}
-
-	// TODO we are doing a double parse and unmarshal here, kinda messy but go with it for now.
-	// Provided config in this API call overrides the active config the experiment ran with.
 	mergedConfig := schemas.Merge(providedConfig, activeConfig)
 
-	bytes, err := mergedConfig.Value() // TODO better way to do this
+	bytes, err := mergedConfig.Value()
 	if err != nil {
 		return nil, err
 	}
 	dbExp, activeConfig, p, taskSpec, err := a.m.parseCreateExperiment(
 		&apiv1.CreateExperimentRequest{
 			Config:   string(bytes.([]byte)),
-			ParentId: req.Id,
+			ParentId: req.Id, // Use parent logic.
 		}, user,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing continue experiment request: %w", err)
 	}
-	if err = exputil.AuthZProvider.Get().CanCreateExperiment(ctx, *user, p); err != nil {
-		return nil, status.Errorf(codes.PermissionDenied, err.Error())
-	}
-	dbExp.ParentID = nil // Not a parent.
+	dbExp.ParentID = nil // Not actually a parent though.
 	dbExp.ID = int(req.Id)
 
 	trialsResp, err := a.GetExperimentTrials(ctx, &apiv1.GetExperimentTrialsRequest{
@@ -1377,45 +1364,14 @@ func (a *apiServer) ContinueExperiment(
 		return nil, fmt.Errorf("getting experiment trials: %w", err)
 	}
 	if len(trialsResp.Trials) != 1 {
-		return nil, fmt.Errorf("experiment needs exactly one trial got %d instead",
-			len(trialsResp.Trials))
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf(
+			"experiment needs exactly one trial got %d instead", len(trialsResp.Trials)))
 	}
-
-	// Overwrite config ??? or allow this???
-	// Maybe check and error if it is a different trial?
-	// Or maybe don't? and just not set it if it is a different trial
-	// TODO I don't think we need this!
-	// activeConfig.RawSearcher.RawSourceTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
-
-	// TODO adjust searcher to only train for this much more?
-	// The searcher itself doesn't seem to have a way to handle this.
-	/*
-		activeConfig.RawSearcher.RawSingleConfig.RawMaxLength = &expconf.LengthV0{
-			Unit:  expconf.Batches,
-			Units: 0,
-		}
-	*/
-	// Okay so error out that this won't train anymore?
-	// How do we convert units? Is this even possible probaly not
-	// Or do we just default to keep trainig
-	// TODO remove this.
-	fmt.Println(activeConfig.RawSearcher.RawSingleConfig.RawMaxLength.Unit)
-	if activeConfig.RawSearcher.RawSingleConfig.RawMaxLength.Units <= 0 {
-		return nil, status.Errorf(codes.FailedPrecondition,
-			"trial won't train anymore so not continuing")
-	}
-
-	// where do we persist the experiment. newExperiment !!!
-	// where do we set warm start checkpoint ID. newExperiment
-	// where do we persist the trial?
 
 	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec, true)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create experiment: %s", err)
 	}
-
-	// updateExperiment state
-	// updateTrial state?
 
 	// Persist job. Feels somewhat strange doing this here.
 	job := model.Job{
@@ -1428,7 +1384,7 @@ func (a *apiServer) ContinueExperiment(
 	}
 
 	// Zero out trial restarts. We do somewhat lose information about how many times
-	// the previous failed but I don't think anyone cares.
+	// the previous failed but likely people care only about current run.
 	if _, err := db.Bun().NewUpdate().Model(&model.Trial{}).
 		Set("restarts = 0").
 		Where("id = ?", trialsResp.Trials[0].Id).
@@ -1442,85 +1398,11 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
 	}
 
-	// TODO unhack name
-	// Lets just make max_length a warning.
-	// Something like
-	//
-	// You haven't submitted an updated searcher config.
-	// The trial has trained for 8 epochs already and originally was training for 22 epochs.
-	// This trial will attempt trian for an additional 22 epochs for a total of 30.
-	// If this is not what you expect rerun this command with an additional CLI argument of
-	// `--config.searcher.max_length.epochs=23`.
-	// Run for original + additional length? [Y\n]
-
-	//
-	//
-	// TODO make these into test cases
-	// bugs
-	// a. 1. keeps training for awhile
-	//   searcher.max_length.batches=937 where do we obey this when we decide to stop?
-	//   is it searcher or experiment code?
-	// b. trial run id increases -- which makes sense but restarts is affected no?
-	//   we will break an invariant of restarts < trial IDs
-	//   we could add a new like meta retry id but I don't love that.
-	// c. we broke checkpoint gc
-	//   persisting GC task 2520.df8c3766-3265-4fd7-8328-560bba6a1da3:
-	//   adding task: ERROR:
-	//   insert or update on table \"tasks\" violates foreign key constraint \"tasks_job_id_fkey\"
-	//
-	// d. continung a sucess experiment gets error
-	/*
-		[2023-08-16T16:35:05.571540Z] 8d6e7976 ||   File "/run/determined/pythonuserbase/lib/python3.8/site-packages/determined/layers/_workload_sequencer.py", line 456, in workloads
-		[2023-08-16T16:35:05.571678Z] 8d6e7976 ||     for wkld, response_fn in wlsq:
-		[2023-08-16T16:35:05.571679Z] 8d6e7976 ||   File "/run/determined/pythonuserbase/lib/python3.8/site-packages/determined/layers/_workload_sequencer.py", line 427, in __iter__
-		[2023-08-16T16:35:05.571811Z] 8d6e7976 ||     assert op._completed, "logic error; op was never completed"
-		[2023-08-16T16:35:05.571812Z] 8d6e7976 || AssertionError: logic error; op was never completed
-		[2023-08-16T16:35:06.295679Z] 8d6e7976 || ERROR: crashed: resources failed with non-zero exit code: container failed with non-zero exit code: 1 (exit code 1)
-		[2023-08-16T16:35:06.300150Z]          || ERROR: Trial 401 (Experiment 117) was terminated: allocation failed: resources failed with non-zero exit code: container failed with non-zero exit code: 1 (exit code 1)
-	*/
-	//
-	// TODO make sure submitted config also has a searcher of NOT.
-	// Could be intergration test too.
-
-	// TASK ID ~1
-	// break hmm?
-
-	// I dunno about these test cases...
-	// Let's do test cases...
-	// REPORT some metrics
-	// 1.x need fix continuing an compelted exp with same config
-	//   should exit immediately since it trained for batches
-	//
-	// 2.x TODO this continuing an completed exp with larger train time
-	//   should train for the longer time
-	// 3.x need fix continung an completed exp with shorter train time
-	//   should exit immediately
-	//
-	// FAILURE cases.
-	// 4.x transient failure
-	//    should rerun and have sucess
-	// 5.x failure failure should rerun trial restarts
-	//
-	// MiSC
-	// 6.x trial time? (lets just more and more add test cases)
-	// 7.x continuing medium train step on sucess...
-	//
-	// why does searcher create despite being paused???
-	// Is this how normal experiments work?
-	//
-	// trial_run_id is intresting, we want to make sure that it is good. I think we are tho
-	//
-	//_ = launchWarnings // TODO delete
-
-	fmt.Println("Has activated gone through?")
 	_, err = a.ActivateExperiment(ctx, &apiv1.ActivateExperimentRequest{Id: int32(e.ID)})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
 	}
-	//}
-	// TODO activate
 
-	// TODO
 	protoExp, err := a.getExperiment(ctx, *user, int(req.Id))
 	if err != nil {
 		return nil, err

@@ -246,7 +246,6 @@ var TrialTransitions = map[State]map[State]bool{
 		CompletedState: true,
 	},
 	CanceledState: {
-		// Should this active or paused?
 		ActiveState: true,
 	},
 	CompletedState: {

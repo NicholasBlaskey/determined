@@ -185,10 +185,6 @@ func newExperiment(
 		m.db, activeConfig.Searcher().SourceTrialID(), activeConfig.Searcher().SourceCheckpointUUID())
 	if err != nil {
 		return nil, launchWarnings, err
-		// TODO do we even need this? I like litterally don't think we do...
-		// if !(isContinued && errors.Is(err, errMissingCheckpoint)) {
-		// return nil, launchWarnings, err
-		//}
 	}
 
 	if expModel.ID == 0 {
@@ -851,8 +847,6 @@ func (e *experiment) Restore(experimentSnapshot json.RawMessage) error {
 	return nil
 }
 
-var errMissingCheckpoint = fmt.Errorf("getting source trial checkpoint")
-
 func checkpointFromTrialIDOrUUID(
 	db *db.PgDB, trialID *int, checkpointUUIDStr *string,
 ) (*model.Checkpoint, error) {
@@ -863,12 +857,10 @@ func checkpointFromTrialIDOrUUID(
 	if trialID != nil {
 		checkpoint, err = db.LatestCheckpointForTrial(*trialID)
 		if err != nil {
-			return nil, fmt.Errorf("getting latest checkpoint from source trial %d: %w",
-				*trialID, err)
+			return nil, errors.Wrapf(err, "failed to get checkpoint for source trial %d", *trialID)
 		}
 		if checkpoint == nil {
-			return nil, fmt.Errorf("no checkpoint found for source trial %d: %w",
-				*trialID, errMissingCheckpoint)
+			return nil, errors.Errorf("no checkpoint found for source trial %d", *trialID)
 		}
 	} else if checkpointUUIDStr != nil {
 		checkpointUUID, err := uuid.Parse(*checkpointUUIDStr)
