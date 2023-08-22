@@ -386,8 +386,23 @@ class WorkloadSequencer(workload.Source):
             ):
                 yield from self.validate(None)
 
+            print("ENtering func")
+            
             for op in self.core_context.searcher.operations(core.SearcherMode.ChiefOnly):
+                print(op, op.length)
+                # Send bug to ryan
+                # 
+                
+                # major TODO
+                # This isn't the right way to write this code.
+                # But the idea is we are okay with not training at all when
+                # we have already completed training so we can be done.
+                # This def breaks something.
+                if self.batches_until_op_complete(op) == 0:
+                    raise ShouldExit() #op._completed = True
+                
                 while self.batches_until_op_complete(op) > 0:
+                    print("DOING SOME TRAINING")
                     # Do some training.
                     yield from self.train(
                         max(
@@ -410,18 +425,23 @@ class WorkloadSequencer(workload.Source):
 
                     # Pause training to validate?
                     if self.batches_until_val() < 1:
+                        print("DOING SOME validation")                    
                         yield from self.validate(op)
 
                     # Pause training to checkpoint?
                     if self.batches_until_ckpt() < 1:
+                        print("batches unitl ckpt")                                            
                         yield from self.checkpoint(already_exiting=False)
-
+                    
                 # Done training for this searcher operation!
+                print("done training for this search operator")                                            
 
                 if not self.checkpoint_is_current():
+                    print("is current?")  
                     yield from self.checkpoint(already_exiting=False)
 
                 if not self.validation_is_current():
+                    print("val is crrent??")                      
                     yield from self.validate(op)
 
                 assert op._completed, "logic error; op was never completed"

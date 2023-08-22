@@ -19,11 +19,7 @@ def test_continue_fixing_broken_config() -> None:
         ["--config", "hyperparameters.metrics_sigma=-1.0"],
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
-
-    # TODO make a continue expect error / continue expect pass thing that logs task logs
-    # for circleci.
     
-    # RUNNING exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR
     det_cmd(["e", "continue", str(exp_id), "--config", "hyperparameters.metrics_sigma=1.0"],
             check=True)
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
@@ -31,9 +27,10 @@ def test_continue_fixing_broken_config() -> None:
     trials = exp.experiment_trials(exp_id)
     assert len(trials) == 1
 
-    # Trial logs show both failed and sucessful run.
+    # Trial logs show both tasks logs with the failure message in it.
     trial_logs = "\n".join(exp.trial_logs(trials[0].trial.id))
     assert "assert 0 <= self.metrics_sigma" in trial_logs
+    assert "resources exited successfully with a zero exit code" in trial_logs
 
 @pytest.mark.e2e_cpu
 def test_continue_max_restart() -> None:
@@ -71,7 +68,7 @@ def test_continue_trial_time() -> None:
     exp_id = exp.create_experiment(
         conf.fixtures_path("no_op/single-medium-train-step.yaml"),
         conf.fixtures_path("no_op"),
-        ["--config", "hyperparameters.metrics_sigma=-1.0"], # TODO why does this fail on continue?
+        ["--config", "hyperparameters.metrics_sigma=-1.0"],
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
 
@@ -88,8 +85,6 @@ def test_continue_trial_time() -> None:
     exp_orig_start, exp_orig_end = exp_start_end_time()
     trial_orig_start, trial_orig_end = trial_start_end_time()
 
-    # This is technically a race. So maybe do IN PROGRESS then completed? IDK Oh it isn't a race
-    # We might be good.
     det_cmd(["e", "continue", str(exp_id)], check=True)
     exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
 
@@ -97,6 +92,8 @@ def test_continue_trial_time() -> None:
     trial_new_start, trial_new_end = trial_start_end_time()
 
     # I don't love this behaviour.
+    # The alternative here is to make trials have an array of start_time
+    # which feels bad and is kinda what task_time should be.
     assert exp_orig_start == exp_new_start
     assert trial_orig_start == trial_new_start
     
@@ -113,9 +110,19 @@ def test_continue_trial_time() -> None:
     assert task.startTime > exp_orig_end
     assert task.endTime > task.startTime
 
+@pytest.mark.e2e_cpu
+def test_continue_completed_single_step() -> None:
+    exp_id = exp.create_experiment(
+        conf.fixtures_path("no_op/single-medium-train-step.yaml"),
+        conf.fixtures_path("no_op"),
+        [],
+    )
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
-# TODO continue core API sucess
-    
+    det_cmd(["e", "continue", str(exp_id)], check=True)
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
+
+
 @pytest.mark.e2e_cpu
 def test_continue_batches() -> None:
     # Experiment fails before first checkpoint.
@@ -183,8 +190,9 @@ def test_continue_batches() -> None:
         assert m.totalBatches == i
         i += 1
 
-        
 @pytest.mark.e2e_cpu
+# TODO expected_total_batches is all wrong
+# should be 3, 3 and 6...
 @pytest.mark.parametrize("continue_max_length,expected_total_batches", [(2, 4), (3, 6), (6, 6)])
 def test_continue_completed_searcher(continue_max_length: int, expected_total_batches: int) -> None:
     exp_id = exp.create_experiment(
@@ -207,13 +215,11 @@ def test_continue_completed_searcher(continue_max_length: int, expected_total_ba
 
     # Train for less time.
     det_cmd(["e", "continue", str(exp_id),
-             # This merging feels really bad. TODO fix this. SOMETHING is wrong
+             # TODO This merging feels really bad SOMETHING is wrong
              "--config", f"searcher.max_length.batches={continue_max_length}",
              "--config", "searcher.name=single"], check=True)
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
-    # TODO should both be 3. I don't know why we keep training. This might be okay as a follow
-    # up ticket.
     assert max_total_batches() == expected_total_batches
     
     # This feels super bad.

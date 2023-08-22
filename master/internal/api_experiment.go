@@ -1470,12 +1470,12 @@ func (a *apiServer) ContinueExperiment(
 	// I dunno about these test cases...
 	// Let's do test cases...
 	// REPORT some metrics
-	// 1.x continuing an compelted exp with same config
+	// 1.x need fix continuing an compelted exp with same config
 	//   should exit immediately since it trained for batches
 	//
 	// 2. TODO this continuing an completed exp with larger train time
 	//   should train for the longer time
-	// 3.x continung an completed exp with shorter train time
+	// 3.x need fix continung an completed exp with shorter train time
 	//   should exit immediately
 	//
 	// FAILURE cases.
