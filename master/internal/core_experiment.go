@@ -417,6 +417,10 @@ func (m *Master) parseCreateExperiment(req *apiv1.CreateExperimentRequest, user 
 		req.GitRemote, req.GitCommit, req.GitCommitter, commitDate,
 		int(p.Id),
 	)
+	if err != nil {
+		return nil, config, nil, nil, fmt.Errorf("error creating model experiment: %w", err)
+	}
+
 	if user != nil {
 		dbExp.OwnerID = &user.ID
 		dbExp.Username = user.Username

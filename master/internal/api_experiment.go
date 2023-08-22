@@ -1313,9 +1313,26 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
 	}
 
+	// This is gross but an annoying item is a user can't specify just
+	// searcher.max_length.batches = 2. They would also need
+	// searcher.name = "single", which all experiments will always be here.
+
+	// This presumably will be ok.
+
+	fmt.Println("OVERRRIDE COFNIG", req.OverrideConfig)
+
+	// Fails to parse...
+	// Do we have an override???
+
 	providedConfig, err := expconf.ParseAnyExperimentConfigYAML([]byte(req.OverrideConfig))
 	if err != nil {
-		return nil, fmt.Errorf("parsing override config: %w", err)
+		if strings.Contains(err.Error(), `unknown field "max_length"`) {
+			return nil, status.Errorf(codes.InvalidArgument,
+				`unknown field "max_length", you might also need to specify searcher.name=single`)
+		}
+
+		return nil, status.Errorf(codes.InvalidArgument,
+			fmt.Errorf("parsing override config: %w", err).Error())
 	}
 
 	// DO a lock update on state.
