@@ -1304,18 +1304,12 @@ func (a *apiServer) GetExperimentCheckpoints(
 	return resp, a.paginate(&resp.Pagination, &resp.Checkpoints, req.Offset, req.Limit)
 }
 
-// New endpoint to avoid breaking things.
-func (a *apiServer) ContinueExperiment(
-	ctx context.Context, req *apiv1.ContinueExperimentRequest,
-) (*apiv1.ContinueExperimentResponse, error) {
-	user, _, err := grpcutil.GetUser(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
+func (a *apiServer) parseAndMergeContinueConfig(expID int, overrideConfig string) ([]byte, error) {
+	if overrideConfig == "" {
+		overrideConfig = "{}"
 	}
 
-	// TODO rbac stuff.
-
-	providedConfig, err := expconf.ParseAnyExperimentConfigYAML([]byte(req.OverrideConfig))
+	providedConfig, err := expconf.ParseAnyExperimentConfigYAML([]byte(overrideConfig))
 	if err != nil {
 		// Add a helpful error message if a user just submits
 		// searcher.max_length.batches = 2. They would also need
@@ -1329,25 +1323,54 @@ func (a *apiServer) ContinueExperiment(
 			fmt.Errorf("parsing override config: %w", err).Error())
 	}
 
-	// TODO lock update on state.
-
-	// TODO ASSERT single searcher.
-
-	_ = user
-
-	activeConfig, err := a.m.db.ActiveExperimentConfig(int(req.Id))
+	activeConfig, err := a.m.db.ActiveExperimentConfig(int(expID))
 	if err != nil {
-		return nil, fmt.Errorf("loading active config for experiment %d: %w", req.Id, err)
+		return nil, fmt.Errorf("loading active config for experiment %d: %w", expID, err)
 	}
+	if name := activeConfig.Searcher().AsLegacy().Name; name != "single" {
+		return nil, status.Errorf(codes.InvalidArgument,
+			fmt.Sprintf(
+				"cannot continue a '%s' searcher experiment, must be a single searcher experiment",
+				name))
+	}
+
 	mergedConfig := schemas.Merge(providedConfig, activeConfig)
+	if name := mergedConfig.Searcher().AsLegacy().Name; name != "single" {
+		return nil, status.Errorf(codes.InvalidArgument,
+			fmt.Sprintf("override config must have single searcher type got '%s' instead", name))
+	}
 
 	bytes, err := mergedConfig.Value()
 	if err != nil {
+		return nil, fmt.Errorf("getting value of merged config: %w", err)
+	}
+
+	return bytes.([]byte), nil
+}
+
+func (a *apiServer) ContinueExperiment(
+	ctx context.Context, req *apiv1.ContinueExperimentRequest,
+) (*apiv1.ContinueExperimentResponse, error) {
+	user, _, err := grpcutil.GetUser(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
+	}
+
+	// TODO lock update on state.
+
+	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id),
+		exputil.AuthZProvider.Get().CanEditExperiment); err != nil {
 		return nil, err
 	}
+
+	configBytes, err := a.parseAndMergeContinueConfig(int(req.Id), req.OverrideConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	dbExp, activeConfig, _, taskSpec, err := a.m.parseCreateExperiment(
 		&apiv1.CreateExperimentRequest{
-			Config:   string(bytes.([]byte)),
+			Config:   string(configBytes),
 			ParentId: req.Id, // Use parent logic.
 		}, user,
 	)
