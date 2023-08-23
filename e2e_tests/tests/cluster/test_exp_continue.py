@@ -52,6 +52,13 @@ def test_continue_config_file_and_args_cli() -> None:
     assert resp.experiment.config["name"] == expected_name
     assert resp.experiment.state == experimentv1State.COMPLETED # Follow goes till completion.
 
+    # Experiment original config is not updated. This might be a slight abuse of the webui's
+    # meaning original config as "pre merged". I imagine most user's continues won't change config
+    # besides maybe length.
+    assert expected_name not in resp.experiment.originalConfig
+
+
+
 
 @pytest.mark.e2e_cpu
 def test_continue_fixing_broken_config() -> None:
@@ -61,7 +68,7 @@ def test_continue_fixing_broken_config() -> None:
         ["--config", "hyperparameters.metrics_sigma=-1.0"],
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
-    
+
     det_cmd(["e", "continue", str(exp_id), "--config", "hyperparameters.metrics_sigma=1.0"],
             check=True)
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)

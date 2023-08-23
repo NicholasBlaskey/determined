@@ -1406,6 +1406,20 @@ func (a *apiServer) ContinueExperiment(
 		return nil, fmt.Errorf("adding new job for experiment: %w", err)
 	}
 
+	// Update active config but not original config.
+	// We actually do this in experiment's PreStart in setWeight but relying on that
+	// is a fun regression waiting to happen.
+	activeConfigStr, err := json.Marshal(activeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling exp config %v: %w", activeConfig, err)
+	}
+	if _, err := db.Bun().NewUpdate().Model(&model.Experiment{}).
+		Set("config = ?", string(activeConfigStr)).
+		Where("id = ?", req.Id).
+		Exec(ctx); err != nil {
+		return nil, fmt.Errorf("updating experiments config: %w", err)
+	}
+
 	// Zero out trial restarts. We do somewhat lose information about how many times
 	// the previous failed but likely people care only about current run.
 	if _, err := db.Bun().NewUpdate().Model(&model.Trial{}).

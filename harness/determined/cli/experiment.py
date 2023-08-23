@@ -316,7 +316,7 @@ def continue_experiment(args: Namespace) -> None:
         overrideConfig=config_text,
     )
     bindings.post_ContinueExperiment(sess, body=req)
-    print("Continued experiment {args.experiment_id}")
+    print(f"Continued experiment {args.experiment_id}")
 
     if args.follow_first_trial:
         _follow_experiment_logs(sess, args.experiment_id)

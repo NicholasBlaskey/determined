@@ -260,6 +260,7 @@ func (e *experiment) Receive(ctx *actor.Context) error {
 			MaxSlots: e.activeConfig.Resources().MaxSlots(),
 			Handler:  ctx.Self(),
 		})
+
 		if err := e.setWeight(ctx, e.activeConfig.Resources().Weight()); err != nil {
 			e.updateState(ctx, model.StateWithReason{
 				State:               model.StoppingErrorState,
@@ -267,6 +268,7 @@ func (e *experiment) Receive(ctx *actor.Context) error {
 			})
 			return err
 		}
+
 		if err := e.setPriority(ctx, e.activeConfig.Resources().Priority(), true); err != nil {
 			e.updateState(ctx, model.StateWithReason{
 				State:               model.StoppingErrorState,
