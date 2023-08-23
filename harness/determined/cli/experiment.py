@@ -309,29 +309,18 @@ def continue_experiment(args: Namespace) -> None:
 
 
     config_text = yaml.dump(experiment_config)
-    '''
-    config_text = '{}'
-    if args.config_file:
-        config_text = args.config_file.read()
-        args.config_file.close()
-    experiment_config = _parse_config_text_or_exit(config_text, args.config_file.name, args.config)
 
-    if args.config:
-        # The user provided tweaks as cli args, so we have to reserialize the submitted experiment
-        # config.  This will unfortunately remove comments they had in the yaml, so we only do it
-        # when we have to.
-        yaml_dump = yaml.dump(experiment_config)
-        assert yaml_dump is not None
-        config_text = yaml_dump
-    '''
-    
     sess = cli.setup_session(args)
-
     req = bindings.v1ContinueExperimentRequest(
         id=args.experiment_id,
         overrideConfig=config_text,
     )
-    resp = bindings.post_ContinueExperiment(sess, body=req)
+    bindings.post_ContinueExperiment(sess, body=req)
+    print("Continued experiment {args.experiment_id}")
+
+    if args.follow_first_trial:
+        _follow_experiment_logs(sess, args.experiment_id)
+
 
 
 def local_experiment(args: Namespace) -> None:
@@ -1176,8 +1165,14 @@ main_cmd = Cmd(
                 experiment_id_arg("experiment ID to continue"),
                 Arg("--config-file", type=FileType("r"), help="experiment config file (.yaml)"),
                 Arg("--config", action="append", default=[], help=CONFIG_DESC),
+                Arg(
+                        "-f",
+                        "--follow-first-trial",
+                        action="store_true",
+                        help="follow logs of the trial that is being continued",
+                ),
             ],
-        ),        
+        ),
         # Lifecycle management commands.
         Cmd(
             "activate",

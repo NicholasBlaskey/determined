@@ -41,15 +41,17 @@ def test_continue_config_file_and_args_cli() -> None:
         with open(tf.name, "w") as f:
             yaml.dump({"name": expected_name, "hyperparameters": {"metrics_sigma": -1.0}}, f)
 
-        det_cmd(["e", "continue", str(exp_id), "--config-file", tf.name,
-                 "--config", "hyperparameters.metrics_sigma=1.0"], check=True)
-    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
+        stdout = det_cmd(["e", "continue", str(exp_id), "--config-file", tf.name,
+                 "--config", "hyperparameters.metrics_sigma=1.0", "-f"], check=True).stdout
+        # Follow works till end of trial.
+        assert "resources exited successfully with a zero exit code" in stdout.decode("utf-8")
 
     # Name is also still applied.
     sess = api_utils.determined_test_session()
     resp = bindings.get_GetExperiment(sess, experimentId=exp_id)
     assert resp.experiment.config["name"] == expected_name
-    
+    assert resp.experiment.state == experimentv1State.COMPLETED # Follow goes till completion.
+
 
 @pytest.mark.e2e_cpu
 def test_continue_fixing_broken_config() -> None:
