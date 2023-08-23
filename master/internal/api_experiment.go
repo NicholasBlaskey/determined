@@ -1396,48 +1396,83 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.Internal, "failed to create experiment: %s", err)
 	}
 
-	// Persist job. Feels somewhat strange doing this here.
-	job := model.Job{
-		JobID:   e.JobID,
-		JobType: model.JobTypeExperiment,
-		OwnerID: e.OwnerID,
-	}
-	if _, err := db.Bun().NewInsert().Model(&job).Exec(ctx); err != nil {
-		return nil, fmt.Errorf("adding new job for experiment: %w", err)
-	}
+	err = db.Bun().RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		// Lock experiment state.
+		var expState model.State
+		if err = tx.
+			NewRaw(`SELECT state FROM experiments WHERE id = ? FOR UPDATE`, req.Id).
+			Scan(ctx, &expState); err != nil {
+			return fmt.Errorf("getting / locking experiment state: %w", err)
+		}
+		if !model.TerminalStates[expState] {
+			return status.Error(codes.FailedPrecondition, fmt.Sprintf(
+				"experiment in non terminal state '%s', try again later", expState))
+		}
+		if _, err := tx.NewUpdate().Model(&model.Experiment{}).
+			Set("state = ?", model.PausedState). // Throw it in paused.
+			Where("id = ?", req.Id).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("updating experiments config: %w", err)
+		}
 
-	// Update active config but not original config.
-	// We actually do this in experiment's PreStart in setWeight but relying on that
-	// is a fun regression waiting to happen.
-	activeConfigStr, err := json.Marshal(activeConfig)
+		// Persist job. Feels somewhat strange doing this here.
+		job := model.Job{
+			JobID:   e.JobID,
+			JobType: model.JobTypeExperiment,
+			OwnerID: e.OwnerID,
+		}
+		if _, err := tx.NewInsert().Model(&job).Exec(ctx); err != nil {
+			return fmt.Errorf("adding new job for experiment: %w", err)
+		}
+
+		// Update active config but not original config.
+		// We actually do this in experiment's PreStart in setWeight but relying on that
+		// is a fun regression waiting to happen.
+		activeConfigStr, err := json.Marshal(activeConfig)
+		if err != nil {
+			return fmt.Errorf("unmarshaling exp config %v: %w", activeConfig, err)
+		}
+		if _, err := tx.NewUpdate().Model(&model.Experiment{}).
+			Set("config = ?", string(activeConfigStr)).
+			Where("id = ?", req.Id).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("updating experiments config: %w", err)
+		}
+
+		// Zero out trial restarts. We do somewhat lose information about how many times
+		// the previous failed but likely people care only about current run.
+		if _, err := tx.NewUpdate().Model(&model.Trial{}).
+			Set("restarts = 0").
+			Where("id = ?", trialsResp.Trials[0].Id).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("zeroing out trial restarts: %w", err)
+		}
+
+		/*
+			err = a.tell(addr, req, &resp); {
+				case err != nil:
+				return nil, status.Errorf(codes.Internal, "failed to post operations: %v", err)
+
+			// TODO ask actor.Addr("experiments", int(exp.Id))
+		*/
+		//check if actor exists.
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("unmarshaling exp config %v: %w", activeConfig, err)
-	}
-	if _, err := db.Bun().NewUpdate().Model(&model.Experiment{}).
-		Set("config = ?", string(activeConfigStr)).
-		Where("id = ?", req.Id).
-		Exec(ctx); err != nil {
-		return nil, fmt.Errorf("updating experiments config: %w", err)
+		return nil, fmt.Errorf("experiment continue database updates: %w", err)
 	}
 
-	// Zero out trial restarts. We do somewhat lose information about how many times
-	// the previous failed but likely people care only about current run.
-	if _, err := db.Bun().NewUpdate().Model(&model.Trial{}).
-		Set("restarts = 0").
-		Where("id = ?", trialsResp.Trials[0].Id).
-		Exec(ctx); err != nil {
-		return nil, fmt.Errorf("zeroing out trial restarts: %w", err)
-	}
-
+	// I don't love these two items inside this transcation. Can we lock ourselves
+	// out of getting to certain items??? That seems like a kinda dumb question.
 	e.continueFromTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
 	_, created := a.m.system.ActorOf(exputil.ExperimentsAddr.Child(e.ID), e)
 	if !created {
-		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
+		return status.Errorf(codes.FailedPrecondition, "experiment actor still running")
 	}
 
 	_, err = a.ActivateExperiment(ctx, &apiv1.ActivateExperimentRequest{Id: int32(e.ID)})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
+		return status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
 	}
 
 	protoExp, err := a.getExperiment(ctx, *user, int(req.Id))
