@@ -300,11 +300,21 @@ def submit_experiment(args: Namespace) -> None:
 # TODO Follow / other exp options ? ? ?
 @authentication.required
 def continue_experiment(args: Namespace) -> None:
-    config_text = '{"name":"hack"}'
     if args.config_file:
         config_text = args.config_file.read()
         args.config_file.close()
-    experiment_config = _parse_config_text_or_exit(config_text, "HACK", args.config)
+        experiment_config = _parse_config_text_or_exit(config_text, args.config_file.name, args.config)
+    else:
+        experiment_config = parse_config_overrides({}, args.config)
+
+
+    config_text = yaml.dump(experiment_config)
+    '''
+    config_text = '{}'
+    if args.config_file:
+        config_text = args.config_file.read()
+        args.config_file.close()
+    experiment_config = _parse_config_text_or_exit(config_text, args.config_file.name, args.config)
 
     if args.config:
         # The user provided tweaks as cli args, so we have to reserialize the submitted experiment
@@ -313,7 +323,8 @@ def continue_experiment(args: Namespace) -> None:
         yaml_dump = yaml.dump(experiment_config)
         assert yaml_dump is not None
         config_text = yaml_dump
-
+    '''
+    
     sess = cli.setup_session(args)
 
     req = bindings.v1ContinueExperimentRequest(
@@ -1163,7 +1174,7 @@ main_cmd = Cmd(
             "continue experiment",
             [
                 experiment_id_arg("experiment ID to continue"),
-                Arg("--config_file", type=FileType("r"), help="experiment config file (.yaml)"),
+                Arg("--config-file", type=FileType("r"), help="experiment config file (.yaml)"),
                 Arg("--config", action="append", default=[], help=CONFIG_DESC),
             ],
         ),        

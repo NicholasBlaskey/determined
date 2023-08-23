@@ -1345,7 +1345,7 @@ func (a *apiServer) ContinueExperiment(
 	if err != nil {
 		return nil, err
 	}
-	dbExp, activeConfig, p, taskSpec, err := a.m.parseCreateExperiment(
+	dbExp, activeConfig, _, taskSpec, err := a.m.parseCreateExperiment(
 		&apiv1.CreateExperimentRequest{
 			Config:   string(bytes.([]byte)),
 			ParentId: req.Id, // Use parent logic.

@@ -1,8 +1,8 @@
-
 import pytest
-
+import tempfile
 import time
 
+from determined.common import yaml
 from determined.common.api import authentication, bindings, certs
 from determined.common.api.bindings import experimentv1State
 from tests import experiment as exp
@@ -10,6 +10,46 @@ from tests import config as conf
 from tests import api_utils
 
 from .test_groups import det_cmd
+
+@pytest.mark.e2e_cpu
+def test_continue_config_file_cli() -> None:
+    exp_id = exp.create_experiment(
+        conf.fixtures_path("no_op/single-medium-train-step.yaml"),
+        conf.fixtures_path("no_op"),
+        ["--config", "hyperparameters.metrics_sigma=-1.0"],
+    )
+    exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
+
+    with tempfile.NamedTemporaryFile() as tf:
+        with open(tf.name, "w") as f:
+            yaml.dump({"hyperparameters": {"metrics_sigma": 1.0}}, f)
+        det_cmd(["e", "continue", str(exp_id), "--config-file", tf.name], check=True)
+
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
+
+@pytest.mark.e2e_cpu
+def test_continue_config_file_and_args_cli() -> None:
+    exp_id = exp.create_experiment(
+        conf.fixtures_path("no_op/single-medium-train-step.yaml"),
+        conf.fixtures_path("no_op"),
+        ["--config", "hyperparameters.metrics_sigma=-1.0"],
+    )
+    exp.wait_for_experiment_state(exp_id, experimentv1State.ERROR)
+
+    expected_name = "checkThis"
+    with tempfile.NamedTemporaryFile() as tf:
+        with open(tf.name, "w") as f:
+            yaml.dump({"name": expected_name, "hyperparameters": {"metrics_sigma": -1.0}}, f)
+
+        det_cmd(["e", "continue", str(exp_id), "--config-file", tf.name,
+                 "--config", "hyperparameters.metrics_sigma=1.0"], check=True)
+    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
+
+    # Name is also still applied.
+    sess = api_utils.determined_test_session()
+    resp = bindings.get_GetExperiment(sess, experimentId=exp_id)
+    assert resp.experiment.config["name"] == expected_name
+    
 
 @pytest.mark.e2e_cpu
 def test_continue_fixing_broken_config() -> None:
