@@ -154,6 +154,8 @@ def test_continue_trial_time() -> None:
     assert len(experiment_trials) == 1
     taskIds = experiment_trials[0].trial.taskIds
     assert len(taskIds) == 2
+
+    assert taskIds[1] == taskIds[0] + "-1"
     
     task = bindings.get_GetTask(sess, taskId=taskIds[1]).task
     assert task.startTime > exp_orig_end

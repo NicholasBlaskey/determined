@@ -706,8 +706,19 @@ func (e *experiment) processOperations(
 			if e.continueFromTrialID != nil {
 				t.id = *e.continueFromTrialID
 				t.idSet = true
-				// TODO ID thing...
-				t.taskID += t.taskID + "revived" + model.TaskID(uuid.New().String())
+
+				count, err := getNumTaskIDsForTrial(t.id)
+				if err != nil {
+					e.updateState(ctx, model.StateWithReason{
+						State: model.StoppingErrorState,
+						InformationalReason: fmt.Sprintf(
+							"can not get number of times trial was continued %v", err),
+					})
+					ctx.Log().Error(err)
+					return
+				}
+
+				t.taskID = model.TaskID(fmt.Sprintf("%s-%d", t.taskID, count))
 				t.continued = true
 			}
 
@@ -781,6 +792,18 @@ func experimentIDFromTrialTaskID(taskID model.TaskID) (int, error) {
 		return 0, errors.Wrapf(err, "error parsing experiment ID for task ID %s", taskID)
 	}
 	return id, nil
+}
+
+func getNumTaskIDsForTrial(trialID int) (int, error) {
+	count, err := db.Bun().NewSelect().
+		Table("trial_id_task_id").
+		Where("trial_id = ?", trialID).
+		Count(context.TODO())
+	if err != nil {
+		return 0, fmt.Errorf("counting number of task IDs for trial %d: %w", trialID, err)
+	}
+
+	return count, nil
 }
 
 func (e *experiment) checkpointForCreate(op searcher.Create) (*model.Checkpoint, error) {
