@@ -1323,6 +1323,15 @@ func (a *apiServer) parseAndMergeContinueConfig(expID int, overrideConfig string
 			fmt.Errorf("parsing override config: %w", err).Error())
 	}
 
+	if providedConfig.RawProject != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "'project' in override config "+
+			"cannot be specified, use `det experiment move` first if you want to change the project")
+	}
+	if providedConfig.RawWorkspace != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "'workspace' in override config "+
+			"cannot be specified, use `det experiment move` first if you want to change the workspace")
+	}
+
 	activeConfig, err := a.m.db.ActiveExperimentConfig(int(expID))
 	if err != nil {
 		return nil, fmt.Errorf("loading active config for experiment %d: %w", expID, err)
@@ -1355,8 +1364,6 @@ func (a *apiServer) ContinueExperiment(
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
 	}
-
-	// TODO lock update on state.
 
 	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id),
 		exputil.AuthZProvider.Get().CanEditExperiment); err != nil {
@@ -1448,31 +1455,27 @@ func (a *apiServer) ContinueExperiment(
 			return fmt.Errorf("zeroing out trial restarts: %w", err)
 		}
 
-		/*
-			err = a.tell(addr, req, &resp); {
-				case err != nil:
-				return nil, status.Errorf(codes.Internal, "failed to post operations: %v", err)
-
-			// TODO ask actor.Addr("experiments", int(exp.Id))
-		*/
-		//check if actor exists.
+		// Check at the end to minimize chance of actor already being created somehow.
+		if a.m.system.Get(actor.Addr("experiments", int(req.Id))) != nil {
+			return fmt.Errorf("experiment actor already exists")
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("experiment continue database updates: %w", err)
 	}
 
-	// I don't love these two items inside this transcation. Can we lock ourselves
-	// out of getting to certain items??? That seems like a kinda dumb question.
 	e.continueFromTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
 	_, created := a.m.system.ActorOf(exputil.ExperimentsAddr.Child(e.ID), e)
 	if !created {
-		return status.Errorf(codes.FailedPrecondition, "experiment actor still running")
+		// Is it even possible to fail here? I don't think so from continuing experiment alone.
+		// If we fail here we just messed with the experiment database representation.
+		return nil, status.Errorf(codes.FailedPrecondition, "experiment actor still running")
 	}
 
 	_, err = a.ActivateExperiment(ctx, &apiv1.ActivateExperimentRequest{Id: int32(e.ID)})
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
+		return nil, status.Errorf(codes.Internal, "failed to activate experiment: %s", err)
 	}
 
 	protoExp, err := a.getExperiment(ctx, *user, int(req.Id))

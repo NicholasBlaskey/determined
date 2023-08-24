@@ -201,6 +201,16 @@ func TestParseAndMergeContinueConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = api.parseAndMergeContinueConfig(exp.ID, `
+project: test
+`)
+	require.ErrorContains(t, err, "'project' in override config cannot be specified")
+
+	_, err = api.parseAndMergeContinueConfig(exp.ID, `
+workspace: test
+`)
+	require.ErrorContains(t, err, "'workspace' in override config cannot be specified")
+
+	_, err = api.parseAndMergeContinueConfig(exp.ID, `
 searcher:
     max_length:
         batches: 10
