@@ -58,6 +58,7 @@ type trial struct {
 	idSet             bool
 	experimentID      int
 	restored          bool
+	continued         bool
 	trialCreationSent bool
 
 	// System dependencies.
@@ -145,25 +146,6 @@ func (t *trial) Receive(ctx *actor.Context) error {
 	switch msg := ctx.Message().(type) {
 	case actor.PreStart:
 		if t.idSet {
-			// TODO(nick): wrong in restore
-			// Is jobSubmissionTime sensiable? Probaly should be updated to continue time.
-			// It might actually be.
-			// TODO do this in a trnascation.
-			fmt.Println("JOB ID", t.jobID)
-			err := t.addTask()
-			if err != nil {
-				return err
-			}
-			fmt.Println("LOG HERE for adding trial ID")
-			if _, err := db.Bun().
-				NewInsert().
-				Model(&model.TrialTaskID{TrialID: t.id, TaskID: t.taskID}).
-				Exec(context.TODO()); err != nil {
-				return fmt.Errorf("adding trial ID task ID relationship: %w", err)
-			}
-			// COMMIT
-
-			// recover(). We do want to reset state + trial restarts probaly.
 			if err := t.recover(); err != nil {
 				return fmt.Errorf("recovering trial in prestart: %w", err)
 			}
@@ -172,6 +154,22 @@ func (t *trial) Receive(ctx *actor.Context) error {
 				return fmt.Errorf("persisting trial in prestart: %w", err)
 			}
 		}
+
+		if t.continued {
+			// TODO these should be in a transcation.
+			err := t.addTask()
+			if err != nil {
+				return err
+			}
+			if _, err := db.Bun().
+				NewInsert().
+				Model(&model.TrialTaskID{TrialID: t.id, TaskID: t.taskID}).
+				Exec(context.TODO()); err != nil {
+				return fmt.Errorf("adding trial ID task ID relationship: %w", err)
+			}
+
+		}
+
 		t.logCtx = logger.MergeContexts(t.logCtx, logger.Context{
 			"trial-id":     t.id,
 			"trial-run-id": t.runID,
@@ -265,7 +263,6 @@ func (t *trial) create(ctx *actor.Context) error {
 		int64(t.searcher.Create.TrialSeed),
 	)
 
-	// TODO this needs to happen in a transcation. Or does it?
 	err := t.addTask()
 	if err != nil {
 		return err
@@ -441,8 +438,6 @@ func (t *trial) buildTaskSpecifier(ctx *actor.Context) (*tasks.TrialSpec, error)
 		return nil, errors.Wrap(err, "failed to save trial run ID")
 	}
 
-	// what is the deal with this? It is super subitle.
-	// If latestCheckpoint is != nil then we get stepsCompleted.
 	var stepsCompleted int
 	latestCheckpoint, err := t.db.LatestCheckpointForTrial(t.id)
 	switch {
@@ -453,7 +448,6 @@ func (t *trial) buildTaskSpecifier(ctx *actor.Context) (*tasks.TrialSpec, error)
 	default:
 		stepsCompleted = latestCheckpoint.StepsCompleted
 	}
-	fmt.Println("STEPS COMPLETED!!!", stepsCompleted, latestCheckpoint, err)
 
 	return &tasks.TrialSpec{
 		Base: *t.taskSpec,

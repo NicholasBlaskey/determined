@@ -1104,6 +1104,7 @@ func (db *PgDB) ExperimentCheckpointsToGCRaw(
 	id int,
 	experimentBest, trialBest, trialLatest int,
 ) ([]uuid.UUID, error) {
+	fmt.Println(experimentBest, trialBest, trialLatest)
 	// The string for the CTEs that we need whether or not we're not deleting the results. The
 	// "selected_checkpoints" table contains the checkpoints to return as rows, so that we can easily
 	// set the corresponding checkpoints to deleted in a separate CTE if we're deleting.
@@ -1165,6 +1166,7 @@ WHERE trial_order_rank > $4 AND experiment_rank > $2 AND trial_rank > $3;`
 	for _, cRow := range checkpointIDRows {
 		checkpointIDs = append(checkpointIDs, cRow.ID)
 	}
+	fmt.Println("CHECKPOINT IDS", checkpointIDs)
 
 	registeredCheckpoints, err := db.GetRegisteredCheckpoints(checkpointIDs)
 	if err != nil {
