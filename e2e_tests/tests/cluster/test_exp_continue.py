@@ -188,11 +188,11 @@ def test_continue_batches() -> None:
     trials = exp.experiment_trials(exp_id)
     assert len(trials) == 1
     trial_id = trials[0].trial.id
-    
+
     def assert_exited_at(batch_idx):
         assert f"failed at this batch {batch_idx}" in "\n".join(exp.trial_logs(trial_id))
     assert_exited_at(2)
-
+    
     def get_metric_list():
         resp_list = bindings.get_GetValidationMetrics(sess, trialIds=[trial_id])
         return [metric for resp in resp_list for metric in resp.metrics]

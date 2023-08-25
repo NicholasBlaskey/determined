@@ -1425,6 +1425,7 @@ func (a *apiServer) ContinueExperiment(
 		}
 		if _, err := tx.NewUpdate().Model(&model.Experiment{}).
 			Set("state = ?", model.PausedState). // Throw it in paused.
+			Set("progress = ?", 0.0).            // Reset progress.
 			Where("id = ?", req.Id).
 			Exec(ctx); err != nil {
 			return fmt.Errorf("updating experiments config: %w", err)
