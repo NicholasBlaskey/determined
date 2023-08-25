@@ -92,6 +92,10 @@ func (a *apiServer) enrichExperimentState(experiments ...*experimentv1.Experimen
 		return err
 	}
 
+	for _, t := range tasks {
+		fmt.Println("JOB IDEA", t.Job, t.Pulling, t.Running, t.Starting)
+	}
+
 	// Collect state information by JobID
 	byJobID := make(map[model.JobID]experimentv1.State, len(tasks))
 	for _, task := range tasks {
@@ -109,6 +113,8 @@ func (a *apiServer) enrichExperimentState(experiments ...*experimentv1.Experimen
 				experimentv1.State_STATE_QUEUED)
 		}
 	}
+
+	fmt.Println("BY JOB ID")
 
 	// Active experiments converted to Queued, Pulling, Starting, or Running
 	for _, exp := range experiments {
@@ -1365,8 +1371,9 @@ func (a *apiServer) ContinueExperiment(
 		return nil, status.Errorf(codes.Internal, "failed to get the user: %s", err)
 	}
 
-	if _, _, err = a.getExperimentAndCheckCanDoActions(ctx, int(req.Id),
-		exputil.AuthZProvider.Get().CanEditExperiment); err != nil {
+	origExperiment, _, err := a.getExperimentAndCheckCanDoActions(ctx, int(req.Id),
+		exputil.AuthZProvider.Get().CanEditExperiment)
+	if err != nil {
 		return nil, err
 	}
 
@@ -1386,6 +1393,7 @@ func (a *apiServer) ContinueExperiment(
 	}
 	dbExp.ParentID = nil // Not actually a parent though.
 	dbExp.ID = int(req.Id)
+	dbExp.JobID = origExperiment.JobID // Revive job. TODO on what this sets on fire.
 
 	trialsResp, err := a.GetExperimentTrials(ctx, &apiv1.GetExperimentTrialsRequest{
 		ExperimentId: req.Id,
@@ -1422,14 +1430,12 @@ func (a *apiServer) ContinueExperiment(
 			return fmt.Errorf("updating experiments config: %w", err)
 		}
 
-		// Persist job. Feels somewhat strange doing this here.
-		job := model.Job{
-			JobID:   e.JobID,
-			JobType: model.JobTypeExperiment,
-			OwnerID: e.OwnerID,
-		}
-		if _, err := tx.NewInsert().Model(&job).Exec(ctx); err != nil {
-			return fmt.Errorf("adding new job for experiment: %w", err)
+		if _, err := db.Bun().NewUpdate().Model(&model.Job{}).
+			Set("owner_id = ?", user.ID).
+			Set("q_position = ?", 0).
+			Where("job_id = ?", dbExp.JobID).
+			Exec(ctx); err != nil {
+			return fmt.Errorf("updating experiment's job: %w", err)
 		}
 
 		// Update active config but not original config.
