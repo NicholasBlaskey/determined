@@ -167,7 +167,6 @@ func (t *trial) Receive(ctx *actor.Context) error {
 				Exec(context.TODO()); err != nil {
 				return fmt.Errorf("adding trial ID task ID relationship: %w", err)
 			}
-
 		}
 
 		t.logCtx = logger.MergeContexts(t.logCtx, logger.Context{

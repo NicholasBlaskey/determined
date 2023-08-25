@@ -92,10 +92,6 @@ func (a *apiServer) enrichExperimentState(experiments ...*experimentv1.Experimen
 		return err
 	}
 
-	for _, t := range tasks {
-		fmt.Println("JOB IDEA", t.Job, t.Pulling, t.Running, t.Starting)
-	}
-
 	// Collect state information by JobID
 	byJobID := make(map[model.JobID]experimentv1.State, len(tasks))
 	for _, task := range tasks {
@@ -113,8 +109,6 @@ func (a *apiServer) enrichExperimentState(experiments ...*experimentv1.Experimen
 				experimentv1.State_STATE_QUEUED)
 		}
 	}
-
-	fmt.Println("BY JOB ID")
 
 	// Active experiments converted to Queued, Pulling, Starting, or Running
 	for _, exp := range experiments {
@@ -1338,11 +1332,11 @@ func (a *apiServer) parseAndMergeContinueConfig(expID int, overrideConfig string
 			"cannot be specified, use `det experiment move` first if you want to change the workspace")
 	}
 
-	activeConfig, err := a.m.db.ActiveExperimentConfig(int(expID))
+	activeConfig, err := a.m.db.ActiveExperimentConfig(expID)
 	if err != nil {
 		return nil, fmt.Errorf("loading active config for experiment %d: %w", expID, err)
 	}
-	if name := activeConfig.Searcher().AsLegacy().Name; name != "single" {
+	if name := activeConfig.Searcher().AsLegacy().Name; name != "single" { //nolint: goconst
 		return nil, status.Errorf(codes.InvalidArgument,
 			fmt.Sprintf(
 				"cannot continue a '%s' searcher experiment, must be a single searcher experiment",
@@ -1350,7 +1344,7 @@ func (a *apiServer) parseAndMergeContinueConfig(expID int, overrideConfig string
 	}
 
 	mergedConfig := schemas.Merge(providedConfig, activeConfig)
-	if name := mergedConfig.Searcher().AsLegacy().Name; name != "single" {
+	if name := mergedConfig.Searcher().AsLegacy().Name; name != "single" { //nolint: goconst
 		return nil, status.Errorf(codes.InvalidArgument,
 			fmt.Sprintf("override config must have single searcher type got '%s' instead", name))
 	}

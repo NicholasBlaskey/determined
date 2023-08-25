@@ -461,12 +461,10 @@ func (e *experiment) Receive(ctx *actor.Context) error {
 
 		taskSpec := *e.taskSpec
 
-		fmt.Println("EXPERIMENT SHUTDOWN LOGIC", "RUJN CHECKPOINT GC", checkpoints)
 		// May be no checkpoints to gc, if so skip
 		if len(checkpoints) > 0 {
 			taskID := model.TaskID(fmt.Sprintf("%d.%s", e.ID, uuid.New()))
 			go func() {
-				fmt.Println("EXPERIMENT in checkpoint gc func", checkpoints)
 				err := runCheckpointGCTask(
 					ctx.Self().System(), e.rm, e.db, taskID, e.JobID, e.StartTime, taskSpec,
 					e.Experiment.ID, e.activeConfig.AsLegacy(), checkpoints, []string{fullDeleteGlob},
