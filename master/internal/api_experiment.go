@@ -1357,6 +1357,81 @@ func (a *apiServer) parseAndMergeContinueConfig(expID int, overrideConfig string
 	return bytes.([]byte), nil
 }
 
+func (a *apiServer) errorIfSearcherIsDone(trialID int, e expconf.ExperimentConfig) error {
+	latestCheckpoint, err := a.m.db.LatestCheckpointForTrial(trialID)
+	if err != nil {
+		return fmt.Errorf("getting latest checkpoint for trialID %d: %w", trialID, err)
+	}
+	if latestCheckpoint == nil || latestCheckpoint.StepsCompleted == 0 {
+		return nil // Can't be done if we don't have a checkpoint.
+	}
+
+	if e.Searcher().RawSingleConfig == nil {
+		return fmt.Errorf("something went wrong searcher single config is nil")
+	}
+
+	var inBatches int
+	units := int(e.Searcher().RawSingleConfig.MaxLength().Units)
+	unit := e.Searcher().Unit()
+	switch unit {
+	case expconf.Unitless, expconf.Unspecified:
+		return nil // Unitless makes us have no idea if the searcher is done.
+	case expconf.Records:
+		// TODO this feels awful, how do we parse this thing?
+		hyper, ok := e.Hyperparameters()["global_batch_size"]
+		if !ok {
+			return fmt.Errorf("searcher in records but did not specify global_batch_size")
+		}
+		if hyper.RawConstHyperparameter == nil {
+			return fmt.Errorf("global_batch_size not constant parameter")
+		}
+		globalBatchSize, ok := hyper.RawConstHyperparameter.RawVal.(int)
+		if !ok {
+			return fmt.Errorf("global_batch_size is not an integer got %v",
+				hyper.RawConstHyperparameter.RawVal)
+		}
+
+		inBatches = units / globalBatchSize
+		if inBatches < 1 {
+			inBatches = 1
+		}
+
+	case expconf.Batches:
+		inBatches = units
+
+	case expconf.Epochs:
+		hyper, ok := e.Hyperparameters()["global_batch_size"]
+		if !ok {
+			return fmt.Errorf("searcher in epochs but did not specify global_batch_size")
+		}
+		if hyper.RawConstHyperparameter == nil {
+			return fmt.Errorf("global_batch_size not constant parameter")
+		}
+		globalBatchSize, ok := hyper.RawConstHyperparameter.RawVal.(int)
+		if !ok {
+			return fmt.Errorf("global_batch_size is not an integer got %v",
+				hyper.RawConstHyperparameter.RawVal)
+		}
+
+		if e.RawRecordsPerEpoch == nil {
+			return fmt.Errorf("searcher in epochs but did not specify record_per_epoch")
+		}
+
+		inBatches = (units * *e.RawRecordsPerEpoch) / globalBatchSize
+		if inBatches < 1 {
+			inBatches = 1
+		}
+	}
+
+	if latestCheckpoint.StepsCompleted >= inBatches {
+		return fmt.Errorf("trial has trained for %d batches but searcher.max_length "+
+			"is asking to train for %d batches (specified as %d %s), "+
+			"please increase searcher.max_length if you would like the trial to train longer",
+			latestCheckpoint.StepsCompleted, inBatches, units, unit)
+	}
+	return nil
+}
+
 func (a *apiServer) ContinueExperiment(
 	ctx context.Context, req *apiv1.ContinueExperimentRequest,
 ) (*apiv1.ContinueExperimentResponse, error) {
@@ -1370,6 +1445,18 @@ func (a *apiServer) ContinueExperiment(
 	if err != nil {
 		return nil, err
 	}
+
+	trialsResp, err := a.GetExperimentTrials(ctx, &apiv1.GetExperimentTrialsRequest{
+		ExperimentId: req.Id,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("getting experiment trials: %w", err)
+	}
+	if len(trialsResp.Trials) != 1 {
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf(
+			"experiment needs exactly one trial got %d instead", len(trialsResp.Trials)))
+	}
+	trialID := int(trialsResp.Trials[0].Id)
 
 	configBytes, err := a.parseAndMergeContinueConfig(int(req.Id), req.OverrideConfig)
 	if err != nil {
@@ -1389,15 +1476,8 @@ func (a *apiServer) ContinueExperiment(
 	dbExp.ID = int(req.Id)
 	dbExp.JobID = origExperiment.JobID // Revive job. TODO on what this sets on fire.
 
-	trialsResp, err := a.GetExperimentTrials(ctx, &apiv1.GetExperimentTrialsRequest{
-		ExperimentId: req.Id,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("getting experiment trials: %w", err)
-	}
-	if len(trialsResp.Trials) != 1 {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf(
-			"experiment needs exactly one trial got %d instead", len(trialsResp.Trials)))
+	if err := a.errorIfSearcherIsDone(trialID, activeConfig); err != nil {
+		return nil, err
 	}
 
 	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec, true)
@@ -1466,7 +1546,7 @@ func (a *apiServer) ContinueExperiment(
 		return nil, fmt.Errorf("experiment continue database updates: %w", err)
 	}
 
-	e.continueFromTrialID = ptrs.Ptr(int(trialsResp.Trials[0].Id))
+	e.continueFromTrialID = ptrs.Ptr(trialID)
 	_, created := a.m.system.ActorOf(exputil.ExperimentsAddr.Child(e.ID), e)
 	if !created {
 		// Is it even possible to fail here? I don't think so from continuing experiment alone.
