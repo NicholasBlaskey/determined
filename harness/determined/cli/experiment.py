@@ -303,10 +303,11 @@ def continue_experiment(args: Namespace) -> None:
     if args.config_file:
         config_text = args.config_file.read()
         args.config_file.close()
-        experiment_config = _parse_config_text_or_exit(config_text, args.config_file.name, args.config)
+        experiment_config = _parse_config_text_or_exit(
+            config_text, args.config_file.name, args.config
+        )
     else:
         experiment_config = parse_config_overrides({}, args.config)
-
 
     config_text = yaml.dump(experiment_config)
 
@@ -320,7 +321,6 @@ def continue_experiment(args: Namespace) -> None:
 
     if args.follow_first_trial:
         _follow_experiment_logs(sess, args.experiment_id)
-
 
 
 def local_experiment(args: Namespace) -> None:
@@ -1166,10 +1166,10 @@ main_cmd = Cmd(
                 Arg("--config-file", type=FileType("r"), help="experiment config file (.yaml)"),
                 Arg("--config", action="append", default=[], help=CONFIG_DESC),
                 Arg(
-                        "-f",
-                        "--follow-first-trial",
-                        action="store_true",
-                        help="follow logs of the trial that is being continued",
+                    "-f",
+                    "--follow-first-trial",
+                    action="store_true",
+                    help="follow logs of the trial that is being continued",
                 ),
             ],
         ),

@@ -718,8 +718,12 @@ class _PyTorchTrialController:
 
             # Batch complete: check if any training periods have been reached and exit if any
             for step in train_boundaries:
-                print("STEP for step in train_boundraries",
-                      step.step_type, step.unit.value, step.limit_reached)
+                print(
+                    "STEP for step in train_boundraries",
+                    step.step_type,
+                    step.unit.value,
+                    step.limit_reached,
+                )
                 if isinstance(step.unit, Batch):
                     if step.unit.should_stop(batch_idx + 1):
                         step.limit_reached = True
