@@ -422,6 +422,8 @@ class WorkloadSequencer(workload.Source):
                     if self.batches_until_ckpt() < 1:
                         yield from self.checkpoint(already_exiting=False)
 
+                # Done training for this searcher operation!
+
                 if not self.checkpoint_is_current():
                     yield from self.checkpoint(already_exiting=False)
 
