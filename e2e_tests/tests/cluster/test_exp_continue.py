@@ -160,9 +160,6 @@ def test_continue_trial_time() -> None:
     exp_new_start, exp_new_end = exp_start_end_time()
     trial_new_start, trial_new_end = trial_start_end_time()
 
-    # I don't love this behaviour.
-    # The alternative here is to make trials have an array of start_time
-    # which feels bad and is kinda what task_time should be.
     assert exp_orig_start == exp_new_start
     assert trial_orig_start == trial_new_start
 
@@ -176,7 +173,7 @@ def test_continue_trial_time() -> None:
     assert taskIds is not None
     assert len(taskIds) == 2
 
-    assert taskIds[1] == taskIds[0] + "-1"
+    assert taskIds[1] == taskIds[0] + "-1" # Task IDs are formatted prevTaskID-N
 
     task = bindings.get_GetTask(sess, taskId=taskIds[1]).task
     assert task.startTime > exp_orig_end
@@ -293,7 +290,7 @@ def test_continue_completed_searcher(continue_max_length: int) -> None:
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
-    # Train for less time.
+    # Train for less time runs into error.
     det_cmd_expect_error(
         [
             "e",
