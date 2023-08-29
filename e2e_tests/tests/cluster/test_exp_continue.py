@@ -10,7 +10,7 @@ from tests import api_utils
 from tests import config as conf
 from tests import experiment as exp
 
-from .test_groups import det_cmd
+from .test_groups import det_cmd, det_cmd_expect_error
 
 
 @pytest.mark.e2e_cpu
@@ -284,18 +284,8 @@ def test_continue_batches() -> None:
 
 
 @pytest.mark.e2e_cpu
-# This is like super wrong.
-# Probaly need help since I am not getting this.
-# Could also message Ryan. make reproducable example with warm start
-# ...Okay so this is a unqiue problem to contining, never before in the system have we had this...
-#
-# Kinda a pain
-#
-# TODO expected_total_batches is all wrong
-# should be 3, 3 and 6...
-# @pytest.mark.parametrize("continue_max_length,expected_total_batches", [(2, 4), (3, 6), (6, 6)])
-@pytest.mark.parametrize("continue_max_length,expected_total_batches", [(2, 4)])
-def test_continue_completed_searcher(continue_max_length: int, expected_total_batches: int) -> None:
+@pytest.mark.parametrize("continue_max_length", [2, 3])
+def test_continue_completed_searcher(continue_max_length: int) -> None:
     exp_id = exp.create_experiment(
         conf.fixtures_path("mnist_pytorch/failable.yaml"),
         conf.fixtures_path("mnist_pytorch"),
@@ -303,21 +293,8 @@ def test_continue_completed_searcher(continue_max_length: int, expected_total_ba
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
-    sess = api_utils.determined_test_session()
-    trials = exp.experiment_trials(exp_id)
-    assert len(trials) == 1
-    trial_id = trials[0].trial.id
-
-    def max_total_batches() -> int:
-        resp_list = bindings.get_GetValidationMetrics(sess, trialIds=[trial_id])
-        return max(
-            [metric for resp in resp_list for metric in resp.metrics], key=lambda x: x.totalBatches
-        ).totalBatches
-
-    assert max_total_batches() == 3
-
     # Train for less time.
-    det_cmd(
+    det_cmd_expect_error(
         [
             "e",
             "continue",
@@ -327,8 +304,5 @@ def test_continue_completed_searcher(continue_max_length: int, expected_total_ba
             "--config",
             "searcher.name=single",
         ],
-        check=True,
+        "would like the trial to train longer",
     )
-    exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
-
-    assert max_total_batches() == expected_total_batches
