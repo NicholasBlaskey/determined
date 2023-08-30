@@ -344,7 +344,8 @@ service Determined {
       tags: "Internal"
     };
   }
-  // Continues an experiment either to make the existing experiment train longer or to retry it.
+  // Continues an experiment either to make the existing experiment train longer
+  // or to retry it.
   rpc ContinueExperiment(ContinueExperimentRequest)
       returns (ContinueExperimentResponse) {
     option (google.api.http) = {

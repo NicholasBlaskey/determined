@@ -173,7 +173,7 @@ def test_continue_trial_time() -> None:
     assert taskIds is not None
     assert len(taskIds) == 2
 
-    assert taskIds[1] == taskIds[0] + "-1" # Task IDs are formatted prevTaskID-N
+    assert taskIds[1] == taskIds[0] + "-1"  # Task IDs are formatted prevTaskID-N
 
     task = bindings.get_GetTask(sess, taskId=taskIds[1]).task
     assert task.startTime > exp_orig_end

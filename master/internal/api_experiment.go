@@ -1331,6 +1331,7 @@ func (a *apiServer) parseAndMergeContinueConfig(expID int, overrideConfig string
 		return nil, status.Errorf(codes.InvalidArgument, "'workspace' in override config "+
 			"cannot be specified, use `det experiment move` first if you want to change the workspace")
 	}
+	// TODO deny list more stuff.
 
 	activeConfig, err := a.m.db.ActiveExperimentConfig(expID)
 	if err != nil {
@@ -1377,7 +1378,6 @@ func (a *apiServer) errorIfSearcherIsDone(trialID int, e expconf.ExperimentConfi
 	case expconf.Unitless, expconf.Unspecified:
 		return nil // Unitless makes us have no idea if the searcher is done.
 	case expconf.Records:
-		// TODO this feels awful, how do we parse this thing?
 		hyper, ok := e.Hyperparameters()["global_batch_size"]
 		if !ok {
 			return fmt.Errorf("searcher in records but did not specify global_batch_size")
@@ -1474,13 +1474,13 @@ func (a *apiServer) ContinueExperiment(
 	}
 	dbExp.ParentID = nil // Not actually a parent though.
 	dbExp.ID = int(req.Id)
-	dbExp.JobID = origExperiment.JobID // Revive job. TODO on what this sets on fire.
+	dbExp.JobID = origExperiment.JobID // Revive job.
 
 	if err := a.errorIfSearcherIsDone(trialID, activeConfig); err != nil {
 		return nil, err
 	}
 
-	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec, true)
+	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create experiment: %s", err)
 	}
@@ -1640,7 +1640,7 @@ func (a *apiServer) CreateExperiment(
 		}
 	}
 
-	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec, false)
+	e, launchWarnings, err := newExperiment(a.m, dbExp, activeConfig, taskSpec)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create experiment: %s", err)
 	}

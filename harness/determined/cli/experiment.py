@@ -297,7 +297,6 @@ def submit_experiment(args: Namespace) -> None:
                 _follow_experiment_logs(sess, resp.experiment.id)
 
 
-# TODO Follow / other exp options ? ? ?
 @authentication.required
 def continue_experiment(args: Namespace) -> None:
     if args.config_file:
@@ -1160,7 +1159,7 @@ main_cmd = Cmd(
         Cmd(
             "continue",
             continue_experiment,
-            "continue experiment",
+            "resume or recover training for a single-searcher experiment",
             [
                 experiment_id_arg("experiment ID to continue"),
                 Arg("--config-file", type=FileType("r"), help="experiment config file (.yaml)"),

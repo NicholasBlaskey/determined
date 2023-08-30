@@ -3217,7 +3217,8 @@ type DeterminedClient interface {
 	DisableSlot(ctx context.Context, in *DisableSlotRequest, opts ...grpc.CallOption) (*DisableSlotResponse, error)
 	// Create an experiment.
 	CreateExperiment(ctx context.Context, in *CreateExperimentRequest, opts ...grpc.CallOption) (*CreateExperimentResponse, error)
-	// Continues an experiment either to make the existing experiment train longer or to retry it.
+	// Continues an experiment either to make the existing experiment train longer
+	// or to retry it.
 	ContinueExperiment(ctx context.Context, in *ContinueExperimentRequest, opts ...grpc.CallOption) (*ContinueExperimentResponse, error)
 	// Get the requested experiment.
 	GetExperiment(ctx context.Context, in *GetExperimentRequest, opts ...grpc.CallOption) (*GetExperimentResponse, error)
@@ -5829,7 +5830,8 @@ type DeterminedServer interface {
 	DisableSlot(context.Context, *DisableSlotRequest) (*DisableSlotResponse, error)
 	// Create an experiment.
 	CreateExperiment(context.Context, *CreateExperimentRequest) (*CreateExperimentResponse, error)
-	// Continues an experiment either to make the existing experiment train longer or to retry it.
+	// Continues an experiment either to make the existing experiment train longer
+	// or to retry it.
 	ContinueExperiment(context.Context, *ContinueExperimentRequest) (*ContinueExperimentResponse, error)
 	// Get the requested experiment.
 	GetExperiment(context.Context, *GetExperimentRequest) (*GetExperimentResponse, error)

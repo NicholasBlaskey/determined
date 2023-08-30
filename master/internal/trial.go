@@ -156,7 +156,7 @@ func (t *trial) Receive(ctx *actor.Context) error {
 		}
 
 		if t.continued {
-			// TODO these should be in a transcation.
+			// TODO these should be in a transaction eventually.
 			err := t.addTask()
 			if err != nil {
 				return err

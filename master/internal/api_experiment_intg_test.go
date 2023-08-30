@@ -193,8 +193,6 @@ func TestErrorIfSearcherIsDone(t *testing.T) {
 	api, curUser, ctx := setupAPITest(t, nil)
 	trial, task := createTestTrial(t, api, curUser)
 
-	_ = ctx
-
 	// No checkpoint no error.
 	err := api.errorIfSearcherIsDone(trial.ID, expconf.ExperimentConfig{})
 	require.NoError(t, err)
@@ -223,21 +221,6 @@ func TestErrorIfSearcherIsDone(t *testing.T) {
 		},
 	}
 	require.NoError(t, db.AddCheckpointMetadata(ctx, checkpoint))
-
-	/*
-		_, err = api.ReportTrialValidationMetrics(ctx, &apiv1.ReportTrialValidationMetricsRequest{
-			ValidationMetrics: &trialv1.TrialMetrics{
-				TrialId:        int32(trial.ID),
-				TrialRunId:     0,
-				StepsCompleted: 1,
-				Metrics: &commonv1.Metrics{
-					AvgMetrics: expectedMetrics,
-				},
-			},
-		})
-		setTotalBatches := func() {
-		}
-	*/
 
 	// No panic when not single searcher.
 	err = api.errorIfSearcherIsDone(trial.ID, expconf.ExperimentConfig{
