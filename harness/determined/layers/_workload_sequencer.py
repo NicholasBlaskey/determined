@@ -387,12 +387,6 @@ class WorkloadSequencer(workload.Source):
                 yield from self.validate(None)
 
             for op in self.core_context.searcher.operations(core.SearcherMode.ChiefOnly):
-                # TODO not sure if this is the right way to write this code.
-                # But the idea is we are okay with not training at all when
-                # we have already completed training so we can be done.
-                if self.batches_until_op_complete(op) == 0:
-                    raise ShouldExit()
-
                 while self.batches_until_op_complete(op) > 0:
                     # Do some training.
                     yield from self.train(

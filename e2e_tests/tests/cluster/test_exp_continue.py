@@ -190,7 +190,18 @@ def test_continue_completed_single_step() -> None:
     )
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
-    det_cmd(["e", "continue", str(exp_id)], check=True)
+    det_cmd(
+        [
+            "e",
+            "continue",
+            str(exp_id),
+            "--config",
+            "searcher.max_length.batches=505",
+            "--config",
+            "searcher.name=single",
+        ],
+        check=True,
+    )
     exp.wait_for_experiment_state(exp_id, experimentv1State.COMPLETED)
 
 
