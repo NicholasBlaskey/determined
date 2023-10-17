@@ -364,6 +364,52 @@ func TestTaskContainerDefaultsConfigMerging(t *testing.T) {
 	}
 }
 
+func TestLogPatternPoliciesMerging(t *testing.T) {
+	defaults := &TaskContainerDefaultsConfig{
+		LogPatternPolicies: expconf.LogPatternPoliciesConfig{
+			expconf.LogPatternPolicy{RawPattern: "a", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureDontRetry,
+			}},
+			expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureExcludeNode,
+			}},
+		},
+	}
+
+	conf := expconf.ExperimentConfig{
+		RawLogPatternPolicies: expconf.LogPatternPoliciesConfig{
+			expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureDontRetry,
+			}},
+			expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureExcludeNode,
+			}},
+			expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureExcludeNode,
+			}},
+		},
+	}
+
+	defaults.MergeIntoExpConfig(&conf)
+
+	expected := expconf.LogPatternPoliciesConfig{
+		expconf.LogPatternPolicy{RawPattern: "a", RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureDontRetry,
+		}},
+		expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureExcludeNode,
+		}},
+		expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureDontRetry,
+		}},
+		expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureExcludeNode,
+		}},
+	}
+
+	require.Equal(t, expected, conf.RawLogPatternPolicies)
+}
+
 func TestPodSpecsDefaultMerging(t *testing.T) {
 	defaults := &TaskContainerDefaultsConfig{
 		CPUPodSpec: &k8sV1.Pod{

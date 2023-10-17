@@ -971,6 +971,24 @@ WHERE id = $1`, id)
 	return schemas.WithDefaults(expConfig), nil
 }
 
+// ActiveLogPatternPolicies returns log pattern policies for an experiment ID.
+// This should only be called on a running experiment.
+func ActiveLogPatternPolicies(
+	ctx context.Context, id int,
+) (expconf.LogPatternPoliciesConfig, error) {
+	res := struct {
+		LogPatternPolicies expconf.LogPatternPoliciesConfig
+	}{}
+	if err := Bun().NewSelect().Table("experiments").
+		ColumnExpr("config -> 'log_pattern_policies' AS log_pattern_policies").
+		Where("id = ?", id).
+		Scan(ctx, &res); err != nil {
+		return nil, fmt.Errorf("getting log pattern policies config for experiment %d: %w", id, err)
+	}
+
+	return res.LogPatternPolicies, nil
+}
+
 // ExperimentTotalStepTime returns the total elapsed time for all allocations of the experiment
 // with the given ID. Any step with a NULL end_time does not contribute. Elapsed time is
 // expressed as a floating point number of seconds.

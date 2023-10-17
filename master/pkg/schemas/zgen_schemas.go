@@ -771,6 +771,14 @@ var (
                 "type": "string"
             }
         },
+        "log_pattern_policies": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "default": [],
+            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json"
+        },
         "max_restarts": {
             "type": [
                 "integer",
@@ -1370,6 +1378,62 @@ var (
                 }
             }
         ]
+    }
+}
+`)
+	textLogPatternPoliciesConfigV0 = []byte(`{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json",
+    "title": "LogPatternPoliciesConfig",
+    "type": "array",
+    "items": {
+        "$ref": "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json"
+    }
+}
+`)
+	textLogPatternPolicyV0 = []byte(`{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json",
+    "title": "LogPatternPolicy",
+    "additionalProperties": false,
+    "required": [
+        "pattern"
+    ],
+    "type": "object",
+    "properties": {
+        "pattern": {
+            "type": [
+                "string"
+            ]
+        },
+        "policy": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "default": null,
+            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-policy.json"
+        }
+    }
+}
+`)
+	textLogPolicyV0 = []byte(`{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://determined.ai/schemas/expconf/v0/log-policy.json",
+    "title": "LogPolicy",
+    "additionalProperties": false,
+    "required": [
+        "type"
+    ],
+    "type": "object",
+    "properties": {
+        "type": {
+            "enum": [
+                "on_failure_dont_retry",
+                "on_failure_exclude_node"
+            ],
+            "default": false
+        }
     }
 }
 `)
@@ -3037,6 +3101,12 @@ var (
 
 	schemaLengthV0 interface{}
 
+	schemaLogPatternPoliciesConfigV0 interface{}
+
+	schemaLogPatternPolicyV0 interface{}
+
+	schemaLogPolicyV0 interface{}
+
 	schemaOptimizationsConfigV0 interface{}
 
 	schemaProfilingConfigV0 interface{}
@@ -3616,6 +3686,66 @@ func ParsedLengthV0() interface{} {
 		panic("invalid embedded json for LengthV0")
 	}
 	return schemaLengthV0
+}
+
+func ParsedLogPatternPoliciesConfigV0() interface{} {
+	cacheLock.RLock()
+	if schemaLogPatternPoliciesConfigV0 != nil {
+		cacheLock.RUnlock()
+		return schemaLogPatternPoliciesConfigV0
+	}
+	cacheLock.RUnlock()
+
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+	if schemaLogPatternPoliciesConfigV0 != nil {
+		return schemaLogPatternPoliciesConfigV0
+	}
+	err := json.Unmarshal(textLogPatternPoliciesConfigV0, &schemaLogPatternPoliciesConfigV0)
+	if err != nil {
+		panic("invalid embedded json for LogPatternPoliciesConfigV0")
+	}
+	return schemaLogPatternPoliciesConfigV0
+}
+
+func ParsedLogPatternPolicyV0() interface{} {
+	cacheLock.RLock()
+	if schemaLogPatternPolicyV0 != nil {
+		cacheLock.RUnlock()
+		return schemaLogPatternPolicyV0
+	}
+	cacheLock.RUnlock()
+
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+	if schemaLogPatternPolicyV0 != nil {
+		return schemaLogPatternPolicyV0
+	}
+	err := json.Unmarshal(textLogPatternPolicyV0, &schemaLogPatternPolicyV0)
+	if err != nil {
+		panic("invalid embedded json for LogPatternPolicyV0")
+	}
+	return schemaLogPatternPolicyV0
+}
+
+func ParsedLogPolicyV0() interface{} {
+	cacheLock.RLock()
+	if schemaLogPolicyV0 != nil {
+		cacheLock.RUnlock()
+		return schemaLogPolicyV0
+	}
+	cacheLock.RUnlock()
+
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+	if schemaLogPolicyV0 != nil {
+		return schemaLogPolicyV0
+	}
+	err := json.Unmarshal(textLogPolicyV0, &schemaLogPolicyV0)
+	if err != nil {
+		panic("invalid embedded json for LogPolicyV0")
+	}
+	return schemaLogPolicyV0
 }
 
 func ParsedOptimizationsConfigV0() interface{} {
@@ -4225,6 +4355,12 @@ func schemaBytesMap() map[string][]byte {
 	cachedSchemaBytesMap[url] = textKerberosConfigV0
 	url = "http://determined.ai/schemas/expconf/v0/length.json"
 	cachedSchemaBytesMap[url] = textLengthV0
+	url = "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json"
+	cachedSchemaBytesMap[url] = textLogPatternPoliciesConfigV0
+	url = "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json"
+	cachedSchemaBytesMap[url] = textLogPatternPolicyV0
+	url = "http://determined.ai/schemas/expconf/v0/log-policy.json"
+	cachedSchemaBytesMap[url] = textLogPolicyV0
 	url = "http://determined.ai/schemas/expconf/v0/optimizations.json"
 	cachedSchemaBytesMap[url] = textOptimizationsConfigV0
 	url = "http://determined.ai/schemas/expconf/v0/profiling.json"

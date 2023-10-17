@@ -5,6 +5,8 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -371,6 +373,49 @@ func TestMetricNames(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []string{"a", "b", "d"}, actualNames[model.MetricGroup("inference")])
 	require.Equal(t, []string{"b", "c", "f"}, actualNames[model.MetricGroup("golabi")])
+}
+
+func TestActiveLogPatternPolicies(t *testing.T) {
+	ctx := context.Background()
+	require.NoError(t, etc.SetRootPath(RootFromDB))
+
+	db := MustResolveTestPostgres(t)
+	MustMigrateTestPostgres(t, db, MigrationsFromDB)
+
+	_, err := ActiveLogPatternPolicies(ctx, -1)
+	require.ErrorIs(t, err, sql.ErrNoRows)
+
+	user := RequireMockUser(t, db)
+	exp := RequireMockExperiment(t, db, user)
+
+	policies, err := ActiveLogPatternPolicies(ctx, exp.ID)
+	require.NoError(t, err)
+	require.Len(t, policies, 0)
+
+	activeConfig, err := db.ActiveExperimentConfig(exp.ID)
+	require.NoError(t, err)
+	activeConfig.RawLogPatternPolicies = expconf.LogPatternPoliciesConfig{
+		expconf.LogPatternPolicy{RawPattern: "sub", RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureDontRetry,
+		}},
+		expconf.LogPatternPolicy{RawPattern: `\d{5}$`, RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureExcludeNode,
+		}},
+	}
+
+	v, err := json.Marshal(activeConfig)
+	require.NoError(t, err)
+	var m map[string]any
+	require.NoError(t, json.Unmarshal(v, &m))
+	_, err = Bun().NewUpdate().Table("experiments").
+		Where("id = ?", exp.ID).
+		Set("config = ?", m).
+		Exec(ctx)
+	require.NoError(t, err)
+
+	policies, err = ActiveLogPatternPolicies(ctx, exp.ID)
+	require.NoError(t, err)
+	require.Equal(t, activeConfig.RawLogPatternPolicies, policies)
 }
 
 func TestMetricBatchesMilestones(t *testing.T) {
