@@ -139,11 +139,6 @@ func TestPostTaskLogsLogPattern(t *testing.T) {
 				AgentId: ptrs.Ptr("a1"),
 				Log:     "12345",
 			},
-			{
-				TaskId:  string(task.TaskID),
-				AgentId: ptrs.Ptr("a1"),
-				Log:     "patternc",
-			},
 		},
 	})
 	require.NoError(t, err)
