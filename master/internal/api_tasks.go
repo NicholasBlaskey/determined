@@ -391,13 +391,12 @@ func (a *apiServer) monitor(ctx context.Context, taskID model.TaskID, logs []*mo
 		return nil
 	}
 
-	// TODO we could only load log policies config if this is a performance issue.
-	activeConfig, err := a.m.db.ActiveExperimentConfig(exp.ID)
+	policies, err := db.ActiveLogPatternPolicies(ctx, exp.ID)
 	if err != nil {
 		return err
 	}
 
-	if err := logpattern.Monitor(ctx, taskID, logs, activeConfig.LogPatternPolicies()); err != nil {
+	if err := logpattern.Default().Monitor(ctx, taskID, logs, policies); err != nil {
 		return err
 	}
 

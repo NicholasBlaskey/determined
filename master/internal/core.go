@@ -887,7 +887,7 @@ func (m *Master) Run(ctx context.Context, gRPCLogInitDone chan struct{}) error {
 		return errors.Wrap(err, "could not fetch cluster id from database")
 	}
 
-	if err := logpattern.Initialize(ctx); err != nil {
+	if err := logpattern.Default().Initialize(ctx); err != nil {
 		return fmt.Errorf("initializing log pattern policies: %w", err)
 	}
 

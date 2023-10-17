@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"sync"
-	"testing"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 
@@ -19,15 +18,48 @@ import (
 	"github.com/uptrace/bun"
 )
 
-var (
-	blockListCache = make(map[model.TaskID]*set.Set[string])
+const regexCacheSize = 256
+
+var p = &LogPatternPolicies{
+	blockListCache: make(map[model.TaskID]*set.Set[string]),
+}
+
+// Default returns the default singleton log pattern type.
+func Default() *LogPatternPolicies {
+	return p
+}
+
+// LogPatternPolicies is the singleton type that holds blocklist and regex cache.
+type LogPatternPolicies struct {
+	blockListCache map[model.TaskID]*set.Set[string]
 	mu             sync.RWMutex
 	regexCache     *lru.Cache[string, *regexp.Regexp]
-	regexCacheSize = 128
-)
+}
+
+func (l *LogPatternPolicies) getCompiledRegex(regex string) (*regexp.Regexp, error) {
+	var err error
+	if l.regexCache == nil {
+		l.regexCache, err = lru.New[string, *regexp.Regexp](regexCacheSize)
+		if err != nil {
+			return nil, fmt.Errorf("creating LRU cache for compiled regex: %w", err)
+		}
+	}
+
+	compiledRegex, ok := l.regexCache.Get(regex)
+	if !ok {
+		compiledRegex, err = regexp.Compile(regex)
+		if err != nil {
+			return nil, fmt.Errorf("compiling regex '%s': %w", regex, err)
+		}
+
+		l.regexCache.Add(regex, compiledRegex)
+	}
+
+	return compiledRegex, nil
+}
 
 // Monitor checks for logs against any log_pattern_policies and takes action according to the policy.
-func Monitor(ctx context.Context,
+func (l *LogPatternPolicies) Monitor(ctx context.Context,
 	taskID model.TaskID, logs []*model.TaskLog, policies expconf.LogPatternPoliciesConfig,
 ) error {
 	if len(policies) == 0 {
@@ -35,36 +67,36 @@ func Monitor(ctx context.Context,
 	}
 
 	// TODO when we add rm specific log grabbing we will need to also monitor them.
-	for _, l := range logs {
-		if l.AgentID == nil {
+	for _, log := range logs {
+		if log.AgentID == nil {
 			return fmt.Errorf("agentID must be non nil to monitor logs")
 		}
 
-		for _, lpp := range policies {
+		for _, policy := range policies {
 			// TODO we have this problem where a regex will always match itself.
 			// Should we match the regex against itself and regex it in expconf?
 			// This does this since the first line of logs is printing expconf
 			// which has the regex pattern. Maybe we can censor or omit the pattern?
 			// I'm not sure. Maybe this isn't an issue since
 			// regexes matching themself can be avoided by users.
-			regex := fmt.Sprintf("(.*)%s(.*)", lpp.Pattern())
-			compiledRegex, err := getCompiledRegex(regex)
+			regex := fmt.Sprintf("(.*)%s(.*)", policy.Pattern())
+			compiledRegex, err := l.getCompiledRegex(regex)
 			if err != nil {
 				return err
 			}
 
-			if compiledRegex.MatchString(l.Log) {
-				switch lpp.Policy().Type() {
+			if compiledRegex.MatchString(log.Log) {
+				switch policy.Policy().Type() {
 				case expconf.LogPolicyOnFailureDontRetry:
 					if err := addDontRetry(
-						ctx, model.TaskID(l.TaskID), *l.AgentID, lpp.Pattern(), l.Log,
+						ctx, model.TaskID(log.TaskID), *log.AgentID, policy.Pattern(), log.Log,
 					); err != nil {
 						return fmt.Errorf("adding don't retry: %w", err)
 					}
 
 				case expconf.LogPolicyOnFailureExcludeNode:
-					if err := addRetryOnDifferentNode(
-						ctx, model.TaskID(l.TaskID), *l.AgentID, lpp.Pattern(), l.Log,
+					if err := l.addRetryOnDifferentNode(
+						ctx, model.TaskID(log.TaskID), *log.AgentID, policy.Pattern(), log.Log,
 					); err != nil {
 						return fmt.Errorf("adding retry on different node: %w", err)
 					}
@@ -88,9 +120,9 @@ func Monitor(ctx context.Context,
 // I think there is going to be a decent chance this cache approach will somehow leak tasks
 // in the future but I think even if we never removed items from the cache
 // we would still probably be okay.
-func Initialize(ctx context.Context) error {
-	mu.Lock()
-	defer mu.Unlock()
+func (l *LogPatternPolicies) Initialize(ctx context.Context) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	var blockedNodes []*retryOnDifferentNode
 	if err := db.Bun().NewSelect().Model(&blockedNodes).
@@ -99,23 +131,23 @@ func Initialize(ctx context.Context) error {
 		return fmt.Errorf("getting blocked nodes: %w", err)
 	}
 
-	blockListCache = make(map[model.TaskID]*set.Set[string])
+	l.blockListCache = make(map[model.TaskID]*set.Set[string])
 	for _, b := range blockedNodes {
-		if _, ok := blockListCache[b.TaskID]; !ok {
-			blockListCache[b.TaskID] = ptrs.Ptr(set.New[string]())
+		if _, ok := l.blockListCache[b.TaskID]; !ok {
+			l.blockListCache[b.TaskID] = ptrs.Ptr(set.New[string]())
 		}
-		blockListCache[b.TaskID].Insert(b.NodeName)
+		l.blockListCache[b.TaskID].Insert(b.NodeName)
 	}
 
 	return nil
 }
 
 // DisallowedNodes returns a list of nodes that should be blocklisted for the given allocation.
-func DisallowedNodes(taskID model.TaskID) *set.Set[string] {
-	mu.RLock()
-	defer mu.RUnlock()
+func (l *LogPatternPolicies) DisallowedNodes(taskID model.TaskID) *set.Set[string] {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
 
-	disallowedNodes := blockListCache[taskID]
+	disallowedNodes := l.blockListCache[taskID]
 	if disallowedNodes != nil {
 		return disallowedNodes
 	}
@@ -125,11 +157,11 @@ func DisallowedNodes(taskID model.TaskID) *set.Set[string] {
 
 // ReportTaskDone cleans up taskID to disallowed nodes cache.
 // This is safe to call multiple times and on tasks without disallowed nodes.
-func ReportTaskDone(taskID model.TaskID) {
-	mu.Lock()
-	defer mu.Unlock()
+func (l *LogPatternPolicies) ReportTaskDone(taskID model.TaskID) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	delete(blockListCache, taskID)
+	delete(l.blockListCache, taskID)
 }
 
 type retryOnDifferentNode struct {
@@ -143,11 +175,11 @@ type retryOnDifferentNode struct {
 	TaskEnded     bool         `bun:"task_ended"`
 }
 
-func addRetryOnDifferentNode(
+func (l *LogPatternPolicies) addRetryOnDifferentNode(
 	ctx context.Context, taskID model.TaskID, nodeName, regex, triggeringLog string,
 ) error {
-	mu.Lock()
-	defer mu.Unlock()
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	m := &retryOnDifferentNode{
 		TaskID:        taskID,
@@ -172,10 +204,10 @@ func addRetryOnDifferentNode(
 		fmt.Sprintf("(log '%q' matched regex %s) therefore will not schedule on %s\n",
 			triggeringLog, regex, nodeName)))
 
-	if _, ok := blockListCache[taskID]; !ok {
-		blockListCache[taskID] = ptrs.Ptr(set.New[string]())
+	if _, ok := l.blockListCache[taskID]; !ok {
+		l.blockListCache[taskID] = ptrs.Ptr(set.New[string]())
 	}
-	blockListCache[taskID].Insert(nodeName)
+	l.blockListCache[taskID].Insert(nodeName)
 	return nil
 }
 
@@ -235,33 +267,4 @@ func ShouldRetry(ctx context.Context, taskID model.TaskID) ([]RetryInfo, error) 
 	}
 
 	return out, nil
-}
-
-func getCompiledRegex(regex string) (*regexp.Regexp, error) {
-	var err error
-	if regexCache == nil {
-		regexCache, err = lru.New[string, *regexp.Regexp](regexCacheSize)
-		if err != nil {
-			return nil, fmt.Errorf("creating LRU cache for compiled regex: %w", err)
-		}
-	}
-
-	compiledRegex, ok := regexCache.Get(regex)
-	if !ok {
-		compiledRegex, err = regexp.Compile(regex)
-		if err != nil {
-			return nil, fmt.Errorf("compiling regex '%s': %w", regex, err)
-		}
-		regexCache.Add(regex, compiledRegex)
-	}
-
-	return compiledRegex, nil
-}
-
-// SetDisallowedNodesCacheTest is used only in unit tests. export_test.go does not work as expected.
-// t *testing.T should convince you to not use this.
-func SetDisallowedNodesCacheTest(t *testing.T, c map[model.TaskID]*set.Set[string]) {
-	mu.Lock()
-	defer mu.Unlock()
-	blockListCache = c
 }

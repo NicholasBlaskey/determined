@@ -201,7 +201,7 @@ func (t *trial) exit(reason *model.ExitedReason) {
 }
 
 func (t *trial) close() error {
-	logpattern.ReportTaskDone(t.taskID)
+	logpattern.Default().ReportTaskDone(t.taskID)
 
 	t.wg.Close()
 	if !t.idSet {
