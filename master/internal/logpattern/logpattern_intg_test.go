@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/determined-ai/determined/master/internal/db"
-	"github.com/determined-ai/determined/master/internal/webhooks"
 	"github.com/determined-ai/determined/master/pkg/etc"
 	"github.com/determined-ai/determined/master/pkg/model"
 )
@@ -157,71 +156,4 @@ func TestShouldRetry(t *testing.T) {
 			TriggeringLog: "logb",
 		},
 	}, resp)
-}
-
-func TestSendWebhook(t *testing.T) {
-	ctx := context.Background()
-
-	resp, err := ShouldRetry(ctx, model.TaskID("fake Task ID"))
-	require.NoError(t, err)
-	require.Len(t, resp, 0)
-
-	user := db.RequireMockUser(t, pgDB)
-	exp := db.RequireMockExperiment(t, pgDB, user)
-	_, task := db.RequireMockTrial(t, pgDB, exp)
-
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n0", "regexa", "loga", "determined.ai", webhooks.WebhookTypeSlack))
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n0", "regexb", "logb", "determined.ai", webhooks.WebhookTypeSlack))
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n0", "regexa", "logc", "determined.ai/a", webhooks.WebhookTypeSlack))
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n0", "regexa", "logd", "determined.ai", webhooks.WebhookTypeDefault))
-
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n1", "regexa", "dontappear", "determined.ai", webhooks.WebhookTypeSlack))
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n1", "regexb", "dontappear", "determined.ai", webhooks.WebhookTypeSlack))
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n1", "regexa", "dontappear", "determined.ai/a", webhooks.WebhookTypeSlack))
-	require.NoError(t, addWebhookAlert(
-		ctx, task.TaskID, "n1", "regexa", "dontappear", "determined.ai", webhooks.WebhookTypeDefault))
-
-	var actual []*sendWebhook
-	require.NoError(t, db.Bun().NewSelect().Model(&actual).
-		ExcludeColumn("id", "task_id").
-		Where("task_id = ?", task.TaskID).
-		Scan(ctx, &actual))
-
-	require.ElementsMatch(t, []*sendWebhook{
-		{
-			NodeName:      "n0",
-			Regex:         "regexa",
-			TriggeringLog: "loga",
-			WebhookURL:    "determined.ai",
-			WebhookType:   webhooks.WebhookTypeSlack,
-		},
-		{
-			NodeName:      "n0",
-			Regex:         "regexb",
-			TriggeringLog: "logb",
-			WebhookURL:    "determined.ai",
-			WebhookType:   webhooks.WebhookTypeSlack,
-		},
-		{
-			NodeName:      "n0",
-			Regex:         "regexa",
-			TriggeringLog: "logc",
-			WebhookURL:    "determined.ai/a",
-			WebhookType:   webhooks.WebhookTypeSlack,
-		},
-		{
-			NodeName:      "n0",
-			Regex:         "regexa",
-			TriggeringLog: "logd",
-			WebhookURL:    "determined.ai",
-			WebhookType:   webhooks.WebhookTypeDefault,
-		},
-	}, actual)
 }

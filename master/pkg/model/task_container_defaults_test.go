@@ -368,33 +368,24 @@ func TestLogPatternPoliciesMerging(t *testing.T) {
 	defaults := &TaskContainerDefaultsConfig{
 		LogPatternPolicies: expconf.LogPatternPoliciesConfig{
 			expconf.LogPatternPolicy{RawPattern: "a", RawPolicy: &expconf.LogPolicy{
-				RawOnFailureDontRetry: &expconf.DontRetryPolicy{},
+				RawType: expconf.LogPolicyOnFailureDontRetry,
 			}},
-			expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
-				RawOnFailureExcludeNode: &expconf.OnFailureExcludeNodePolicy{},
-			}},
-			expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
-				RawSendWebhook: &expconf.SendWebhookPolicy{
-					RawWebhookURL:  "determined.ai",
-					RawWebhookType: "default",
-				},
+			expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureExcludeNode,
 			}},
 		},
 	}
 
 	conf := expconf.ExperimentConfig{
 		RawLogPatternPolicies: expconf.LogPatternPoliciesConfig{
-			expconf.LogPatternPolicy{RawPattern: "a", RawPolicy: &expconf.LogPolicy{
-				RawOnFailureDontRetry: &expconf.DontRetryPolicy{},
+			expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+				RawType: expconf.LogPolicyOnFailureDontRetry,
 			}},
 			expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
-				RawOnFailureExcludeNode: &expconf.OnFailureExcludeNodePolicy{},
+				RawType: expconf.LogPolicyOnFailureExcludeNode,
 			}},
 			expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
-				RawSendWebhook: &expconf.SendWebhookPolicy{
-					RawWebhookURL:  "determined.ai",
-					RawWebhookType: "slack",
-				},
+				RawType: expconf.LogPolicyOnFailureExcludeNode,
 			}},
 		},
 	}
@@ -403,25 +394,16 @@ func TestLogPatternPoliciesMerging(t *testing.T) {
 
 	expected := expconf.LogPatternPoliciesConfig{
 		expconf.LogPatternPolicy{RawPattern: "a", RawPolicy: &expconf.LogPolicy{
-			RawOnFailureDontRetry: &expconf.DontRetryPolicy{},
-		}},
-		expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
-			RawOnFailureExcludeNode: &expconf.OnFailureExcludeNodePolicy{},
-		}},
-		expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
-			RawSendWebhook: &expconf.SendWebhookPolicy{
-				RawWebhookURL:  "determined.ai",
-				RawWebhookType: "default",
-			},
+			RawType: expconf.LogPolicyOnFailureDontRetry,
 		}},
 		expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
-			RawOnFailureExcludeNode: &expconf.OnFailureExcludeNodePolicy{},
+			RawType: expconf.LogPolicyOnFailureExcludeNode,
+		}},
+		expconf.LogPatternPolicy{RawPattern: "b", RawPolicy: &expconf.LogPolicy{
+			RawType: expconf.LogPolicyOnFailureDontRetry,
 		}},
 		expconf.LogPatternPolicy{RawPattern: "c", RawPolicy: &expconf.LogPolicy{
-			RawSendWebhook: &expconf.SendWebhookPolicy{
-				RawWebhookURL:  "determined.ai",
-				RawWebhookType: "slack",
-			},
+			RawType: expconf.LogPolicyOnFailureExcludeNode,
 		}},
 	}
 

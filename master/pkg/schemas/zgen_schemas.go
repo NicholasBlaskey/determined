@@ -1417,105 +1417,23 @@ var (
     }
 }
 `)
-	textDontRetryPolicyV0 = []byte(`{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://determined.ai/schemas/expconf/v0/log-policy-on-failure-dont-retry.json",
-    "title": "DontRetryPolicy",
-    "additionalProperties": false,
-    "required": [
-        "type"
-    ],
-    "type": "object",
-    "properties": {
-        "type": {
-            "const": "on_failure_dont_retry"
-        }
-    }
-}
-`)
-	textOnFailureExcludeNodePolicyV0 = []byte(`{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://determined.ai/schemas/expconf/v0/log-policy-on-failure-exclude-node.json",
-    "title": "OnFailureExcludeNodePolicy",
-    "additionalProperties": false,
-    "required": [
-        "type"
-    ],
-    "type": "object",
-    "properties": {
-        "type": {
-            "const": "on_failure_exclude_node"
-        }
-    }
-}
-`)
-	textSendWebhookPolicyV0 = []byte(`{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://determined.ai/schemas/expconf/v0/log-policy-send-webhook.json",
-    "title": "SendWebhookPolicy",
-    "additionalProperties": false,
-    "type": "object",
-    "required": [
-        "type",
-        "webhook_type",
-        "webhook_url"
-    ],
-    "eventuallyRequired": [],
-    "properties": {
-        "type": {
-            "const": "send_webhook"
-        },
-        "webhook_type": {
-            "enum": [
-                "default",
-                "slack"
-            ]
-        },
-        "webhook_url": {
-            "type": [
-                "string"
-            ]
-        }
-    }
-}
-`)
 	textLogPolicyV0 = []byte(`{
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "http://determined.ai/schemas/expconf/v0/log-policy.json",
     "title": "LogPolicy",
-    "$comment": "this is a union of all possible properties, with validation for the common properties",
-    "if": {
-        "required": [
-            "type"
-        ]
-    },
-    "then": {
-        "union": {
-            "defaultMessage": "is not an object where object[\"type\"] is one of 'on_failure_dont_retry', 'on_failure_exclude_node' or 'send_webhook'",
-            "items": [
-                {
-                    "unionKey": "const:type=on_failure_dont_retry",
-                    "$ref": "http://determined.ai/schemas/expconf/v0/log-policy-on-failure-dont-retry.json"
-                },
-                {
-                    "unionKey": "const:type=on_failure_exclude_node",
-                    "$ref": "http://determined.ai/schemas/expconf/v0/log-policy-on-failure-exclude-node.json"
-                },
-                {
-                    "unionKey": "const:type=send_webhook",
-                    "$ref": "http://determined.ai/schemas/expconf/v0/log-policy-send-webhook.json"
-                }
-            ]
-        }
-    },
     "additionalProperties": false,
-    "eventuallyRequired": [
+    "required": [
         "type"
     ],
+    "type": "object",
     "properties": {
-        "type": true,
-        "webhook_type": true,
-        "webhook_url": true
+        "type": {
+            "enum": [
+                "on_failure_dont_retry",
+                "on_failure_exclude_node"
+            ],
+            "default": false
+        }
     }
 }
 `)
@@ -3187,12 +3105,6 @@ var (
 
 	schemaLogPatternPolicyV0 interface{}
 
-	schemaDontRetryPolicyV0 interface{}
-
-	schemaOnFailureExcludeNodePolicyV0 interface{}
-
-	schemaSendWebhookPolicyV0 interface{}
-
 	schemaLogPolicyV0 interface{}
 
 	schemaOptimizationsConfigV0 interface{}
@@ -3814,66 +3726,6 @@ func ParsedLogPatternPolicyV0() interface{} {
 		panic("invalid embedded json for LogPatternPolicyV0")
 	}
 	return schemaLogPatternPolicyV0
-}
-
-func ParsedDontRetryPolicyV0() interface{} {
-	cacheLock.RLock()
-	if schemaDontRetryPolicyV0 != nil {
-		cacheLock.RUnlock()
-		return schemaDontRetryPolicyV0
-	}
-	cacheLock.RUnlock()
-
-	cacheLock.Lock()
-	defer cacheLock.Unlock()
-	if schemaDontRetryPolicyV0 != nil {
-		return schemaDontRetryPolicyV0
-	}
-	err := json.Unmarshal(textDontRetryPolicyV0, &schemaDontRetryPolicyV0)
-	if err != nil {
-		panic("invalid embedded json for DontRetryPolicyV0")
-	}
-	return schemaDontRetryPolicyV0
-}
-
-func ParsedOnFailureExcludeNodePolicyV0() interface{} {
-	cacheLock.RLock()
-	if schemaOnFailureExcludeNodePolicyV0 != nil {
-		cacheLock.RUnlock()
-		return schemaOnFailureExcludeNodePolicyV0
-	}
-	cacheLock.RUnlock()
-
-	cacheLock.Lock()
-	defer cacheLock.Unlock()
-	if schemaOnFailureExcludeNodePolicyV0 != nil {
-		return schemaOnFailureExcludeNodePolicyV0
-	}
-	err := json.Unmarshal(textOnFailureExcludeNodePolicyV0, &schemaOnFailureExcludeNodePolicyV0)
-	if err != nil {
-		panic("invalid embedded json for OnFailureExcludeNodePolicyV0")
-	}
-	return schemaOnFailureExcludeNodePolicyV0
-}
-
-func ParsedSendWebhookPolicyV0() interface{} {
-	cacheLock.RLock()
-	if schemaSendWebhookPolicyV0 != nil {
-		cacheLock.RUnlock()
-		return schemaSendWebhookPolicyV0
-	}
-	cacheLock.RUnlock()
-
-	cacheLock.Lock()
-	defer cacheLock.Unlock()
-	if schemaSendWebhookPolicyV0 != nil {
-		return schemaSendWebhookPolicyV0
-	}
-	err := json.Unmarshal(textSendWebhookPolicyV0, &schemaSendWebhookPolicyV0)
-	if err != nil {
-		panic("invalid embedded json for SendWebhookPolicyV0")
-	}
-	return schemaSendWebhookPolicyV0
 }
 
 func ParsedLogPolicyV0() interface{} {
@@ -4507,12 +4359,6 @@ func schemaBytesMap() map[string][]byte {
 	cachedSchemaBytesMap[url] = textLogPatternPoliciesConfigV0
 	url = "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json"
 	cachedSchemaBytesMap[url] = textLogPatternPolicyV0
-	url = "http://determined.ai/schemas/expconf/v0/log-policy-on-failure-dont-retry.json"
-	cachedSchemaBytesMap[url] = textDontRetryPolicyV0
-	url = "http://determined.ai/schemas/expconf/v0/log-policy-on-failure-exclude-node.json"
-	cachedSchemaBytesMap[url] = textOnFailureExcludeNodePolicyV0
-	url = "http://determined.ai/schemas/expconf/v0/log-policy-send-webhook.json"
-	cachedSchemaBytesMap[url] = textSendWebhookPolicyV0
 	url = "http://determined.ai/schemas/expconf/v0/log-policy.json"
 	cachedSchemaBytesMap[url] = textLogPolicyV0
 	url = "http://determined.ai/schemas/expconf/v0/optimizations.json"

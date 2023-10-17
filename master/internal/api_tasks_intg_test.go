@@ -106,21 +106,14 @@ func TestPostTaskLogsLogPattern(t *testing.T) {
 	api, curUser, ctx := setupAPITest(t, nil)
 	trial, task := createTestTrial(t, api, curUser)
 
-	// Add config.
 	activeConfig, err := api.m.db.ActiveExperimentConfig(trial.ExperimentID)
 	require.NoError(t, err)
 	activeConfig.RawLogPatternPolicies = expconf.LogPatternPoliciesConfig{
 		expconf.LogPatternPolicy{RawPattern: "sub", RawPolicy: &expconf.LogPolicy{
-			RawOnFailureDontRetry: &expconf.DontRetryPolicy{},
+			RawType: expconf.LogPolicyOnFailureDontRetry,
 		}},
 		expconf.LogPatternPolicy{RawPattern: `\d{5}$`, RawPolicy: &expconf.LogPolicy{
-			RawOnFailureExcludeNode: &expconf.OnFailureExcludeNodePolicy{},
-		}},
-		expconf.LogPatternPolicy{RawPattern: "patternc", RawPolicy: &expconf.LogPolicy{
-			RawSendWebhook: &expconf.SendWebhookPolicy{
-				RawWebhookType: "default",
-				RawWebhookURL:  "determined.ai",
-			},
+			RawType: expconf.LogPolicyOnFailureExcludeNode,
 		}},
 	}
 
@@ -162,18 +155,6 @@ func TestPostTaskLogsLogPattern(t *testing.T) {
 	require.Equal(t,
 		[]logpattern.RetryInfo{{Regex: `sub`, TriggeringLog: "stringsubstring"}},
 		retryInfo)
-
-	// This is kinda unfortunate but we are breaking the abstraction here.
-	c, err := db.Bun().NewSelect().
-		Table("log_policy_send_webhook").
-		Where("task_id = ?", task.TaskID).
-		Where("regex = ?", "patternc").
-		Where("node_name = ?", "a1").
-		Where("webhook_type = ?", "DEFAULT").
-		Where("webhook_url = ?", "determined.ai").
-		Count(ctx)
-	require.NoError(t, err)
-	require.Equal(t, 1, c)
 }
 
 func TestTaskAuthZ(t *testing.T) {

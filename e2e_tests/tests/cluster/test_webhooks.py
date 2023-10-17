@@ -1,4 +1,6 @@
 import json
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import pytest
 
@@ -6,13 +8,44 @@ from determined.common.api import bindings
 from tests import api_utils
 from tests import config as conf
 from tests import experiment as exp
-from tests.cluster import utils
+
+# global variable to store the webhook request
+request_to_webhook_endpoint = {}
+
+# global state to handle server termination
+keep_server_running = True
+
+SERVER_PORT = 5005
+
+
+class WebhookRequestHandler(SimpleHTTPRequestHandler):
+    def do_POST(self) -> None:
+        global request_to_webhook_endpoint
+        global keep_server_running
+        content_length = int(self.headers.get("content-length"))
+        request_body = self.rfile.read(content_length)
+        request_to_webhook_endpoint = json.loads(request_body)
+        self.send_response(200, "Success")
+        self.end_headers()
+        self.wfile.write("".encode("utf-8"))
+
+        # terminate Server
+        keep_server_running = False
+
+
+def run_server() -> None:
+    global keep_server_running
+    server_address = ("", SERVER_PORT)
+    http_server = HTTPServer(server_address, WebhookRequestHandler)
+    while keep_server_running:
+        http_server.handle_request()
 
 
 @pytest.mark.e2e_cpu
 def test_slack_webhook() -> None:
-    port = 5005
-    server = utils.WebhookServer(port, allow_dupes=True)
+    global request_to_webhook_endpoint
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
     sess = api_utils.determined_test_session(admin=True)
 
     webhook_trigger = bindings.v1Trigger(
@@ -21,7 +54,7 @@ def test_slack_webhook() -> None:
     )
 
     webhook_request = bindings.v1Webhook(
-        url=f"http://localhost:{port}",
+        url=f"http://localhost:{SERVER_PORT}",
         webhookType=bindings.v1WebhookType.SLACK,
         triggers=[webhook_trigger],
     )
@@ -66,12 +99,8 @@ def test_slack_webhook() -> None:
             }
         ],
     }
+    server_thread.join()
     expected_color = "#13B670"
-
-    responses = server.close_and_return_responses()
-    assert len(responses) == 1
-    response = json.loads(responses["/"])
-
-    assert expected_payload["blocks"] == response["blocks"]
-    assert expected_color == response["attachments"][0]["color"]
-    assert expected_field == response["attachments"][0]["blocks"][0]["fields"][0]
+    assert expected_payload["blocks"] == request_to_webhook_endpoint["blocks"]
+    assert expected_color == request_to_webhook_endpoint["attachments"][0]["color"]
+    assert expected_field == request_to_webhook_endpoint["attachments"][0]["blocks"][0]["fields"][0]

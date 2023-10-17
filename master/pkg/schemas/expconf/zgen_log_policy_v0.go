@@ -8,17 +8,12 @@ import (
 	"github.com/determined-ai/determined/master/pkg/schemas"
 )
 
-func (l LogPolicyV0) GetUnionMember() interface{} {
-	if l.RawOnFailureDontRetry != nil {
-		return *l.RawOnFailureDontRetry
-	}
-	if l.RawOnFailureExcludeNode != nil {
-		return *l.RawOnFailureExcludeNode
-	}
-	if l.RawSendWebhook != nil {
-		return *l.RawSendWebhook
-	}
-	panic("no union member defined")
+func (l LogPolicyV0) Type() LogPolicyType {
+	return l.RawType
+}
+
+func (l *LogPolicyV0) SetType(val LogPolicyType) {
+	l.RawType = val
 }
 
 func (l LogPolicyV0) ParsedSchema() interface{} {

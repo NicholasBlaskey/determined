@@ -11,7 +11,6 @@ import (
 
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/task/tasklogger"
-	"github.com/determined-ai/determined/master/internal/webhooks"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
@@ -26,17 +25,6 @@ var (
 	regexCache     *lru.Cache[string, *regexp.Regexp]
 	regexCacheSize = 128
 )
-
-func webhookTypeFromPolicy(p expconf.SendWebhookPolicy) webhooks.WebhookType {
-	switch p.WebhookType() {
-	case "default":
-		return webhooks.WebhookTypeDefault
-	case "slack":
-		return webhooks.WebhookTypeSlack
-	default:
-		return webhooks.WebhookTypeDefault
-	}
-}
 
 // Monitor checks for logs against any log_pattern_policies and takes action according to the policy.
 func Monitor(ctx context.Context,
@@ -66,26 +54,21 @@ func Monitor(ctx context.Context,
 			}
 
 			if compiledRegex.MatchString(l.Log) {
-				switch policy := lpp.Policy().GetUnionMember().(type) {
-				case expconf.DontRetryPolicyV0:
+				switch lpp.Policy().Type() {
+				case expconf.LogPolicyOnFailureDontRetry:
 					if err := addDontRetry(
 						ctx, model.TaskID(l.TaskID), *l.AgentID, lpp.Pattern(), l.Log,
 					); err != nil {
 						return fmt.Errorf("adding don't retry: %w", err)
 					}
-				case expconf.OnFailureExcludeNodePolicy:
+
+				case expconf.LogPolicyOnFailureExcludeNode:
 					if err := addRetryOnDifferentNode(
 						ctx, model.TaskID(l.TaskID), *l.AgentID, lpp.Pattern(), l.Log,
 					); err != nil {
 						return fmt.Errorf("adding retry on different node: %w", err)
 					}
-				case expconf.SendWebhookPolicy:
-					if err := addWebhookAlert(
-						ctx, model.TaskID(l.TaskID), *l.AgentID, lpp.Pattern(), l.Log,
-						policy.WebhookURL(), webhookTypeFromPolicy(policy),
-					); err != nil {
-						return fmt.Errorf("adding webhook alert: %w", err)
-					}
+
 				default:
 					return fmt.Errorf("unrecognized log pattern policy type")
 				}
@@ -193,56 +176,6 @@ func addRetryOnDifferentNode(
 		blockListCache[taskID] = ptrs.Ptr(set.New[string]())
 	}
 	blockListCache[taskID].Insert(nodeName)
-	return nil
-}
-
-type sendWebhook struct {
-	bun.BaseModel `bun:"table:log_policy_send_webhook"`
-
-	ID            int                  `bun:"id,pk,autoincrement"`
-	TaskID        model.TaskID         `bun:"task_id"`
-	Regex         string               `bun:"regex"`
-	NodeName      string               `bun:"node_name"`
-	TriggeringLog string               `bun:"triggering_log"`
-	WebhookType   webhooks.WebhookType `bun:"webhook_type"`
-	WebhookURL    string               `bun:"webhook_url"`
-}
-
-func addWebhookAlert(ctx context.Context,
-	taskID model.TaskID, nodeName, regex, triggeringLog, url string, wt webhooks.WebhookType,
-) error {
-	// The reason we persist this is to avoid sending dupes.
-	// Maybe the webhook package could handle this but I think it makes sense for us to do it here.
-	m := &sendWebhook{
-		TaskID:        taskID,
-		NodeName:      nodeName,
-		Regex:         regex,
-		TriggeringLog: triggeringLog,
-		WebhookURL:    url,
-		WebhookType:   wt,
-	}
-	res, err := db.Bun().NewInsert().Model(m).
-		On("CONFLICT (task_id, regex, webhook_type, webhook_url) DO NOTHING").
-		Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("adding send webhook policy %+v: %w", m, err)
-	}
-	if num, err := res.RowsAffected(); err != nil {
-		return fmt.Errorf("retry different node rows affected: %w", err)
-	} else if num == 0 {
-		return nil
-	}
-
-	tasklogger.Insert(tasklogger.CreateLogFromMaster(taskID, model.LogLevelError,
-		fmt.Sprintf("(log '%q' matched regex %s) therefore sent webhook\n",
-			triggeringLog, regex)))
-
-	if err := webhooks.ReportLogPatternAction(
-		ctx, taskID, nodeName, regex, triggeringLog, url, wt,
-	); err != nil {
-		return err
-	}
-
 	return nil
 }
 
