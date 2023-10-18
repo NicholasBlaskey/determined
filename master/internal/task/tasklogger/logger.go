@@ -40,22 +40,6 @@ func New(backend Writer) *Logger {
 	return &l
 }
 
-// CreateLogFromMaster creates a tasklog of the format that we expect when it comes from master.
-func CreateLogFromMaster(taskID model.TaskID, level, log string) *model.TaskLog {
-	if !strings.HasSuffix(log, "\n") {
-		log += "\n"
-	}
-
-	return &model.TaskLog{
-		TaskID:    string(taskID),
-		Timestamp: ptrs.Ptr(time.Now().UTC()),
-		Level:     &level,
-		Source:    ptrs.Ptr("master"),
-		StdType:   ptrs.Ptr("stdout"),
-		Log:       log,
-	}
-}
-
 // Insert a log into the buffer to be flush within some interval.
 func (l *Logger) Insert(tl *model.TaskLog) {
 	l.inbox <- tl
@@ -89,5 +73,21 @@ func (l *Logger) flush(pending []*model.TaskLog) {
 	err := l.backend.AddTaskLogs(pending)
 	if err != nil {
 		syslog.WithError(err).Errorf("failed to save task logs")
+	}
+}
+
+// CreateLogFromMaster creates a tasklog of the format that we expect when it comes from master.
+func CreateLogFromMaster(taskID model.TaskID, level, log string) *model.TaskLog {
+	if !strings.HasSuffix(log, "\n") {
+		log += "\n"
+	}
+
+	return &model.TaskLog{
+		TaskID:    string(taskID),
+		Timestamp: ptrs.Ptr(time.Now().UTC()),
+		Level:     &level,
+		Source:    ptrs.Ptr("master"),
+		StdType:   ptrs.Ptr("stdout"),
+		Log:       log,
 	}
 }

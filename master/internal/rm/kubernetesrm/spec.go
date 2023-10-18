@@ -235,7 +235,7 @@ func addDisallowedNodesToPodSpec(pod *k8sV1.Pod, taskID model.TaskID) {
 	// logpattern.DisallowedNodes(taskID).ToSlice() and not loop
 	// because of the k8s error given "Required value:
 	// must be only one value when `operator` is 'In' or 'NotIn' for node field selector".
-	for _, nodeName := range logpattern.Default().DisallowedNodes(taskID).ToSlice() {
+	for _, nodeName := range logpattern.DisallowedNodes(taskID).ToSlice() {
 		addNodeSelectorRequirement(pod, k8sV1.NodeSelectorRequirement{
 			Key:      "metadata.name",
 			Operator: k8sV1.NodeSelectorOpNotIn,

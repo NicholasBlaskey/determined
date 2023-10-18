@@ -396,7 +396,7 @@ func (a *apiServer) monitor(ctx context.Context, taskID model.TaskID, logs []*mo
 		return err
 	}
 
-	if err := logpattern.Default().Monitor(ctx, taskID, logs, policies); err != nil {
+	if err := logpattern.Monitor(ctx, taskID, logs, policies); err != nil {
 		return err
 	}
 

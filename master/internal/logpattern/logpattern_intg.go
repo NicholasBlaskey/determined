@@ -12,7 +12,7 @@ import (
 
 // SetDisallowedNodesCacheTest is used only in tests to set expected blocklist for tasks.
 func SetDisallowedNodesCacheTest(t *testing.T, c map[model.TaskID]*set.Set[string]) {
-	p = &LogPatternPolicies{
+	defaultSingleton = &logPatternPolicies{
 		blockListCache: c,
 	}
 }

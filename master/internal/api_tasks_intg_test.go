@@ -143,12 +143,12 @@ func TestPostTaskLogsLogPattern(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.Equal(t, []string{"a1"}, logpattern.Default().DisallowedNodes(task.TaskID).ToSlice())
+	require.Equal(t, []string{"a1"}, logpattern.DisallowedNodes(task.TaskID).ToSlice())
 
 	retryInfo, err := logpattern.ShouldRetry(ctx, task.TaskID)
 	require.NoError(t, err)
 	require.Equal(t,
-		[]logpattern.RetryInfo{{Regex: `sub`, TriggeringLog: "stringsubstring"}},
+		[]logpattern.DontRetryTrigger{{Regex: `sub`, TriggeringLog: "stringsubstring"}},
 		retryInfo)
 }
 

@@ -195,7 +195,7 @@ func (t *trial) exit(reason *model.ExitedReason) {
 }
 
 func (t *trial) close() error {
-	logpattern.Default().ReportTaskDone(t.taskID)
+	logpattern.ReportTaskDone(t.taskID)
 
 	t.wg.Close()
 	if !t.idSet {
@@ -580,27 +580,19 @@ func (t *trial) handleAllocationExit(exit *task.AllocationExited) error {
 		}
 
 		if len(notRetries) > 0 {
-			var exitReasons []string
-			for _, r := range notRetries {
-				exitReasons = append(exitReasons,
-					fmt.Sprintf("(log '%q' matched regex %s)", r.TriggeringLog, r.Regex))
+			for _, l := range logpattern.TaskLogsFromDontRetryTriggers(t.taskID, notRetries) {
+				tasklogger.Insert(l)
 			}
+
+			exitReason := "trial failed and not retrying due to logs matching a don't retry policy" +
+				" check trial logs for more info"
 			t.syslog.
 				WithError(exit.Err).
-				Errorf("trial failed and not retrying due to logs matching a don't retry policy" +
-					" check trial logs for more info")
-
-			reason := ""
-			for _, l := range append([]string{
-				"trial failed and matched logs to a don't retry policy",
-			}, exitReasons...) {
-				reason += l + "\n"
-				tasklogger.Insert(tasklogger.CreateLogFromMaster(t.taskID, model.LogLevelError, l))
-			}
+				Errorf(exitReason)
 
 			return t.transition(model.StateWithReason{
 				State:               model.ErrorState,
-				InformationalReason: reason,
+				InformationalReason: exitReason,
 			})
 		}
 

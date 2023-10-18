@@ -889,9 +889,11 @@ func (m *Master) Run(ctx context.Context, gRPCLogInitDone chan struct{}) error {
 		return errors.Wrap(err, "could not fetch cluster id from database")
 	}
 
-	if err := logpattern.Default().Initialize(ctx); err != nil {
+	l, err := logpattern.New(ctx)
+	if err != nil {
 		return fmt.Errorf("initializing log pattern policies: %w", err)
 	}
+	logpattern.SetDefault(l)
 
 	err = m.checkIfRMDefaultsAreUnbound(m.config.ResourceManager)
 	if err != nil {

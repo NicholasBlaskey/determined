@@ -40,22 +40,24 @@ func TestMain(m *testing.M) {
 func TestRetryOnDifferentNode(t *testing.T) {
 	ctx := context.Background()
 
-	require.NoError(t, Default().Initialize(ctx))
+	l, err := New(ctx)
+	require.NoError(t, err)
+	SetDefault(l)
 
-	require.Len(t, *Default().DisallowedNodes(model.TaskID("fake task ID")), 0)
+	require.Len(t, *DisallowedNodes(model.TaskID("fake task ID")), 0)
 
 	user := db.RequireMockUser(t, pgDB)
 	exp := db.RequireMockExperiment(t, pgDB, user)
 	trial, task := db.RequireMockTrial(t, pgDB, exp)
 
-	require.Len(t, *Default().DisallowedNodes(task.TaskID), 0)
+	require.Len(t, *DisallowedNodes(task.TaskID), 0)
 
-	require.NoError(t, Default().addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexa", "loga"))
-	require.NoError(t, Default().addRetryOnDifferentNode(ctx, task.TaskID, "n1", "regexa", "logb"))
-	require.NoError(t, Default().addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexb", "logc"))
+	require.NoError(t, l.addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexa", "loga"))
+	require.NoError(t, l.addRetryOnDifferentNode(ctx, task.TaskID, "n1", "regexa", "logb"))
+	require.NoError(t, l.addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexb", "logc"))
 
-	require.NoError(t, Default().addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexa", "dontappear"))
-	require.NoError(t, Default().addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexb", "dontappear"))
+	require.NoError(t, l.addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexa", "dontappear"))
+	require.NoError(t, l.addRetryOnDifferentNode(ctx, task.TaskID, "n0", "regexb", "dontappear"))
 
 	// Check DB state is as expected.
 	var actual []*retryOnDifferentNode
@@ -87,41 +89,49 @@ func TestRetryOnDifferentNode(t *testing.T) {
 
 	// Safe across "restarts".
 	require.ElementsMatch(t, []string{"n0", "n1"},
-		Default().DisallowedNodes(task.TaskID).ToSlice())
+		DisallowedNodes(task.TaskID).ToSlice())
 
-	require.NoError(t, Default().Initialize(ctx))
+	l, err = New(ctx)
+	require.NoError(t, err)
+	SetDefault(l)
 
 	require.ElementsMatch(t, []string{"n0", "n1"},
-		Default().DisallowedNodes(task.TaskID).ToSlice())
+		DisallowedNodes(task.TaskID).ToSlice())
 
 	// Restarts won't load inactive alerts for perf.
-	_, err := db.Bun().NewUpdate().Model(&retryOnDifferentNode{}).
+	_, err = db.Bun().NewUpdate().Model(&retryOnDifferentNode{}).
 		Set("task_ended = true").
 		Where("task_id = ?", task.TaskID).
 		Where("node_name = ?", "n0").
 		Exec(ctx)
 	require.NoError(t, err)
 
-	require.NoError(t, Default().Initialize(ctx))
+	l, err = New(ctx)
+	require.NoError(t, err)
+	SetDefault(l)
 
 	require.ElementsMatch(t, []string{"n1"},
-		Default().DisallowedNodes(task.TaskID).ToSlice())
+		DisallowedNodes(task.TaskID).ToSlice())
 
 	// Reporting task done won't update db state just the cache.
-	Default().ReportTaskDone(task.TaskID)
-	require.Len(t, Default().DisallowedNodes(task.TaskID).ToSlice(), 0)
+	ReportTaskDone(task.TaskID)
+	require.Len(t, DisallowedNodes(task.TaskID).ToSlice(), 0)
 
-	require.NoError(t, Default().Initialize(ctx))
+	l, err = New(ctx)
+	require.NoError(t, err)
+	SetDefault(l)
 
 	require.ElementsMatch(t, []string{"n1"},
-		Default().DisallowedNodes(task.TaskID).ToSlice())
+		DisallowedNodes(task.TaskID).ToSlice())
 
 	// Moving trial to done will end it's task and have it no longer be in cache when restarted.
 	require.NoError(t, pgDB.UpdateTrial(trial.ID, model.CompletedState))
 
-	require.NoError(t, Default().Initialize(ctx))
+	l, err = New(ctx)
+	require.NoError(t, err)
+	SetDefault(l)
 
-	require.Len(t, Default().DisallowedNodes(task.TaskID).ToSlice(), 0)
+	require.Len(t, DisallowedNodes(task.TaskID).ToSlice(), 0)
 }
 
 func TestShouldRetry(t *testing.T) {
@@ -146,7 +156,7 @@ func TestShouldRetry(t *testing.T) {
 
 	resp, err = ShouldRetry(ctx, task.TaskID)
 	require.NoError(t, err)
-	require.ElementsMatch(t, []RetryInfo{
+	require.ElementsMatch(t, []DontRetryTrigger{
 		{
 			Regex:         "regexa",
 			TriggeringLog: "loga",
@@ -156,4 +166,27 @@ func TestShouldRetry(t *testing.T) {
 			TriggeringLog: "logb",
 		},
 	}, resp)
+}
+
+func TestTaskLogsFromDontRetryTriggers(t *testing.T) {
+	logs := TaskLogsFromDontRetryTriggers("id", []DontRetryTrigger{
+		{
+			Regex:         "regexa",
+			TriggeringLog: "loga",
+		},
+		{
+			Regex:         "regexb",
+			TriggeringLog: "logb",
+		},
+	})
+	totalLog := ""
+	for _, l := range logs {
+		require.Equal(t, "id", l.TaskID)
+		totalLog += l.Log
+	}
+
+	require.Equal(t, `trial failed and matched logs to a don't retry policy
+(log "loga" matched regex "regexa")
+(log "logb" matched regex "regexb")
+`, totalLog)
 }

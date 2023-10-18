@@ -20,46 +20,65 @@ import (
 
 const regexCacheSize = 256
 
-var p = &LogPatternPolicies{
-	blockListCache: make(map[model.TaskID]*set.Set[string]),
-}
+var defaultSingleton *logPatternPolicies
 
-// Default returns the default singleton log pattern type.
-func Default() *LogPatternPolicies {
-	return p
-}
-
-// LogPatternPolicies is the singleton type that holds blocklist and regex cache.
-type LogPatternPolicies struct {
+type logPatternPolicies struct {
 	blockListCache map[model.TaskID]*set.Set[string]
 	mu             sync.RWMutex
 	regexCache     *lru.Cache[string, *regexp.Regexp]
 }
 
-func (l *LogPatternPolicies) getCompiledRegex(regex string) (*regexp.Regexp, error) {
-	var err error
-	if l.regexCache == nil {
-		l.regexCache, err = lru.New[string, *regexp.Regexp](regexCacheSize)
-		if err != nil {
-			return nil, fmt.Errorf("creating LRU cache for compiled regex: %w", err)
-		}
+func (l *logPatternPolicies) getCompiledRegex(regex string) (*regexp.Regexp, error) {
+	if compiledRegex, ok := l.regexCache.Get(regex); ok {
+		return compiledRegex, nil
 	}
 
-	compiledRegex, ok := l.regexCache.Get(regex)
-	if !ok {
-		compiledRegex, err = regexp.Compile(regex)
-		if err != nil {
-			return nil, fmt.Errorf("compiling regex '%s': %w", regex, err)
-		}
-
-		l.regexCache.Add(regex, compiledRegex)
+	compiledRegex, err := regexp.Compile(regex)
+	if err != nil {
+		return nil, fmt.Errorf("compiling regex '%s': %w", regex, err)
 	}
+	l.regexCache.Add(regex, compiledRegex)
 
 	return compiledRegex, nil
 }
 
-// Monitor checks for logs against any log_pattern_policies and takes action according to the policy.
-func (l *LogPatternPolicies) Monitor(ctx context.Context,
+// New create the log pattern policies singleton.
+// There are two reasons for this using a cache
+//  1. Avoid the possibility this feature causes a major slowdown to Scheduler
+//     that won't be obvious till it run at scale.
+//  2. Avoid putting possible transient db errors in the path of the Scheduler.
+//
+// I think there is going to be a decent chance this cache approach will somehow leak tasks
+// in the future but I think even if we never removed items from the cache
+// we would still probably be okay.
+func New(ctx context.Context) (*logPatternPolicies, error) { //nolint: revive
+	var blockedNodes []*retryOnDifferentNode
+	if err := db.Bun().NewSelect().Model(&blockedNodes).
+		Where("task_ended = false").
+		Scan(ctx, &blockedNodes); err != nil {
+		return nil, fmt.Errorf("getting blocked nodes: %w", err)
+	}
+
+	blockListCache := make(map[model.TaskID]*set.Set[string])
+	for _, b := range blockedNodes {
+		if _, ok := blockListCache[b.TaskID]; !ok {
+			blockListCache[b.TaskID] = ptrs.Ptr(set.New[string]())
+		}
+		blockListCache[b.TaskID].Insert(b.NodeName)
+	}
+
+	regexCache, err := lru.New[string, *regexp.Regexp](regexCacheSize)
+	if err != nil {
+		return nil, fmt.Errorf("creating LRU cache: %w", err)
+	}
+
+	return &logPatternPolicies{
+		blockListCache: blockListCache,
+		regexCache:     regexCache,
+	}, nil
+}
+
+func (l *logPatternPolicies) monitor(ctx context.Context,
 	taskID model.TaskID, logs []*model.TaskLog, policies expconf.LogPatternPoliciesConfig,
 ) error {
 	if len(policies) == 0 {
@@ -73,14 +92,7 @@ func (l *LogPatternPolicies) Monitor(ctx context.Context,
 		}
 
 		for _, policy := range policies {
-			// TODO we have this problem where a regex will always match itself.
-			// Should we match the regex against itself and regex it in expconf?
-			// This does this since the first line of logs is printing expconf
-			// which has the regex pattern. Maybe we can censor or omit the pattern?
-			// I'm not sure. Maybe this isn't an issue since
-			// regexes matching themself can be avoided by users.
-			regex := fmt.Sprintf("(.*)%s(.*)", policy.Pattern())
-			compiledRegex, err := l.getCompiledRegex(regex)
+			compiledRegex, err := l.getCompiledRegex(policy.Pattern())
 			if err != nil {
 				return err
 			}
@@ -111,39 +123,7 @@ func (l *LogPatternPolicies) Monitor(ctx context.Context,
 	return nil
 }
 
-// Initialize the blocked node list.
-// There are two reasons for this using a cache
-//  1. Avoid the possibility this feature causes a major slowdown to Scheduler
-//     that won't be obvious till it run at scale.
-//  2. Avoid putting possible transient db errors in the path of the Scheduler.
-//
-// I think there is going to be a decent chance this cache approach will somehow leak tasks
-// in the future but I think even if we never removed items from the cache
-// we would still probably be okay.
-func (l *LogPatternPolicies) Initialize(ctx context.Context) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	var blockedNodes []*retryOnDifferentNode
-	if err := db.Bun().NewSelect().Model(&blockedNodes).
-		Where("task_ended = false").
-		Scan(ctx, &blockedNodes); err != nil {
-		return fmt.Errorf("getting blocked nodes: %w", err)
-	}
-
-	l.blockListCache = make(map[model.TaskID]*set.Set[string])
-	for _, b := range blockedNodes {
-		if _, ok := l.blockListCache[b.TaskID]; !ok {
-			l.blockListCache[b.TaskID] = ptrs.Ptr(set.New[string]())
-		}
-		l.blockListCache[b.TaskID].Insert(b.NodeName)
-	}
-
-	return nil
-}
-
-// DisallowedNodes returns a list of nodes that should be blocklisted for the given allocation.
-func (l *LogPatternPolicies) DisallowedNodes(taskID model.TaskID) *set.Set[string] {
+func (l *logPatternPolicies) disallowedNodes(taskID model.TaskID) *set.Set[string] {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
@@ -155,9 +135,7 @@ func (l *LogPatternPolicies) DisallowedNodes(taskID model.TaskID) *set.Set[strin
 	return ptrs.Ptr(set.New[string]())
 }
 
-// ReportTaskDone cleans up taskID to disallowed nodes cache.
-// This is safe to call multiple times and on tasks without disallowed nodes.
-func (l *LogPatternPolicies) ReportTaskDone(taskID model.TaskID) {
+func (l *logPatternPolicies) reportTaskDone(taskID model.TaskID) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -175,7 +153,7 @@ type retryOnDifferentNode struct {
 	TaskEnded     bool         `bun:"task_ended"`
 }
 
-func (l *LogPatternPolicies) addRetryOnDifferentNode(
+func (l *logPatternPolicies) addRetryOnDifferentNode(
 	ctx context.Context, taskID model.TaskID, nodeName, regex, triggeringLog string,
 ) error {
 	l.mu.Lock()
@@ -211,8 +189,8 @@ func (l *LogPatternPolicies) addRetryOnDifferentNode(
 	return nil
 }
 
-// RetryInfo has information about don't retry policies that have been triggered.
-type RetryInfo struct {
+// DontRetryTrigger has information about don't retry policies that have been triggered.
+type DontRetryTrigger struct {
 	Regex         string
 	TriggeringLog string
 }
@@ -249,8 +227,8 @@ func addDontRetry(
 // ShouldRetry returns a list of any triggered log policies that prevent retrying a trial.
 // Returns an empty list if taskID doesn't exist. Order is not guaranteed.
 // Only returns first log that triggered each regex. Multiple policies with the same regex
-// will only have one RetryInfo.
-func ShouldRetry(ctx context.Context, taskID model.TaskID) ([]RetryInfo, error) {
+// will only have one DontRetryTrigger.
+func ShouldRetry(ctx context.Context, taskID model.TaskID) ([]DontRetryTrigger, error) {
 	var models []*dontRetry
 	if err := db.Bun().NewSelect().Model(&models).
 		Where("task_id = ?", taskID).
@@ -258,13 +236,31 @@ func ShouldRetry(ctx context.Context, taskID model.TaskID) ([]RetryInfo, error) 
 		return nil, fmt.Errorf("getting taskID %s should retry: %w", taskID, err)
 	}
 
-	var out []RetryInfo
+	var out []DontRetryTrigger
 	for _, m := range models {
-		out = append(out, RetryInfo{
+		out = append(out, DontRetryTrigger{
 			Regex:         m.Regex,
 			TriggeringLog: m.TriggeringLog,
 		})
 	}
 
 	return out, nil
+}
+
+// TaskLogsFromDontRetryTriggers returns informational task logs from dont retry triggers.
+func TaskLogsFromDontRetryTriggers(taskID model.TaskID, t []DontRetryTrigger) []*model.TaskLog {
+	var regexLogs []string
+	for _, r := range t {
+		regexLogs = append(regexLogs,
+			fmt.Sprintf("(log %q matched regex %q)", r.TriggeringLog, r.Regex))
+	}
+
+	var taskLogs []*model.TaskLog
+	for _, l := range append([]string{
+		"trial failed and matched logs to a don't retry policy",
+	}, regexLogs...) {
+		taskLogs = append(taskLogs, tasklogger.CreateLogFromMaster(taskID, model.LogLevelError, l))
+	}
+
+	return taskLogs
 }
