@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/determined-ai/determined/master/pkg/model"
+	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/master/pkg/set"
 )
@@ -31,7 +32,7 @@ func Monitor(ctx context.Context,
 func DisallowedNodes(taskID model.TaskID) *set.Set[string] {
 	if defaultSingleton == nil {
 		log.Error("uninitialized log pattern policies")
-		return nil
+		return ptrs.Ptr(set.New[string]())
 	}
 
 	return defaultSingleton.disallowedNodes(taskID)
