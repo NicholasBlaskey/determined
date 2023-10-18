@@ -1431,8 +1431,7 @@ var (
             "enum": [
                 "on_failure_dont_retry",
                 "on_failure_exclude_node"
-            ],
-            "default": false
+            ]
         }
     }
 }
