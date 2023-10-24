@@ -108,12 +108,12 @@ func TestPostTaskLogsLogPattern(t *testing.T) {
 
 	activeConfig, err := api.m.db.ActiveExperimentConfig(trial.ExperimentID)
 	require.NoError(t, err)
-	activeConfig.RawLogPatternPolicies = expconf.LogPatternPoliciesConfig{
-		expconf.LogPatternPolicy{RawPattern: "sub", RawPolicy: &expconf.LogPolicy{
-			RawType: expconf.LogPolicyOnFailureDontRetry,
+	activeConfig.RawLogPolicies = expconf.LogPoliciesConfig{
+		expconf.LogPolicy{RawPattern: "sub", RawAction: expconf.LogAction{
+			RawType: expconf.LogActionCancelRetries,
 		}},
-		expconf.LogPatternPolicy{RawPattern: `\d{5}$`, RawPolicy: &expconf.LogPolicy{
-			RawType: expconf.LogPolicyOnFailureExcludeNode,
+		expconf.LogPolicy{RawPattern: `\d{5}$`, RawAction: expconf.LogAction{
+			RawType: expconf.LogActionExcludeNode,
 		}},
 	}
 

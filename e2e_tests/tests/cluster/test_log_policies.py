@@ -11,17 +11,17 @@ from tests import experiment as exp
 
 @pytest.mark.e2e_cpu
 @pytest.mark.parametrize("should_match", [True, False])
-def test_log_pattern_policy_dont_retry(should_match: bool) -> None:
+def test_log_policy_cancel_retries(should_match: bool) -> None:
     regex = r"assert 0 <= self\.metrics_sigma"
     if not should_match:
         regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
 
     config = conf.load_config(conf.fixtures_path("no_op/single-medium-train-step.yaml"))
-    config["log_pattern_policies"] = [
+    config["log_policies"] = [
         {
             "pattern": regex,
-            "policy": {
-                "type": "on_failure_dont_retry",
+            "action": {
+                "type": "cancel_retries",
             },
         },
     ]
@@ -51,17 +51,17 @@ def test_log_pattern_policy_dont_retry(should_match: bool) -> None:
 @pytest.mark.e2e_cpu
 @pytest.mark.e2e_k8s
 @pytest.mark.parametrize("should_match", [True, False])
-def test_log_pattern_retry_different_node(should_match: bool) -> None:
+def test_log_policy_exclude_node(should_match: bool) -> None:
     regex = r"assert 0 <= self\.metrics_sigma"
     if not should_match:
         regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
 
     config = conf.load_config(conf.fixtures_path("no_op/single-medium-train-step.yaml"))
-    config["log_pattern_policies"] = [
+    config["log_policies"] = [
         {
             "pattern": regex,
-            "policy": {
-                "type": "on_failure_exclude_node",
+            "action": {
+                "type": "exclude_node",
             },
         },
     ]

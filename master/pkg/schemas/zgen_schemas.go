@@ -1417,7 +1417,7 @@ var (
     "additionalProperties": false,
     "required": [
         "pattern",
-        "policy"
+        "action"
     ],
     "type": "object",
     "properties": {

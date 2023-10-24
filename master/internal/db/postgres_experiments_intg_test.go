@@ -382,24 +382,24 @@ func TestActiveLogPatternPolicies(t *testing.T) {
 	db := MustResolveTestPostgres(t)
 	MustMigrateTestPostgres(t, db, MigrationsFromDB)
 
-	_, err := ActiveLogPatternPolicies(ctx, -1)
+	_, err := ActiveLogPolicies(ctx, -1)
 	require.ErrorIs(t, err, sql.ErrNoRows)
 
 	user := RequireMockUser(t, db)
 	exp := RequireMockExperiment(t, db, user)
 
-	policies, err := ActiveLogPatternPolicies(ctx, exp.ID)
+	policies, err := ActiveLogPolicies(ctx, exp.ID)
 	require.NoError(t, err)
 	require.Len(t, policies, 0)
 
 	activeConfig, err := db.ActiveExperimentConfig(exp.ID)
 	require.NoError(t, err)
-	activeConfig.RawLogPatternPolicies = expconf.LogPatternPoliciesConfig{
-		expconf.LogPatternPolicy{RawPattern: "sub", RawPolicy: &expconf.LogPolicy{
-			RawType: expconf.LogPolicyOnFailureDontRetry,
+	activeConfig.RawLogPolicies = expconf.LogPoliciesConfig{
+		expconf.LogPolicy{RawPattern: "sub", RawAction: expconf.LogAction{
+			RawType: expconf.LogActionCancelRetries,
 		}},
-		expconf.LogPatternPolicy{RawPattern: `\d{5}$`, RawPolicy: &expconf.LogPolicy{
-			RawType: expconf.LogPolicyOnFailureExcludeNode,
+		expconf.LogPolicy{RawPattern: `\d{5}$`, RawAction: expconf.LogAction{
+			RawType: expconf.LogActionExcludeNode,
 		}},
 	}
 
@@ -413,9 +413,9 @@ func TestActiveLogPatternPolicies(t *testing.T) {
 		Exec(ctx)
 	require.NoError(t, err)
 
-	policies, err = ActiveLogPatternPolicies(ctx, exp.ID)
+	policies, err = ActiveLogPolicies(ctx, exp.ID)
 	require.NoError(t, err)
-	require.Equal(t, activeConfig.RawLogPatternPolicies, policies)
+	require.Equal(t, activeConfig.RawLogPolicies, policies)
 }
 
 func TestMetricBatchesMilestones(t *testing.T) {

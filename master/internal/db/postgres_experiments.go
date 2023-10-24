@@ -971,7 +971,7 @@ WHERE id = $1`, id)
 	return schemas.WithDefaults(expConfig), nil
 }
 
-// ActiveLogPatternPolicies returns log pattern policies for an experiment ID.
+// ActiveLogPolicies returns log pattern policies for an experiment ID.
 // This should only be called on a running experiment.
 func ActiveLogPolicies(
 	ctx context.Context, id int,

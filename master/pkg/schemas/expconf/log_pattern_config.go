@@ -41,15 +41,15 @@ type LogPolicyV0 struct {
 	RawAction LogActionV0 `json:"action"`
 }
 
-// LogPolicyType is a type for different log policies types.
+// LogActionType is a type for different log action types.
 // You will need to convert this to a "true" union if you need to
 // allow configuring other options besides what type of policy it is.
 type LogActionType string
 
 // All the log policy types.
 const (
-	LogActionDontRetry   LogActionType = "dont_retry"
-	LogActionExcludeNode LogActionType = "exclude_node"
+	LogActionCancelRetries LogActionType = "cancel_retries"
+	LogActionExcludeNode   LogActionType = "exclude_node"
 )
 
 // LogActionV0 is an action to take after matching.

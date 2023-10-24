@@ -99,7 +99,7 @@ func (l *logPatternPolicies) monitor(ctx context.Context,
 
 			if compiledRegex.MatchString(log.Log) {
 				switch policy.Action().Type() {
-				case expconf.LogActionDontRetry:
+				case expconf.LogActionCancelRetries:
 					if err := addDontRetry(
 						ctx, model.TaskID(log.TaskID), *log.AgentID, policy.Pattern(), log.Log,
 					); err != nil {
