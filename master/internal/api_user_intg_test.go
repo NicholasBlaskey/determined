@@ -45,7 +45,9 @@ var (
 )
 
 // pgdb can be nil to use the singleton database for testing.
-func setupAPITest(t *testing.T, pgdb *db.PgDB) (*apiServer, model.User, context.Context) {
+func setupAPITest(t *testing.T, pgdb *db.PgDB,
+	actorFunc ...func(context *actor.Context) error,
+) (*apiServer, model.User, context.Context) {
 	if pgdb == nil {
 		if thePgDB == nil {
 			thePgDB = db.MustResolveTestPostgres(t)
@@ -56,15 +58,19 @@ func setupAPITest(t *testing.T, pgdb *db.PgDB) (*apiServer, model.User, context.
 			require.NoError(t, err)
 			logpattern.SetDefault(l)
 
-			system = actor.NewSystem("mock")
-			ref, _ := system.ActorOf(sproto.K8sRMAddr, actor.ActorFunc(
-				func(context *actor.Context) error {
+			require.LessOrEqual(t, len(actorFunc), 1)
+			if len(actorFunc) == 0 {
+				actorFunc = append(actorFunc, func(context *actor.Context) error {
 					switch context.Message().(type) {
 					case sproto.DeleteJob:
 						context.Respond(sproto.EmptyDeleteJobResponse())
 					}
 					return nil
-				}))
+				})
+			}
+
+			system = actor.NewSystem("mock")
+			ref, _ := system.ActorOf(sproto.K8sRMAddr, actor.ActorFunc(actorFunc[0]))
 			mockRM = actorrm.Wrap(ref)
 		}
 		pgdb = thePgDB
@@ -373,8 +379,9 @@ func TestRenameUserThenReuseName(t *testing.T) {
 // pgdb can be nil to use the singleton database for testing.
 func setupUserAuthzTest(
 	t *testing.T, pgdb *db.PgDB,
+	actorFunc ...func(context *actor.Context) error,
 ) (*apiServer, *mocks.UserAuthZ, model.User, context.Context) {
-	api, curUser, ctx := setupAPITest(t, pgdb)
+	api, curUser, ctx := setupAPITest(t, pgdb, actorFunc...)
 
 	if authzUser == nil {
 		authzUser = &mocks.UserAuthZ{}
