@@ -108,13 +108,13 @@
                 "type": "string"
             }
         },
-        "log_pattern_policies": {
+        "log_policies": {
             "type": [
                 "array",
                 "null"
             ],
             "default": [],
-            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json"
+            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-policies.json"
         },
         "max_restarts": {
             "type": [

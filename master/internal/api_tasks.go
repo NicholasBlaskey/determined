@@ -391,7 +391,7 @@ func (a *apiServer) monitor(ctx context.Context, taskID model.TaskID, logs []*mo
 		return nil
 	}
 
-	policies, err := db.ActiveLogPatternPolicies(ctx, exp.ID)
+	policies, err := db.ActiveLogPolicies(ctx, exp.ID)
 	if err != nil {
 		return err
 	}

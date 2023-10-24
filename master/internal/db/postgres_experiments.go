@@ -973,20 +973,20 @@ WHERE id = $1`, id)
 
 // ActiveLogPatternPolicies returns log pattern policies for an experiment ID.
 // This should only be called on a running experiment.
-func ActiveLogPatternPolicies(
+func ActiveLogPolicies(
 	ctx context.Context, id int,
-) (expconf.LogPatternPoliciesConfig, error) {
+) (expconf.LogPoliciesConfig, error) {
 	res := struct {
-		LogPatternPolicies expconf.LogPatternPoliciesConfig
+		LogPolicies expconf.LogPoliciesConfig
 	}{}
 	if err := Bun().NewSelect().Table("experiments").
-		ColumnExpr("config -> 'log_pattern_policies' AS log_pattern_policies").
+		ColumnExpr("config -> 'log_policies' AS log_policies").
 		Where("id = ?", id).
 		Scan(ctx, &res); err != nil {
 		return nil, fmt.Errorf("getting log pattern policies config for experiment %d: %w", id, err)
 	}
 
-	return res.LogPatternPolicies, nil
+	return res.LogPolicies, nil
 }
 
 // ExperimentTotalStepTime returns the total elapsed time for all allocations of the experiment

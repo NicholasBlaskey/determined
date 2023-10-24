@@ -79,7 +79,7 @@ func New(ctx context.Context) (*logPatternPolicies, error) { //nolint: revive
 }
 
 func (l *logPatternPolicies) monitor(ctx context.Context,
-	taskID model.TaskID, logs []*model.TaskLog, policies expconf.LogPatternPoliciesConfig,
+	taskID model.TaskID, logs []*model.TaskLog, policies expconf.LogPoliciesConfig,
 ) error {
 	if len(policies) == 0 {
 		return nil
@@ -98,15 +98,15 @@ func (l *logPatternPolicies) monitor(ctx context.Context,
 			}
 
 			if compiledRegex.MatchString(log.Log) {
-				switch policy.Policy().Type() {
-				case expconf.LogPolicyOnFailureDontRetry:
+				switch policy.Action().Type() {
+				case expconf.LogActionDontRetry:
 					if err := addDontRetry(
 						ctx, model.TaskID(log.TaskID), *log.AgentID, policy.Pattern(), log.Log,
 					); err != nil {
 						return fmt.Errorf("adding don't retry: %w", err)
 					}
 
-				case expconf.LogPolicyOnFailureExcludeNode:
+				case expconf.LogActionExcludeNode:
 					if err := l.addRetryOnDifferentNode(
 						ctx, model.TaskID(log.TaskID), *log.AgentID, policy.Pattern(), log.Log,
 					); err != nil {

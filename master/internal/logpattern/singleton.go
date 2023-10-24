@@ -18,7 +18,7 @@ func SetDefault(p *logPatternPolicies) {
 
 // Monitor checks for logs against any log_pattern_policies and takes action according to the policy.
 func Monitor(ctx context.Context,
-	taskID model.TaskID, logs []*model.TaskLog, policies expconf.LogPatternPoliciesConfig,
+	taskID model.TaskID, logs []*model.TaskLog, policies expconf.LogPoliciesConfig,
 ) error {
 	if defaultSingleton == nil {
 		log.Error("uninitialized log pattern policies")

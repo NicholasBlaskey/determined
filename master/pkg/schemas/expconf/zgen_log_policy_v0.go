@@ -8,12 +8,20 @@ import (
 	"github.com/determined-ai/determined/master/pkg/schemas"
 )
 
-func (l LogPolicyV0) Type() LogPolicyType {
-	return l.RawType
+func (l LogPolicyV0) Pattern() string {
+	return l.RawPattern
 }
 
-func (l *LogPolicyV0) SetType(val LogPolicyType) {
-	l.RawType = val
+func (l *LogPolicyV0) SetPattern(val string) {
+	l.RawPattern = val
+}
+
+func (l LogPolicyV0) Action() LogActionV0 {
+	return l.RawAction
+}
+
+func (l *LogPolicyV0) SetAction(val LogActionV0) {
+	l.RawAction = val
 }
 
 func (l LogPolicyV0) ParsedSchema() interface{} {

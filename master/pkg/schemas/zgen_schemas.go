@@ -771,13 +771,13 @@ var (
                 "type": "string"
             }
         },
-        "log_pattern_policies": {
+        "log_policies": {
             "type": [
                 "array",
                 "null"
             ],
             "default": [],
-            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json"
+            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-policies.json"
         },
         "max_restarts": {
             "type": [
@@ -1381,39 +1381,32 @@ var (
     }
 }
 `)
-	textLogPatternPoliciesConfigV0 = []byte(`{
+	textLogActionV0 = []byte(`{
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json",
-    "title": "LogPatternPoliciesConfig",
-    "type": "array",
-    "items": {
-        "$ref": "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json"
-    }
-}
-`)
-	textLogPatternPolicyV0 = []byte(`{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json",
-    "title": "LogPatternPolicy",
+    "$id": "http://determined.ai/schemas/expconf/v0/log-action.json",
+    "title": "LogAction",
     "additionalProperties": false,
     "required": [
-        "pattern"
+        "type"
     ],
     "type": "object",
     "properties": {
-        "pattern": {
-            "type": [
-                "string"
+        "type": {
+            "enum": [
+                "cancel_retries",
+                "exclude_node"
             ]
-        },
-        "policy": {
-            "type": [
-                "object",
-                "null"
-            ],
-            "default": null,
-            "optionalRef": "http://determined.ai/schemas/expconf/v0/log-policy.json"
         }
+    }
+}
+`)
+	textLogPoliciesConfigV0 = []byte(`{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://determined.ai/schemas/expconf/v0/log-policies.json",
+    "title": "LogPoliciesConfig",
+    "type": "array",
+    "items": {
+        "$ref": "http://determined.ai/schemas/expconf/v0/log-policy.json"
     }
 }
 `)
@@ -1423,15 +1416,21 @@ var (
     "title": "LogPolicy",
     "additionalProperties": false,
     "required": [
-        "type"
+        "pattern",
+        "policy"
     ],
     "type": "object",
     "properties": {
-        "type": {
-            "enum": [
-                "on_failure_dont_retry",
-                "on_failure_exclude_node"
+        "pattern": {
+            "type": [
+                "string"
             ]
+        },
+        "action": {
+            "type": [
+                "object"
+            ],
+            "$ref": "http://determined.ai/schemas/expconf/v0/log-action.json"
         }
     }
 }
@@ -3100,9 +3099,9 @@ var (
 
 	schemaLengthV0 interface{}
 
-	schemaLogPatternPoliciesConfigV0 interface{}
+	schemaLogActionV0 interface{}
 
-	schemaLogPatternPolicyV0 interface{}
+	schemaLogPoliciesConfigV0 interface{}
 
 	schemaLogPolicyV0 interface{}
 
@@ -3687,44 +3686,44 @@ func ParsedLengthV0() interface{} {
 	return schemaLengthV0
 }
 
-func ParsedLogPatternPoliciesConfigV0() interface{} {
+func ParsedLogActionV0() interface{} {
 	cacheLock.RLock()
-	if schemaLogPatternPoliciesConfigV0 != nil {
+	if schemaLogActionV0 != nil {
 		cacheLock.RUnlock()
-		return schemaLogPatternPoliciesConfigV0
+		return schemaLogActionV0
 	}
 	cacheLock.RUnlock()
 
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
-	if schemaLogPatternPoliciesConfigV0 != nil {
-		return schemaLogPatternPoliciesConfigV0
+	if schemaLogActionV0 != nil {
+		return schemaLogActionV0
 	}
-	err := json.Unmarshal(textLogPatternPoliciesConfigV0, &schemaLogPatternPoliciesConfigV0)
+	err := json.Unmarshal(textLogActionV0, &schemaLogActionV0)
 	if err != nil {
-		panic("invalid embedded json for LogPatternPoliciesConfigV0")
+		panic("invalid embedded json for LogActionV0")
 	}
-	return schemaLogPatternPoliciesConfigV0
+	return schemaLogActionV0
 }
 
-func ParsedLogPatternPolicyV0() interface{} {
+func ParsedLogPoliciesConfigV0() interface{} {
 	cacheLock.RLock()
-	if schemaLogPatternPolicyV0 != nil {
+	if schemaLogPoliciesConfigV0 != nil {
 		cacheLock.RUnlock()
-		return schemaLogPatternPolicyV0
+		return schemaLogPoliciesConfigV0
 	}
 	cacheLock.RUnlock()
 
 	cacheLock.Lock()
 	defer cacheLock.Unlock()
-	if schemaLogPatternPolicyV0 != nil {
-		return schemaLogPatternPolicyV0
+	if schemaLogPoliciesConfigV0 != nil {
+		return schemaLogPoliciesConfigV0
 	}
-	err := json.Unmarshal(textLogPatternPolicyV0, &schemaLogPatternPolicyV0)
+	err := json.Unmarshal(textLogPoliciesConfigV0, &schemaLogPoliciesConfigV0)
 	if err != nil {
-		panic("invalid embedded json for LogPatternPolicyV0")
+		panic("invalid embedded json for LogPoliciesConfigV0")
 	}
-	return schemaLogPatternPolicyV0
+	return schemaLogPoliciesConfigV0
 }
 
 func ParsedLogPolicyV0() interface{} {
@@ -4354,10 +4353,10 @@ func schemaBytesMap() map[string][]byte {
 	cachedSchemaBytesMap[url] = textKerberosConfigV0
 	url = "http://determined.ai/schemas/expconf/v0/length.json"
 	cachedSchemaBytesMap[url] = textLengthV0
-	url = "http://determined.ai/schemas/expconf/v0/log-pattern-policies.json"
-	cachedSchemaBytesMap[url] = textLogPatternPoliciesConfigV0
-	url = "http://determined.ai/schemas/expconf/v0/log-pattern-policy.json"
-	cachedSchemaBytesMap[url] = textLogPatternPolicyV0
+	url = "http://determined.ai/schemas/expconf/v0/log-action.json"
+	cachedSchemaBytesMap[url] = textLogActionV0
+	url = "http://determined.ai/schemas/expconf/v0/log-policies.json"
+	cachedSchemaBytesMap[url] = textLogPoliciesConfigV0
 	url = "http://determined.ai/schemas/expconf/v0/log-policy.json"
 	cachedSchemaBytesMap[url] = textLogPolicyV0
 	url = "http://determined.ai/schemas/expconf/v0/optimizations.json"

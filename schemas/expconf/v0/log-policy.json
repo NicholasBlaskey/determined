@@ -4,15 +4,21 @@
     "title": "LogPolicy",
     "additionalProperties": false,
     "required": [
-        "type"
+        "pattern",
+        "policy"
     ],
     "type": "object",
     "properties": {
-        "type": {
-            "enum": [
-                "on_failure_dont_retry",
-                "on_failure_exclude_node"
+        "pattern": {
+            "type": [
+                "string"
             ]
+        },
+        "action": {
+            "type": [
+                "object"
+            ],
+            "$ref": "http://determined.ai/schemas/expconf/v0/log-action.json"
         }
     }
 }
