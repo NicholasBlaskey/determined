@@ -49,6 +49,7 @@ import (
 	"github.com/determined-ai/determined/master/internal/elastic"
 	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/job"
+	"github.com/determined-ai/determined/master/internal/logpattern"
 	"github.com/determined-ai/determined/master/internal/plugin/sso"
 	"github.com/determined-ai/determined/master/internal/portregistry"
 	"github.com/determined-ai/determined/master/internal/prom"
@@ -887,6 +888,12 @@ func (m *Master) Run(ctx context.Context, gRPCLogInitDone chan struct{}) error {
 	if err != nil {
 		return errors.Wrap(err, "could not fetch cluster id from database")
 	}
+
+	l, err := logpattern.New(ctx)
+	if err != nil {
+		return fmt.Errorf("initializing log pattern policies: %w", err)
+	}
+	logpattern.SetDefault(l)
 
 	err = m.checkIfRMDefaultsAreUnbound(m.config.ResourceManager)
 	if err != nil {
