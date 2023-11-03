@@ -94,7 +94,7 @@ linters:
 
     # Linters that we should probably enable. Please give each a ticket.
     - cyclop          # TODO(DET-!!!)
-    - errorlint       # TODO
+    - errorlint       # TODO(DET-!!!)
     - forcetypeassert # TODO(DET-!!!)
     - wrapcheck       # TODO(DET-!!!)
     - maintidx        # TODO(DET-!!!)
