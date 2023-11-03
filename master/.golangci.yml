@@ -156,6 +156,5 @@ linters:
     - interfacer      # Archived since it can give bad suggestions.
     - structcheck     # Removed repo, replaced by unusued.
     - nolintlint      # Ideally should enable, but gofumpt adds leading space to // nolint for funcs.
-    #- usestdlibvars
-    - exhaustruct
+    #- exhaustruct
 
