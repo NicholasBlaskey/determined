@@ -84,6 +84,13 @@ linters-settings:
 linters:
   enable-all: true
   disable:
+    # Linters that need triaging. Put all linters here if you upgrade.
+    # Below here are new linters from upgrading to 1.43.0. Since we enable all and disable
+    # selectively, when we upgrade we get a ton of new linters. For convenience next upgrade,
+    # golangci-lint can tell you which linters are enabled:
+    #   golangci-lint linters | sed -n '/Enabled/,/Disabled/p'
+    # To maintain the same set us linters, disable those in the new set that are not in the old:
+    #   comm -13 <(cut -d : -f 1 <oldlinters.txt) <(cut -d : -f 1 <newlinters.txt)
     - deadcode
     - exhaustive
     - exhaustivestruct
@@ -106,44 +113,39 @@ linters:
     - wsl
     - varcheck
 
-    # Below here are new linters from upgrading to 1.43.0. Since we enable all and disable
-    # selectively, when we upgrade we get a ton of new linters. For convenience next upgrade,
-    # golangci-lint can tell you which linters are enabled:
-    #   golangci-lint linters | sed -n '/Enabled/,/Disabled/p'
-    # To maintain the same set us linters, disable those in the new set that are not in the old:
-    #   comm -13 <(cut -d : -f 1 <oldlinters.txt) <(cut -d : -f 1 <newlinters.txt)
-    - contextcheck    # Maybe we should enable? It is a lot of work currently.
+    # Linters that we should probably enable. Please give each a ticket.
     - cyclop          # Should enable, will be a lot of work.
     - errorlint       # TODO
     - forcetypeassert # TODO
-    - gci             # We aren't using the gci tool.
-    - gomoddirectives # We use a replace in EE right now and this bans this.
-    - ifshort         # The repository of the linter has been deprecated by the owner.
-    - ireturn      # Maybe we should do this.
-#    - makezero
-    - nilnil       # Revisit this one, I don't feel strongly enough to go through effort of enabling.
-    - nlreturn     # This is overally opinionated.
-    - paralleltest # I don't understand this linter.
-    - predeclared  # This is a lot of work to enable.
-    - promlinter   # Maybe enable, I don't understand Prometheus.
-    - tagliatelle  # We aren't consistent with one type so this linter value goes down.
-    - thelper      # I understand why we would use t.Helper().
-    - varnamelen   # This is overally opinionated.
-    - wastedassign # This disallows x := "" and we already have ineffassign.
     - wrapcheck    # Ideally should enable, but this is a lot of work to enable.
-
-    # Below here are new linters from upgrading to 1.45.0. Since we enable all and disable
-    # selectively, when we upgrade we get a ton of new linters.
     - maintidx # TODO this one
-    - errchkjson # Nick really disagrees with this linter.
 
-    # Below here are new linters from upgrading to 1.51.1.
-    - nonamedreturns  # Ideally should enable, but this is just a lot of work to enable.
-    - nosnakecase     # Replaced by revive(var-naming).
-    - musttag         # Ideally we should enable, but it is buggy.
-    - interfacebloat  # Ideally should enable, but we need to remove db interface first.
-    - prealloc        # Nick personally thinks this is more likely to cause bugs than benefit.
-    - interfacer      # Archived since it can give bad suggestions.
-    - structcheck     # Removed repo, replaced by unusued.
+    # Toss up linters.
+    - predeclared
+    - promlinter
+    - thelper
+    - tagliatelle
+    - nilnil
+    - ireturn
+    - contextcheck
+    - nonamedreturns
+    - interfacebloat
+
+    # Linters that we should probably keep disabled.
+    - errchkjson      # Requiring us to ignore errors (even if they won't be non nil) feels strange.
+    - musttag         # Really buggy now.
+    - prealloc        # Nick thinks this is premature optimization.
+    - varnamelen      # This is overally opinionated.
+    - paralleltest    # I don't understand this linter.
+    - gomoddirectives # Seems unneeded and just going to make us make exceptions when we need to.
+    - gci             # We aren't using the gci tool.
     - nolintlint      # Ideally should enable, but gofumpt adds leading space to // nolint for funcs.
+    - nlreturn     # This is overally opinionated.
+
+    # Linters that are deprecated / replaced / removed.
+    - nosnakecase  # Replaced by revive(var-naming).
+    - structcheck  # Removed repo, replaced by unusued.
+    - ifshort      # The repository of the linter has been deprecated by the owner.
+    - interfacer   # Linter archived since it can give bad suggestions.
+    - wastedassign # We already have ineffassign.
 
