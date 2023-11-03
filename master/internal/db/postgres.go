@@ -288,7 +288,7 @@ func SetClause(fields []string) string {
 
 func (db *PgDB) rawQuery(q string, args ...interface{}) ([]byte, error) {
 	var ret []byte
-	if err := db.sql.QueryRowx(q, args...).Scan(&ret); errors.Is(err, sql.ErrNoRows) {
+	if err := db.sql.QueryRowx(q, args...).Scan(&ret); err == sql.ErrNoRows {
 		return nil, errors.WithStack(ErrNotFound)
 	} else if err != nil {
 		return nil, errors.WithStack(err)
@@ -298,7 +298,7 @@ func (db *PgDB) rawQuery(q string, args ...interface{}) ([]byte, error) {
 
 // query executes a query returning a single row and unmarshals the result into an obj.
 func (db *PgDB) query(q string, obj interface{}, args ...interface{}) error {
-	if err := db.sql.QueryRowx(q, args...).StructScan(obj); errors.Is(err, sql.ErrNoRows) {
+	if err := db.sql.QueryRowx(q, args...).StructScan(obj); err == sql.ErrNoRows {
 		return errors.WithStack(ErrNotFound)
 	} else if err != nil {
 		return errors.WithStack(err)

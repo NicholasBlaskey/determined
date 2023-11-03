@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/determined-ai/determined/master/pkg"
@@ -229,7 +228,7 @@ func FromTarGz(zippedTarfile []byte) (Archive, error) {
 	for {
 		header, err := tarReader.Next()
 
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			break
 		}
 

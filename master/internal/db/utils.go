@@ -41,7 +41,6 @@ func MustHaveAffectedRows(result sql.Result, err error) error {
 }
 
 func pgErrCode(err error) string {
-	//nolint: errorlint
 	if e, ok := err.(*pgconn.PgError); ok {
 		return e.Code
 	}

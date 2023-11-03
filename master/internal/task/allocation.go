@@ -966,7 +966,6 @@ func (a *allocation) exitedWithoutErr() bool {
 }
 
 func (a *allocation) SetExitStatus(exitReason string, exitErr error, statusCode *int32) {
-	//nolint: errorlint
 	switch err := exitErr.(type) {
 	case sproto.ResourcesFailureError:
 		a.model.ExitErr = ptrs.Ptr(err.Error())
@@ -1083,7 +1082,6 @@ func (a *allocation) terminated(reason string) {
 	a.finalize(a.calculateExitStatus(reason))
 }
 
-// nolint: errorlint
 func (a *allocation) calculateExitStatus(reason string) (
 	exitReason string,
 	userRequestedStop bool,

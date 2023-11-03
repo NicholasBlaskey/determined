@@ -154,10 +154,9 @@ func (r *Ref) sendInternalMessage(message Message) error {
 	ctx := &Context{recipient: r, message: message}
 	err := r.actor.Receive(ctx)
 	// `errUnexpectedMessage` is ignored; other errors cause the actor to shut down.
-	if err != nil && !errors.As(err, unexpectedMessageError{}) {
+	if _, ok := err.(unexpectedMessageError); err != nil && !ok {
 		return err
 	}
-
 	return nil
 }
 

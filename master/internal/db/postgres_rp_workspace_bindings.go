@@ -166,7 +166,6 @@ func GetAllBindings(
 ) ([]*RPWorkspaceBinding, error) {
 	var rpWorkspaceBindings []*RPWorkspaceBinding
 	err := Bun().NewSelect().Model(&rpWorkspaceBindings).Where("valid = ?", true).Scan(ctx)
-	//nolint: errorlint. This can't return sql.ErrNoRows right since it a list?
 	if err != nil && errors.Cause(err) != sql.ErrNoRows {
 		return nil, err
 	}
@@ -277,7 +276,6 @@ func GetDefaultPoolsForWorkspace(ctx context.Context, workspaceID int,
 ) (computePool, auxPool string, err error) {
 	var target model.Workspace
 	err = Bun().NewSelect().Model(&target).Where("id = ?", workspaceID).Scan(ctx)
-	//nolint: errorlint. Not sure why we swallow ErrNoRows?
 	if err != nil && errors.Cause(err) != sql.ErrNoRows {
 		return "", "", err
 	}
