@@ -91,34 +91,17 @@ linters:
     #   golangci-lint linters | sed -n '/Enabled/,/Disabled/p'
     # To maintain the same set us linters, disable those in the new set that are not in the old:
     #   comm -13 <(cut -d : -f 1 <oldlinters.txt) <(cut -d : -f 1 <newlinters.txt)
-    - deadcode
-    - exhaustive
-    - exhaustivestruct
-    - funlen
-    - gochecknoglobals
-    - gochecknoinits
-    - gocognit
-    - gocyclo
-    - godox
-    - goerr113
-    - gofumpt
-    - golint
-    - gomnd
-    - maligned
-    - nestif
-    - noctx
-    - scopelint
-    - testpackage
-    - unparam
-    - wsl
-    - varcheck
 
     # Linters that we should probably enable. Please give each a ticket.
-    - cyclop          # Should enable, will be a lot of work.
+    - cyclop          # TODO(DET-!!!)
     - errorlint       # TODO
-    - forcetypeassert # TODO
-    - wrapcheck    # Ideally should enable, but this is a lot of work to enable.
-    - maintidx # TODO this one
+    - forcetypeassert # TODO(DET-!!!)
+    - wrapcheck       # TODO(DET-!!!)
+    - maintidx        # TODO(DET-!!!)
+    - gocyclo         # TODO(DET-!!!)
+    - gocognit        # TODO(DET-!!!)
+    - funlen          # TODO(DET-!!!)
+    - nestif          # TODO(DET-!!!)
 
     # Toss up linters.
     - predeclared
@@ -130,22 +113,37 @@ linters:
     - contextcheck
     - nonamedreturns
     - interfacebloat
+    - wsl
+    - godox
+    - gochecknoinits
+    - goerr113
+    - gomnd
 
     # Linters that we should probably keep disabled.
-    - errchkjson      # Requiring us to ignore errors (even if they won't be non nil) feels strange.
-    - musttag         # Really buggy now.
-    - prealloc        # Nick thinks this is premature optimization.
-    - varnamelen      # This is overally opinionated.
-    - paralleltest    # I don't understand this linter.
-    - gomoddirectives # Seems unneeded and just going to make us make exceptions when we need to.
-    - gci             # We aren't using the gci tool.
-    - nolintlint      # Ideally should enable, but gofumpt adds leading space to // nolint for funcs.
-    - nlreturn     # This is overally opinionated.
+    - errchkjson       # Requiring us to ignore errors (even if they won't be non nil) feels strange.
+    - musttag          # Really buggy now.
+    - prealloc         # Nick thinks this is premature optimization.
+    - varnamelen       # This is overally opinionated.
+    - paralleltest     # I don't understand this linter.
+    - gomoddirectives  # Seems unneeded and just going to make us make exceptions when we need to.
+    - gci              # We aren't using the gci tool.
+    - nolintlint       # Ideally should enable, but gofumpt adds leading space to // nolint for funcs.
+    - nlreturn         # This is overally opinionated.
+    - testpackage      # We don't use seperate test packages.
+    - unparam          # We have a lot of unused parameters.
+    - gochecknoglobals # We have globals currently and don't have an issue with too many.
+    - exhaustive       # We often use switch statements as if statements.
 
     # Linters that are deprecated / replaced / removed.
-    - nosnakecase  # Replaced by revive(var-naming).
-    - structcheck  # Removed repo, replaced by unusued.
-    - ifshort      # The repository of the linter has been deprecated by the owner.
-    - interfacer   # Linter archived since it can give bad suggestions.
-    - wastedassign # We already have ineffassign.
+    - nosnakecase      # Replaced by revive(var-naming).
+    - ifshort          # The repository of the linter has been deprecated by the owner.
+    - interfacer       # Linter archived since it can give bad suggestions.
+    - wastedassign     # We already have ineffassign.
+    - scopelint        # Replaced by exportloopref.
+    - exhaustivestruct # Replaced by exhaustruct.
+    - structcheck      # Replaced by unusued.
+    - varcheck         # Replaced by unusued.
+    - deadcode         # Replaced by unusued.
+    - maligned         # Replaced by govet 'fieldalignment'.
+    - golint           # Replaced by revive.
 
