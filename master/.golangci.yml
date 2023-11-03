@@ -112,11 +112,9 @@ linters:
     #   golangci-lint linters | sed -n '/Enabled/,/Disabled/p'
     # To maintain the same set us linters, disable those in the new set that are not in the old:
     #   comm -13 <(cut -d : -f 1 <oldlinters.txt) <(cut -d : -f 1 <newlinters.txt)
-    - bidichk
-    - contextcheck
-    - cyclop
-    - durationcheck
-    - errname
+    - contextcheck # Maybe we should enable? It is a lot of work.
+    - cyclop # TODO
+    #- errname
     - errorlint
     - forcetypeassert
     - gci
@@ -142,8 +140,6 @@ linters:
     # Below here are new linters from upgrading to 1.45.0. Since we enable all and disable
     # selectively, when we upgrade we get a ton of new linters.
     - maintidx # TODO this one
-    #- containedctx
-    - decorder
     - errchkjson # Nick really disagrees with this linter.
 
     # Below here are new linters from upgrading to 1.51.1.
