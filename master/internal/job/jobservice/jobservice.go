@@ -117,7 +117,7 @@ func (s *Service) GetJobs(
 	})
 	if err != nil {
 		// If the error is not 'ErrNotSupported' error, propagate the error upwards.
-		if err != rmerrors.ErrNotSupported {
+		if !errors.Is(err, rmerrors.ErrNotSupported) {
 			return nil, err
 		}
 	}

@@ -21,6 +21,7 @@ func JSONErrorHandler(err error, c echo.Context) {
 		code             = http.StatusInternalServerError
 		msg  interface{} = err
 	)
+	//nolint: errorlint
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
 		msg = he.Message

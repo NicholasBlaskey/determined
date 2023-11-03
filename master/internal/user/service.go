@@ -163,8 +163,8 @@ func (s *Service) ProcessAuthentication(next echo.HandlerFunc) echo.HandlerFunc 
 		}
 
 		user, session, err := s.UserAndSessionFromRequest(c.Request())
-		switch err {
-		case nil:
+		switch {
+		case err == nil:
 			if !user.Active {
 				return echo.NewHTTPError(http.StatusForbidden, "user not active")
 			}
@@ -174,7 +174,7 @@ func (s *Service) ProcessAuthentication(next echo.HandlerFunc) echo.HandlerFunc 
 			c.(*detContext.DetContext).SetUser(*user)
 			c.(*detContext.DetContext).SetUserSession(*session)
 			return next(c)
-		case db.ErrNotFound:
+		case errors.Is(err, db.ErrNotFound):
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		default:
 			return err
@@ -228,9 +228,9 @@ func (s *Service) postLogin(c echo.Context) (interface{}, error) {
 
 	// Get the user from the database.
 	user, err := ByUsername(context.TODO(), params.Username)
-	switch err {
-	case nil:
-	case db.ErrNotFound:
+	switch {
+	case err == nil:
+	case errors.Is(err, db.ErrNotFound):
 		return nil, echo.NewHTTPError(http.StatusForbidden, "user not found")
 	default:
 		return nil, err

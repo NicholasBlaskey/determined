@@ -1040,6 +1040,7 @@ func (e *experiment) setPriority(priority *int, forward bool) (err error) {
 	}
 
 	if forward {
+		//nolint: errorlint
 		switch err := e.rm.SetGroupPriority(sproto.SetGroupPriority{
 			Priority: *priority,
 			JobID:    e.JobID,

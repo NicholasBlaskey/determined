@@ -50,16 +50,16 @@ func addAuthTokenKeypair(ctx context.Context, tokenKeypair *model.AuthTokenKeypa
 func InitAuthKeys() error {
 	switch storedKeys, err := authTokenKeypair(context.TODO()); {
 	case err != nil:
-		return fmt.Errorf("error retrieving auth token keypair: %s", err)
+		return fmt.Errorf("error retrieving auth token keypair: %w", err)
 	case storedKeys == nil:
 		publicKey, privateKey, err := ed25519.GenerateKey(nil)
 		if err != nil {
-			return fmt.Errorf("error creating auth token keypair: %s", err)
+			return fmt.Errorf("error creating auth token keypair: %w", err)
 		}
 		tokenKeypair := model.AuthTokenKeypair{PublicKey: publicKey, PrivateKey: privateKey}
 		err = addAuthTokenKeypair(context.TODO(), &tokenKeypair)
 		if err != nil {
-			return fmt.Errorf("error saving auth token keypair: %s", err)
+			return fmt.Errorf("error saving auth token keypair: %w", err)
 		}
 		SetTokenKeys(&tokenKeypair)
 	default:
