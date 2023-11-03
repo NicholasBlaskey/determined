@@ -53,6 +53,7 @@ import (
 	"github.com/determined-ai/determined/proto/pkg/workspacev1"
 )
 
+//nolint:containedctx
 type mockStream[T any] struct {
 	mu   sync.Mutex
 	ctx  context.Context

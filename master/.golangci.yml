@@ -141,11 +141,10 @@ linters:
 
     # Below here are new linters from upgrading to 1.45.0. Since we enable all and disable
     # selectively, when we upgrade we get a ton of new linters.
-    - maintidx
-    - containedctx
+    - maintidx # TODO this one
+    #- containedctx
     - decorder
-    - errchkjson
-    - grouper
+    - errchkjson # Nick really disagrees with this linter.
 
     # Below here are new linters from upgrading to 1.51.1.
     - nonamedreturns  # Ideally should enable, but this is just a lot of work to enable.
@@ -156,5 +155,4 @@ linters:
     - interfacer      # Archived since it can give bad suggestions.
     - structcheck     # Removed repo, replaced by unusued.
     - nolintlint      # Ideally should enable, but gofumpt adds leading space to // nolint for funcs.
-    #- exhaustruct
 
