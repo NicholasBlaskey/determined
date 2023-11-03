@@ -252,7 +252,7 @@ func (a *apiServer) legacyTrialLogs(
 	var followState interface{}
 	trialLogsTimeSinceLastAuth := time.Now() // time.Now() to avoid recheck from a.TrialLogs.
 	fetch := func(r api.BatchRequest) (api.Batch, error) {
-		if time.Now().Sub(trialLogsTimeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(trialLogsTimeSinceLastAuth) >= recheckAuthPeriod {
 			if err = trials.CanGetTrialsExperimentAndCheckCanDoAction(ctx, int(req.TrialId),
 				expauth.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {
 				return nil, err
@@ -366,7 +366,7 @@ func (a *apiServer) TrialLogsFields(
 	go api.NewBatchStreamProcessor(
 		api.BatchRequest{Follow: req.Follow},
 		func(lr api.BatchRequest) (api.Batch, error) {
-			if time.Now().Sub(trialLogsTimeSinceLastAuth) >= recheckAuthPeriod {
+			if time.Since(trialLogsTimeSinceLastAuth) >= recheckAuthPeriod {
 				if err := trials.CanGetTrialsExperimentAndCheckCanDoAction(resp.Context(),
 					int(req.TrialId),
 					expauth.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {
@@ -391,7 +391,7 @@ func (a *apiServer) TrialLogsFields(
 		go api.NewBatchStreamProcessor(
 			api.BatchRequest{Follow: req.Follow && i == len(trialTaskIDs)-1},
 			func(lr api.BatchRequest) (api.Batch, error) {
-				if time.Now().Sub(taskLogsTimeSinceLastAuth) >= recheckAuthPeriod {
+				if time.Since(taskLogsTimeSinceLastAuth) >= recheckAuthPeriod {
 					if err := trials.CanGetTrialsExperimentAndCheckCanDoAction(resp.Context(),
 						int(req.TrialId),
 						expauth.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {
@@ -996,7 +996,7 @@ func (a *apiServer) GetTrialProfilerMetrics(
 
 	var timeSinceLastAuth time.Time
 	fetch := func(lr api.BatchRequest) (api.Batch, error) {
-		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(timeSinceLastAuth) >= recheckAuthPeriod {
 			if err := trials.CanGetTrialsExperimentAndCheckCanDoAction(resp.Context(),
 				int(req.Labels.TrialId),
 				expauth.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {
@@ -1042,7 +1042,7 @@ func (a *apiServer) GetTrialProfilerAvailableSeries(
 ) error {
 	var timeSinceLastAuth time.Time
 	fetch := func(_ api.BatchRequest) (api.Batch, error) {
-		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(timeSinceLastAuth) >= recheckAuthPeriod {
 			if err := trials.CanGetTrialsExperimentAndCheckCanDoAction(resp.Context(),
 				int(req.TrialId),
 				expauth.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {

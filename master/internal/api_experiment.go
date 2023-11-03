@@ -1538,8 +1538,8 @@ func (a *apiServer) ContinueExperiment(
 				}
 			}
 			if !hasIncompleteTrials {
-				return status.Error(codes.FailedPrecondition, fmt.Sprint(
-					"experiment has been completed, cannot continue this experiment"))
+				return status.Error(codes.FailedPrecondition,
+					"experiment has been completed, cannot continue this experiment")
 			}
 		} else if isSingle && len(trialsResp.Trials) > 0 {
 			if _, err := tx.NewUpdate().Model(&model.Trial{}).
@@ -1783,7 +1783,7 @@ func (a *apiServer) ExpMetricNames(req *apiv1.ExpMetricNamesRequest,
 	var timeSinceLastAuth time.Time
 	for {
 		var response apiv1.ExpMetricNamesResponse
-		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(timeSinceLastAuth) >= recheckAuthPeriod {
 			for _, expID := range req.Ids {
 				exp, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), int(expID),
 					exputil.AuthZProvider.Get().CanGetExperimentArtifacts)
@@ -1883,7 +1883,7 @@ func (a *apiServer) MetricBatches(req *apiv1.MetricBatchesRequest,
 	seenBatches := make(map[int32]bool)
 	var startTime time.Time
 	for {
-		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(timeSinceLastAuth) >= recheckAuthPeriod {
 			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID,
 				exputil.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {
 				return err
@@ -1984,7 +1984,7 @@ func (a *apiServer) TrialsSnapshot(req *apiv1.TrialsSnapshotRequest,
 	var timeSinceLastAuth time.Time
 	var startTime time.Time
 	for {
-		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(timeSinceLastAuth) >= recheckAuthPeriod {
 			if _, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID,
 				exputil.AuthZProvider.Get().CanGetExperimentArtifacts); err != nil {
 				return err
@@ -2172,7 +2172,7 @@ func (a *apiServer) TrialsSample(req *apiv1.TrialsSampleRequest,
 	trialCursors := make(map[int32]time.Time)
 	currentTrials := make(map[int32]bool)
 	for {
-		if time.Now().Sub(timeSinceLastAuth) >= recheckAuthPeriod {
+		if time.Since(timeSinceLastAuth) >= recheckAuthPeriod {
 			exp, _, err := a.getExperimentAndCheckCanDoActions(resp.Context(), experimentID,
 				exputil.AuthZProvider.Get().CanGetExperimentArtifacts)
 			if err != nil {

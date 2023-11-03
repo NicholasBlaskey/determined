@@ -345,7 +345,6 @@ func (c *Container) finalize(ctx context.Context, err error) {
 	if err := c.terminated(ctx, stop); err != nil {
 		c.log.WithError(err).Error("finalizing container")
 	}
-	return
 }
 
 func (c *Container) summary() cproto.Container {

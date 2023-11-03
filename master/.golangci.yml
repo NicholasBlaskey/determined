@@ -149,13 +149,12 @@ linters:
 
     # Below here are new linters from upgrading to 1.51.1.
     - nonamedreturns
-    - nosnakecase
-    - musttag
-    - interfacebloat
-    - gosimple 
-    - prealloc
-    - interfacer
-    - structcheck
+    - nosnakecase # Replaced by revive(var-naming).
+    - musttag # Ideally we should enable but it is buggy.
+    - interfacebloat # Need to remove db interface first.
+    - prealloc # Nick personally thinks this is more likely to cause bugs than benefit.
+    - interfacer # Archived since it can give bad suggestions.
+    - structcheck # Removed repo, replaced by unusued.
     - nolintlint
     - usestdlibvars
     - exhaustruct
