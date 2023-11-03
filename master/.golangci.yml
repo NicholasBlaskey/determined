@@ -114,16 +114,14 @@ linters:
     #   comm -13 <(cut -d : -f 1 <oldlinters.txt) <(cut -d : -f 1 <newlinters.txt)
     - contextcheck # Maybe we should enable? It is a lot of work.
     - cyclop # TODO
-    #- errname
     - errorlint
     - forcetypeassert
     - gci
     - gomoddirectives
-    - ifshort
+    - ifshort # The repository of the linter has been deprecated by the owner.
     - importas
     - ireturn
     - makezero
-    - nilerr
     - nilnil
     - nlreturn
     - paralleltest
