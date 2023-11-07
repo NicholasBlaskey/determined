@@ -31,21 +31,10 @@ updates:
 
   # Maintain dependencies for leader Golang
   - package-ecosystem: gomod
-    directory: /master
+    directory: /
     schedule:
       interval: daily
-    # reviewers:
-    #   - determined-ai/someteam
-    open-pull-requests-limit: 0
-
-  # Maintain dependencies for agent Golang
-  - package-ecosystem: gomod
-    directory: /agent
-    schedule:
-      interval: daily
-    # reviewers:
-    #   - determined-ai/someteam
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 5
 
   # Maintain prod dependencies for WebUI
   - package-ecosystem: npm
