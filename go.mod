@@ -17,7 +17,7 @@ require (
 	github.com/emirpasic/gods v1.18.1
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-pg/migrations/v8 v8.1.0
-	github.com/go-pg/pg/v10 v10.10.6
+	github.com/go-pg/pg/v10 v10.11.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.8
@@ -50,7 +50,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
+	golang.org/x/crypto v0.1.0
 	golang.org/x/net v0.7.0
 	google.golang.org/api v0.56.0
 	google.golang.org/grpc v1.45.0
