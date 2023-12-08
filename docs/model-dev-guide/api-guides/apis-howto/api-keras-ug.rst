@@ -12,16 +12,16 @@ In this guide, you'll learn how to use the Keras API.
 +---------------------------------------------------------------------+
 | Visit the API reference                                             |
 +=====================================================================+
-| :doc:`/reference/training/api-keras-reference`                      |
+| :ref:`keras-reference`                                              |
 +---------------------------------------------------------------------+
 
 This document guides you through training a Keras model in Determined. You need to implement a trial
 class that inherits :class:`~determined.keras.TFKerasTrial` and specify it as the entrypoint in the
-:doc:`experiment configuration </reference/training/experiment-config-reference>`.
+:ref:`experiment-configuration`.
 
-To learn about this API, you can start by reading the trial definitions from the following example:
-
--  :download:`CIFAR-10 example </examples/cifar10_tf_keras.tgz>`
+To learn about this API, you can start by reading the trial definitions in the `Iris categorization
+example
+<https://github.com/determined-ai/determined-examples/tree/main/computer_vision/iris_tf_keras>`__.
 
 ***********
  Load Data

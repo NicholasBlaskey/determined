@@ -71,11 +71,7 @@ const WebhooksView: React.FC = () => {
     }
   }, [canceler.signal]);
 
-  const fetchAll = useCallback(async () => {
-    await Promise.allSettled([fetchWebhooks()]);
-  }, [fetchWebhooks]);
-
-  usePolling(fetchAll, { rerunOnNewFn: true });
+  usePolling(fetchWebhooks, { rerunOnNewFn: true });
 
   /**
    * Get new webhooks based on changes to the pagination and sorter.
@@ -123,6 +119,14 @@ const WebhooksView: React.FC = () => {
             </li>
           );
         }
+        if (t.triggerType === V1TriggerType.TASKLOG) {
+          return (
+            <li className={css.listBadge} key={t.id}>
+              <Badge>TASKLOG</Badge>
+            </li>
+          );
+        }
+        return <></>;
       });
 
     return [
@@ -165,7 +169,7 @@ const WebhooksView: React.FC = () => {
   const handleTableChange = useCallback(
     (
       tablePagination: TablePaginationConfig,
-      tableFilters: Record<string, FilterValue | null>,
+      _tableFilters: Record<string, FilterValue | null>,
       tableSorter: SorterResult<Webhook> | SorterResult<Webhook>[],
     ) => {
       if (Array.isArray(tableSorter)) return;
@@ -234,8 +238,8 @@ const WebhooksView: React.FC = () => {
       ) : (
         <SkeletonTable columns={columns.length} />
       )}
-      <WebhookCreateModal.Component />
-      <WebhookDeleteModal.Component webhook={selectedWebhook} />
+      <WebhookCreateModal.Component onSuccess={() => fetchWebhooks()} />
+      <WebhookDeleteModal.Component webhook={selectedWebhook} onSuccess={() => fetchWebhooks()} />
     </Page>
   );
 };

@@ -89,9 +89,9 @@ configure different container images for NVIDIA GPU tasks using the ``cuda`` key
 Determined 0.17.6), CPU tasks using ``cpu`` key, and ROCm (AMD GPU) tasks using the ``rocm`` key.
 Default values:
 
--  ``determinedai/environments:cuda-11.3-pytorch-1.12-tf-2.11-gpu-0.24.0`` for NVIDIA GPUs.
--  ``determinedai/environments:rocm-5.0-pytorch-1.10-tf-2.7-rocm-0.24.0`` for ROCm.
--  ``determinedai/environments:py-3.8-pytorch-1.12-tf-2.11-cpu-0.24.0`` for CPUs.
+-  ``determinedai/environments:cuda-11.3-pytorch-1.12-tf-2.11-gpu-0.26.4`` for NVIDIA GPUs.
+-  ``determinedai/environments:rocm-5.0-pytorch-1.10-tf-2.7-rocm-0.26.4`` for ROCm.
+-  ``determinedai/environments:py-3.9-pytorch-1.12-tf-2.11-cpu-0.26.4`` for CPUs.
 
 ``environment_variables``
 =========================
@@ -102,6 +102,12 @@ Environment variables specified in the experiment configuration will override de
 specified here. You can customize environment variables for CUDA (NVIDIA GPU), CPU, and ROCm (AMD
 GPU) tasks differently by specifying a dict with ``cuda`` (``gpu`` prior to Determined 0.17.6),
 ``cpu``, and ``rocm`` keys.
+
+``log_policies``
+================
+
+A list of log policies that take effect when a trial reports a log that matches a pattern. For
+details, visit :ref:`log_policies <config-log-policies>`.
 
 ``force_pull_image``
 ====================
@@ -1566,11 +1572,108 @@ The username for HTTP basic authentication (only allowed with ``type: basic``).
 The password for HTTP basic authentication (only allowed with ``type: basic``).
 
 **********
+ ``oidc``
+**********
+
+Applies only to Determined Enterprise Edition. The OIDC (OpenID Connect) configuration allows
+administrators to integrate an OIDC provider such as Okta for authentication in Determined and is
+used for :ref:`remote user <remote-users>` management.
+
+   For example:
+
+   .. code:: yaml
+
+      oidc:
+          enabled: true
+          provider: "Okta"
+          client_id: "xx0xx0"
+          client_secret: "xx0xx0"
+          idp_recipient_url: "https://determined.example.com"
+          idp_sso_url: "https://dev-00000000.okta.com"
+          authentication_claim: "string"
+          scim_authentication_attribute: "string"
+          auto_provision_users: true
+          groups_claim_name: "XYZ"
+          display_name_claim_name: "XYZ"
+
+``enabled``
+===========
+
+Whether to enable OIDC authentication. Defaults to ``false``.
+
+``provider``
+============
+
+The name of the OIDC provider. Officially supported: "okta".
+
+``client_id``
+=============
+
+The client identifier provided by the OIDC provider.
+
+``client-secret``
+=================
+
+The client secret provided by the OIDC provider. This should be kept confidential.
+
+``idp_recipient_url``
+=====================
+
+The URL where your IdP sends OIDC assertions.
+
+``idp_sso_url``
+===============
+
+The Single Sign-On (SSO) URL provided by the OIDC provider.
+
+``authentication_claim``
+========================
+
+The claim used for authentication in OIDC.
+
+``scim_authentication_attribute``
+=================================
+
+The attribute used for SCIM authentication.
+
+``auto_provision_users``
+========================
+
+Determines if users should be automatically created in Determined upon successful OIDC authentication.
+   -  ``true``: Automatic user provisioning is enabled.
+   -  ``false``: Automatic user provisioning is disabled.
+
+``groups_claim_name``
+=====================
+
+The claim name that specifies group memberships in OIDC.
+
+``display_name_claim_name``
+===========================
+
+The claim name from the OIDC provider used to set the user's display name in Determined.
+
+**********
  ``saml``
 **********
 
-Applies only to Determined Enterprise Edition. Specifies whether SAML SSO is enabled and the
-configuration to use it.
+Applies only to Determined Enterprise Edition. The SAML (Security Assertion Markup Language)
+configuration allows administrators to integrate a SAML provider such as Okta for authentication in
+Determined and is used for :ref:`remote user <remote-users>` management.
+
+For example:
+
+   .. code:: yaml
+
+      saml:
+          enabled: true
+          provider: "Okta"
+          idp_recipient_url: "https://determined.example.com/saml/sso"
+          idp_sso_url: "https://myorg.okta.com/app/...sso/saml"
+          idp_cert_path: "okta.cert"
+          auto_provision_users: true
+          groups_attribute_name: "groups"
+          display_name_attribute_name: "disp_name"
 
 ``enabled``
 ===========
@@ -1585,12 +1688,12 @@ The name of the IdP. Currently (officially) supported: "okta".
 ``idp_recipient_url``
 =====================
 
-The URL your IdP will send SAML assertions to.
+The URL where your IdP sends SAML assertions.
 
 ``idp_sso_url``
 ===============
 
-An IdP-provided URL to redirect SAML requests to.
+The Single Sign-On (SSO) URL provided by the SAML provider.
 
 ``idp_sso_descriptor_url``
 ==========================
@@ -1602,6 +1705,23 @@ requests and responses.
 =================
 
 The path to the IdP's certificate, used to validate assertions.
+
+``auto_provision_users``
+========================
+
+Determines if users should be automatically created in Determined upon successful SAML authentication.
+   -  ``true``: Automatic user provisioning is enabled.
+   -  ``false``: Automatic user provisioning is disabled.
+
+``groups_attribute_name``
+=========================
+
+The claim name that specifies group memberships in SAML.
+
+``display_name_attribute_name``
+===============================
+
+The claim name from the SAML provider used to set the user's display name in Determined.
 
 ********************
  ``reserved_ports``

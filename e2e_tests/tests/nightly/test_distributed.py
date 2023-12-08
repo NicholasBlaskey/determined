@@ -34,14 +34,6 @@ def test_mnist_pytorch_set_stop_requested_distributed() -> None:
     exp.run_basic_test_with_temp_config(config, conf.fixtures_path("mnist_pytorch"), 1)
 
 
-@pytest.mark.distributed_quarantine
-def test_cifar10_tf_keras_distributed() -> None:
-    config = conf.load_config(conf.cv_examples_path("cifar10_tf_keras/distributed.yaml"))
-    config = conf.set_max_length(config, {"batches": 200})
-
-    exp.run_basic_test_with_temp_config(config, conf.cv_examples_path("cifar10_tf_keras"), 1)
-
-
 @pytest.mark.distributed
 @pytest.mark.gpu_required
 def test_hf_trainer_api_integration() -> None:
@@ -153,6 +145,8 @@ def test_hf_trainer_image_classification_deepspeed_autotuning() -> None:
     with tempfile.NamedTemporaryFile() as tf:
         with open(tf.name, "w") as f:
             util.yaml_safe_dump(config, f)
+        # expected_trials=1 in run_basic_autotuning_test because the search runner only generates
+        # a single trial (which in turn generates a second, possibly multi-trial experiment).
         _ = exp.run_basic_autotuning_test(
             tf.name,
             conf.hf_trainer_examples_path(test_dir),
@@ -170,6 +164,8 @@ def test_hf_trainer_language_modeling_deepspeed_autotuning() -> None:
     with tempfile.NamedTemporaryFile() as tf:
         with open(tf.name, "w") as f:
             util.yaml_safe_dump(config, f)
+        # expected_trials=1 in run_basic_autotuning_test because the search runner only generates
+        # a single trial (which in turn generates a second, possibly multi-trial experiment).
         _ = exp.run_basic_autotuning_test(
             tf.name,
             conf.hf_trainer_examples_path(test_dir),
@@ -187,6 +183,8 @@ def test_torchvision_core_api_deepspeed_autotuning() -> None:
     with tempfile.NamedTemporaryFile() as tf:
         with open(tf.name, "w") as f:
             util.yaml_safe_dump(config, f)
+        # expected_trials=1 in run_basic_autotuning_test because the search runner only generates
+        # a single trial (which in turn generates a second, possibly multi-trial experiment).
         _ = exp.run_basic_autotuning_test(
             tf.name,
             conf.deepspeed_autotune_examples_path(test_dir),
@@ -204,6 +202,8 @@ def test_torchvision_deepspeed_trial_deepspeed_autotuning() -> None:
     with tempfile.NamedTemporaryFile() as tf:
         with open(tf.name, "w") as f:
             util.yaml_safe_dump(config, f)
+        # expected_trials=1 in run_basic_autotuning_test because the search runner only generates
+        # a single trial (which in turn generates a second, possibly multi-trial experiment).
         _ = exp.run_basic_autotuning_test(
             tf.name,
             conf.deepspeed_autotune_examples_path(test_dir),

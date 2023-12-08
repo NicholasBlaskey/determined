@@ -78,6 +78,16 @@ type WebhooksConfig struct {
 	SigningKey string `json:"signing_key"`
 }
 
+// IntegrationsConfig stores configs related to integrations like pachyderm.
+type IntegrationsConfig struct {
+	Pachyderm PachydermConfig `json:"pachyderm"`
+}
+
+// PachydermConfig stores fields needed to integrate Pachyderm with determined.
+type PachydermConfig struct {
+	Address string `json:"address"`
+}
+
 // DefaultConfig returns the default configuration of the master.
 func DefaultConfig() *Config {
 	return &Config{
@@ -152,6 +162,8 @@ type Config struct {
 
 	// Internal contains "hidden" useful debugging configurations.
 	InternalConfig InternalConfig `json:"__internal"`
+
+	Integrations IntegrationsConfig `json:"integrations"`
 }
 
 // GetMasterConfig returns reference to the master config singleton.

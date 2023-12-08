@@ -31,7 +31,7 @@ resource_manager:
   scheduler:
     type: {{ .resource_manager.scheduler.type }}
     {{- if eq .resource_manager.scheduler.type "priority" }}
-    preemption: {{ .resource_manager.scheduler.preemption_enabled }}
+    preemption: {{ .resource_manager.scheduler.preemption }}
     {{- end }}
 
 resource_pools:
@@ -62,6 +62,8 @@ __internal:
   proxied_servers:
     - destination: "http://lore-backend:9011/lore"
       path_prefix: /lore
+    - destination: "http://lore-backend:9011/genai"
+      path_prefix: /genai
 {{ end }}
 
 {{ if or (or .cpu_env_image .gpu_env_image) .bind_mounts }}

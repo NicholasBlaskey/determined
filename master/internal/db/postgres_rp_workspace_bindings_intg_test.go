@@ -8,8 +8,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/determined-ai/determined/master/internal/config"
 	"github.com/determined-ai/determined/master/pkg/etc"
+	"github.com/determined-ai/determined/master/pkg/model"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -22,7 +25,10 @@ const (
 
 func TestAddAndRemoveBindings(t *testing.T) {
 	ctx := context.Background()
-	pgDB := MustResolveTestPostgres(t)
+
+	require.NoError(t, etc.SetRootPath(RootFromDB))
+	pgDB, cleanup := MustResolveNewPostgresDatabase(t)
+	defer cleanup()
 	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
 
 	user := RequireMockUser(t, pgDB)
@@ -82,6 +88,76 @@ func TestAddAndRemoveBindings(t *testing.T) {
 	require.Equal(t, 0, count, "expected 0 items in DB, found %d", count)
 }
 
+func TestCheckIfRPUnbound(t *testing.T) {
+	ctx := context.Background()
+	pgDB := MustResolveTestPostgres(t)
+	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
+
+	poolName := uuid.New().String()
+	require.NoError(t, CheckIfRPUnbound(poolName))
+
+	user := RequireMockUser(t, pgDB)
+	workspaceIDs, err := MockWorkspaces([]string{uuid.New().String()}, user.ID)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, CleanupMockWorkspace(workspaceIDs))
+	}()
+
+	poolConfigs := []config.ResourcePoolConfig{{PoolName: poolName}}
+	require.NoError(t, AddRPWorkspaceBindings(ctx, workspaceIDs, poolName, poolConfigs))
+
+	require.ErrorContains(t, CheckIfRPUnbound(poolName), "can not be bound to any workspaces")
+
+	require.NoError(t, RemoveRPWorkspaceBindings(ctx, workspaceIDs, poolName))
+}
+
+func TestGetDefaultPoolsForWorkspace(t *testing.T) {
+	ctx := context.Background()
+	pgDB := MustResolveTestPostgres(t)
+	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
+
+	comp, aux, err := GetDefaultPoolsForWorkspace(ctx, -1)
+	require.NoError(t, err) // TODO(!!!) we should return errors for these cases.
+	require.Equal(t, "", comp)
+	require.Equal(t, "", aux)
+
+	user := RequireMockUser(t, pgDB)
+	workspaceIDs, err := MockWorkspaces([]string{uuid.New().String()}, user.ID)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, CleanupMockWorkspace(workspaceIDs))
+	}()
+
+	comp, aux, err = GetDefaultPoolsForWorkspace(ctx, int(workspaceIDs[0]))
+	require.NoError(t, err)
+	require.Equal(t, "", comp)
+	require.Equal(t, "", aux)
+
+	expectedCompute := uuid.New().String()
+	_, err = Bun().NewUpdate().Model(&model.Workspace{}).
+		Set("default_compute_pool = ?", expectedCompute).
+		Where("id = ?", workspaceIDs[0]).
+		Exec(ctx)
+	require.NoError(t, err)
+
+	comp, aux, err = GetDefaultPoolsForWorkspace(ctx, int(workspaceIDs[0]))
+	require.NoError(t, err)
+	require.Equal(t, expectedCompute, comp)
+	require.Equal(t, "", aux)
+
+	expectedAux := uuid.New().String()
+	_, err = Bun().NewUpdate().Model(&model.Workspace{}).
+		Set("default_aux_pool = ?", expectedAux).
+		Where("id = ?", workspaceIDs[0]).
+		Exec(ctx)
+	require.NoError(t, err)
+
+	comp, aux, err = GetDefaultPoolsForWorkspace(ctx, int(workspaceIDs[0]))
+	require.NoError(t, err)
+	require.Equal(t, expectedCompute, comp)
+	require.Equal(t, expectedAux, aux)
+}
+
 func TestBindingFail(t *testing.T) {
 	// Test add the same binding multiple times - should fail
 	ctx := context.Background()
@@ -119,13 +195,12 @@ func TestBindingFail(t *testing.T) {
 	err = AddRPWorkspaceBindings(ctx, []int32{workspaceIDs[2]}, "NonexistentPool", poolConfigs)
 	require.Errorf(t, err, "expected error adding binding for workspaces %d on non-existent pool",
 		workspaceIDs[2], workspaceIDs[1])
-
-	return
 }
 
 func TestListWorkspacesBindingRP(t *testing.T) {
 	ctx := context.Background()
-	pgDB := MustResolveTestPostgres(t)
+	pgDB, cleanup := MustResolveNewPostgresDatabase(t)
+	defer cleanup()
 	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
 
 	user := RequireMockUser(t, pgDB)
@@ -176,7 +251,6 @@ func TestListWorkspacesBindingRP(t *testing.T) {
 	require.NoError(t, err, "failed to get all bindings")
 	require.Equal(t, 2, len(bindings),
 		"expected length of bindings to be 0 but got %d", len(bindings))
-	return
 }
 
 func TestListRPsAvailableToWorkspace(t *testing.T) {
@@ -309,7 +383,6 @@ func TestListRPsAvailableToWorkspace(t *testing.T) {
 
 	err = CleanupMockWorkspace(workspaceIDs)
 	require.NoError(t, err)
-	return
 }
 
 func TestOverwriteBindings(t *testing.T) {
@@ -375,8 +448,6 @@ func TestOverwriteBindings(t *testing.T) {
 	)
 	require.Equal(t, testPool2Name, bindings[0].PoolName,
 		"expected bound pool to be %s, but was %s", testPool2Name, bindings[0].PoolName)
-
-	return
 }
 
 func TestOverwriteFail(t *testing.T) {
@@ -394,7 +465,6 @@ func TestOverwriteFail(t *testing.T) {
 	nonExistentPoolName := "poolNameDoesntExist"
 	err = OverwriteRPWorkspaceBindings(ctx, workspaceIDs, nonExistentPoolName, existingPools)
 	require.ErrorContains(t, err, "doesn't exist")
-	return
 }
 
 func TestRemoveInvalidBinding(t *testing.T) {
@@ -409,5 +479,4 @@ func TestRemoveInvalidBinding(t *testing.T) {
 	workspaceIDs = []int32{1, 2, 3}
 	err = RemoveRPWorkspaceBindings(ctx, workspaceIDs, testPoolName)
 	require.ErrorContains(t, err, " binding doesn't exist")
-	return
 }

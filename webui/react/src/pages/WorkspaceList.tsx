@@ -1,9 +1,11 @@
 import { Space } from 'antd';
 import Button from 'hew/Button';
 import Card from 'hew/Card';
-import { Column, Columns } from 'hew/Columns';
+import Column from 'hew/Column';
 import Message from 'hew/Message';
 import { useModal } from 'hew/Modal';
+import Row from 'hew/Row';
+import Section from 'hew/Section';
 import Select, { Option } from 'hew/Select';
 import Spinner from 'hew/Spinner';
 import Toggle from 'hew/Toggle';
@@ -56,7 +58,7 @@ const WorkspaceList: React.FC = () => {
   const [pageError, setPageError] = useState<Error>();
   const [isLoading, setIsLoading] = useState(true);
   const pageRef = useRef<HTMLElement>(null);
-  const [canceler] = useState(new AbortController());
+  const canceler = useRef<AbortController>();
 
   const { canCreateWorkspace } = usePermissions();
 
@@ -67,6 +69,8 @@ const WorkspaceList: React.FC = () => {
   const fetchWorkspaces = useCallback(async () => {
     if (!settings) return;
 
+    const abortController = new AbortController();
+    canceler.current = abortController;
     try {
       const response = await getWorkspaces(
         {
@@ -78,7 +82,7 @@ const WorkspaceList: React.FC = () => {
           sortBy: validateDetApiEnum(V1GetWorkspacesRequestSortBy, settings.sortKey),
           users: settings.user,
         },
-        { signal: canceler.signal },
+        { signal: abortController.signal },
       );
       setTotal((response.pagination.total ?? 1) - 1); // -1 because we do not display immutable ws
       setWorkspaces((prev) => {
@@ -87,17 +91,21 @@ const WorkspaceList: React.FC = () => {
         return withoutDefault;
       });
     } catch (e) {
-      if (!pageError) setPageError(e as Error);
+      if (!abortController.signal.aborted) {
+        setPageError((p) => p || (e as Error));
+      }
     } finally {
-      setIsLoading(false);
+      if (!abortController.signal.aborted) {
+        setIsLoading(false);
+      }
     }
-  }, [canceler.signal, pageError, settings]);
-
-  usePolling(fetchWorkspaces);
+  }, [settings]);
 
   useEffect(() => {
-    fetchWorkspaces();
-  }, [fetchWorkspaces]);
+    canceler.current?.abort();
+  }, [settings]);
+
+  usePolling(fetchWorkspaces, { rerunOnNewFn: true, runImmediately: true });
 
   const handleWhoseSelect = useCallback(
     (value: unknown) => {
@@ -315,14 +323,8 @@ const WorkspaceList: React.FC = () => {
   ]);
 
   useEffect(() => {
-    setIsLoading(true);
-    fetchWorkspaces().then(() => setIsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => canceler.current?.abort();
   }, []);
-
-  useEffect(() => {
-    return () => canceler.abort();
-  }, [canceler]);
 
   if (pageError) {
     return <Message icon="warning" title="Unable to fetch workspaces" />;
@@ -344,29 +346,31 @@ const WorkspaceList: React.FC = () => {
         </Button>
       }
       title="Workspaces">
-      <Columns page>
-        <Column>
-          <Select value={settings.whose} width={180} onSelect={handleWhoseSelect}>
-            <Option value={WhoseWorkspaces.All}>All Workspaces</Option>
-            <Option value={WhoseWorkspaces.Mine}>My Workspaces</Option>
-            <Option value={WhoseWorkspaces.Others}>Others&apos; Workspaces</Option>
-          </Select>
-        </Column>
-        <Column align="right">
-          <Space wrap>
-            <Toggle
-              checked={settings.archived}
-              label="Show Archived"
-              onChange={switchShowArchived}
-            />
-            <Select value={settings.sortKey} width={170} onSelect={handleSortSelect}>
-              <Option value={V1GetWorkspacesRequestSortBy.NAME}>Alphabetical</Option>
-              <Option value={V1GetWorkspacesRequestSortBy.ID}>Newest to Oldest</Option>
+      <Section>
+        <Row wrap>
+          <Column>
+            <Select value={settings.whose} width={180} onSelect={handleWhoseSelect}>
+              <Option value={WhoseWorkspaces.All}>All Workspaces</Option>
+              <Option value={WhoseWorkspaces.Mine}>My Workspaces</Option>
+              <Option value={WhoseWorkspaces.Others}>Others&apos; Workspaces</Option>
             </Select>
-            {settings && <GridListRadioGroup value={settings.view} onChange={handleViewChange} />}
-          </Space>
-        </Column>
-      </Columns>
+          </Column>
+          <Column align="right">
+            <Space wrap>
+              <Toggle
+                checked={settings.archived}
+                label="Show Archived"
+                onChange={switchShowArchived}
+              />
+              <Select value={settings.sortKey} width={170} onSelect={handleSortSelect}>
+                <Option value={V1GetWorkspacesRequestSortBy.NAME}>Alphabetical</Option>
+                <Option value={V1GetWorkspacesRequestSortBy.ID}>Newest to Oldest</Option>
+              </Select>
+              {settings && <GridListRadioGroup value={settings.view} onChange={handleViewChange} />}
+            </Space>
+          </Column>
+        </Row>
+      </Section>
       <Spinner spinning={isLoading}>
         {workspaces.length !== 0 ? (
           workspacesList

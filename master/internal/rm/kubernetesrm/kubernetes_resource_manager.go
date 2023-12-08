@@ -16,7 +16,6 @@ import (
 	"github.com/determined-ai/determined/master/internal/rm/rmevents"
 	"github.com/determined-ai/determined/master/internal/rm/rmutils"
 	"github.com/determined-ai/determined/master/internal/sproto"
-	"github.com/determined-ai/determined/master/pkg/actor"
 	"github.com/determined-ai/determined/master/pkg/aproto"
 	"github.com/determined-ai/determined/master/pkg/command"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -52,7 +51,6 @@ type ResourceManager struct {
 // New returns a new ResourceManager, which communicates with
 // and submits work to a Kubernetes apiserver.
 func New(
-	system *actor.System,
 	db *db.PgDB,
 	rmConfigs *config.ResourceConfig,
 	taskContainerDefaults *model.TaskContainerDefaultsConfig,
@@ -307,15 +305,12 @@ func (ResourceManager) GetSlots(*apiv1.GetSlotsRequest) (*apiv1.GetSlotsResponse
 }
 
 // MoveJob implements rm.ResourceManager.
-// TODO(DET-9920): This should know which pool it wants.
 func (k *ResourceManager) MoveJob(msg sproto.MoveJob) error {
-	for _, rp := range k.pools {
-		err := rp.MoveJob(msg)
-		if err != nil {
-			return err
-		}
+	rp, err := k.poolByName(msg.ResourcePool)
+	if err != nil {
+		return fmt.Errorf("move job found no resource pool with name %s: %w", msg.ResourcePool, err)
 	}
-	return nil
+	return rp.MoveJob(msg)
 }
 
 // RecoverJobPosition implements rm.ResourceManager.
@@ -329,51 +324,56 @@ func (k *ResourceManager) RecoverJobPosition(msg sproto.RecoverJobPosition) {
 }
 
 // Release implements rm.ResourceManager.
-// TODO(DET-9920): This should know which pool it wants.
 func (k *ResourceManager) Release(msg sproto.ResourcesReleased) {
-	for _, rp := range k.pools {
-		rp.ResourcesReleased(msg)
+	rp, err := k.poolByName(msg.ResourcePool)
+	if err != nil {
+		k.syslog.WithError(err).Warnf("release found no resource pool with name %s",
+			msg.ResourcePool)
+		return
 	}
+	rp.ResourcesReleased(msg)
 }
 
 // SetAllocationName implements rm.ResourceManager.
-// TODO(DET-9920): This should know which pool it wants.
 func (k *ResourceManager) SetAllocationName(msg sproto.SetAllocationName) {
-	for _, rp := range k.pools {
-		rp.SetAllocationName(msg)
+	rp, err := k.poolByName(msg.ResourcePool)
+	if err != nil {
+		k.syslog.WithError(err).Warnf("set allocation name found no resource pool with name %s",
+			msg.ResourcePool)
+		return
 	}
+	rp.SetAllocationName(msg)
 }
 
 // SetGroupMaxSlots implements rm.ResourceManager.
-// TODO(DET-9920): This should know which pool it wants.
 func (k *ResourceManager) SetGroupMaxSlots(msg sproto.SetGroupMaxSlots) {
-	for _, rp := range k.pools {
-		rp.SetGroupMaxSlots(msg)
+	rp, err := k.poolByName(msg.ResourcePool)
+	if err != nil {
+		k.syslog.WithError(err).Warnf("set group max slots found no resource pool with name %s",
+			msg.ResourcePool)
+		return
 	}
+	rp.SetGroupMaxSlots(msg)
 }
 
 // SetGroupPriority implements rm.ResourceManager.
-// TODO(DET-9920): This should know which pool it wants.
 func (k *ResourceManager) SetGroupPriority(msg sproto.SetGroupPriority) error {
-	for _, rp := range k.pools {
-		err := rp.SetGroupPriority(msg)
-		if err != nil {
-			return err
-		}
+	rp, err := k.poolByName(msg.ResourcePool)
+	if err != nil {
+		return fmt.Errorf("set group priority found no resource pool with name %s: %w",
+			msg.ResourcePool, err)
 	}
-	return nil
+	return rp.SetGroupPriority(msg)
 }
 
 // SetGroupWeight implements rm.ResourceManager.
-// TODO(DET-9920): This should know which pool it wants.
 func (k *ResourceManager) SetGroupWeight(msg sproto.SetGroupWeight) error {
-	for _, rp := range k.pools {
-		err := rp.SetGroupWeight(msg)
-		if err != nil {
-			return err
-		}
+	rp, err := k.poolByName(msg.ResourcePool)
+	if err != nil {
+		return fmt.Errorf("set group weight found no resource pool with name %s: %w",
+			msg.ResourcePool, err)
 	}
-	return nil
+	return rp.SetGroupWeight(msg)
 }
 
 // ValidateCommandResources implements rm.ResourceManager.
@@ -487,10 +487,13 @@ func (k ResourceManager) ValidateResourcePool(name string) error {
 // ValidateResourcePoolAvailability checks the available resources for a given pool.
 // This is a no-op for k8s.
 func (k ResourceManager) ValidateResourcePoolAvailability(
-	name string,
-	slots int,
+	v *sproto.ValidateResourcePoolAvailabilityRequest,
 ) ([]command.LaunchWarning, error) {
-	return nil, k.resourcePoolExists(name)
+	if err := k.resourcePoolExists(v.Name); err != nil {
+		return nil, fmt.Errorf("%s is an invalid resource pool", v.Name)
+	}
+
+	return nil, nil
 }
 
 // NotifyContainerRunning receives a notification from the container to let
@@ -525,6 +528,9 @@ func (k *ResourceManager) podStatusUpdateCallback(msg sproto.UpdatePodStatus) {
 }
 
 func (k *ResourceManager) poolByName(resourcePool string) (*kubernetesResourcePool, error) {
+	if resourcePool == "" {
+		return nil, errors.New("invalid call: cannot get a resource pool with no name")
+	}
 	rp, ok := k.pools[resourcePool]
 	if !ok {
 		return nil, fmt.Errorf("cannot find resource pool %s", resourcePool)
