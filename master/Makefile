@@ -152,6 +152,14 @@ test-intg: export DET_INTEGRATION_ES_PORT ?= 9200
 test-intg: build/mock_gen.stamp
 	gotestsum --junitfile test-intg.junit.xml -- -tags=integration -race -coverprofile=coverage.out -covermode atomic -cover ./...
 
+.PHONY: test-intg-short
+test-intg-short: export DET_INTEGRATION_POSTGRES_URL ?= postgres://postgres:postgres@localhost:5432/determined?sslmode=disable
+test-intg-short: export DET_INTEGRATION_ES_HOST ?= localhost
+test-intg-short: export DET_INTEGRATION_ES_PORT ?= 9200
+test-intg-short: build/mock_gen.stamp
+	#go test -tags=integration -i ./...
+	go test -v -tags=integration -short ./... -count=1
+
 .PHONY: pre-package
 pre-package:
 	rm -rf build

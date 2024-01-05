@@ -73,6 +73,13 @@ test-intg: export DET_INTEGRATION_ES_PORT ?= 9200
 test-intg:
 	gotestsum --junitfile test-intg.junit.xml -- -race -tags=integration -coverprofile=coverage.out -covermode atomic ./...
 
+.PHONY: test-intg-short
+test-intg-short: export DET_INTEGRATION_POSTGRES_URL ?= postgres://postgres:postgres@localhost:5432/determined?sslmode=disable
+test-intg-short: export DET_INTEGRATION_ES_HOST ?= localhost
+test-intg-short: export DET_INTEGRATION_ES_PORT ?= 9200
+test-intg-short:
+	gotestsum --junitfile test-intg.junit.xml -- -race -short -tags=integration -coverprofile=coverage.out -covermode atomic ./...
+
 .PHONY: buildx
 buildx:
 	docker context rm -f buildx-context || true

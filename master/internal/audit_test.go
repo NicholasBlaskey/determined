@@ -30,6 +30,10 @@ func (l *logStore) Levels() []logrus.Level {
 
 // nolint: noctx
 func TestAuditLogMiddleware(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	// Given an echo server with our middleware, where we can introspect logs, and with a valid
 	// DetContext.
 	const url = "localhost:8081"

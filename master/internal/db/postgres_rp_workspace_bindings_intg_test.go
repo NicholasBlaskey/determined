@@ -24,6 +24,10 @@ const (
 )
 
 func TestAddAndRemoveBindings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	ctx := context.Background()
 
 	require.NoError(t, etc.SetRootPath(RootFromDB))
@@ -198,6 +202,10 @@ func TestBindingFail(t *testing.T) {
 }
 
 func TestListWorkspacesBindingRP(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	ctx := context.Background()
 	pgDB, cleanup := MustResolveNewPostgresDatabase(t)
 	defer cleanup()

@@ -4,6 +4,7 @@
 package api
 
 import (
+	"flag"
 	"log"
 	"os"
 	"testing"
@@ -20,12 +21,19 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+	if testing.Short() {
+		log.Println("skipping all of these tests in short mode")
+		os.Exit(0)
+	}
+
 	var err error
 	pgDB, err = db.ResolveTestPostgres()
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
+
 	es, err = testutils.ResolveElastic()
 	if err != nil {
 		log.Println(err)

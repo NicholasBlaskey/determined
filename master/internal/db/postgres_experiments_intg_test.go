@@ -814,6 +814,10 @@ func TestTopTrialsByMetric(t *testing.T) {
 }
 
 func TestDeleteExperiments(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	ctx := context.Background()
 
 	require.NoError(t, etc.SetRootPath(RootFromDB))

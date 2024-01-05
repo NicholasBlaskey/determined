@@ -247,7 +247,7 @@ func TestDeleteExperimentWithoutCheckpoints(t *testing.T) {
 			return
 		}
 		require.NotEqual(t, experimentv1.State_STATE_DELETE_FAILED, e.Experiment.State)
-		time.Sleep(1 * time.Second)
+		time.Sleep(25 * time.Millisecond)
 	}
 	t.Error("expected experiment to delete after 1 minute and it did not")
 }
@@ -844,6 +844,10 @@ func TestSearchExperimentsMalformed(t *testing.T) {
 
 // Test that endpoints don't puke when running against old experiments.
 func TestLegacyExperiments(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	err := etc.SetRootPath("../static/srv")
 	require.NoError(t, err)
 
@@ -1698,6 +1702,10 @@ func TestExperimentSearchApiFilterParsing(t *testing.T) {
 }
 
 func TestDeleteExperiments(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	var mockRM mocks.ResourceManager
 	// Need _anything_ to error to check the error flow leaves things in DELETE_FAILED and that they are delete-able
 	// still after that.
@@ -1769,6 +1777,10 @@ func TestDeleteExperiments(t *testing.T) {
 }
 
 func TestDeleteExperimentsFiltered(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	var mockRM mocks.ResourceManager
 	// Need _anything_ to error to check the error flow leaves things in DELETE_FAILED and that they are delete-able
 	// still after that.

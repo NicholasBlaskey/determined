@@ -452,6 +452,10 @@ func TestNonNumericEpochMetric(t *testing.T) {
 }
 
 func TestTrialsNonNumericMetrics(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	api, curUser, ctx := setupAPITest(t, nil)
 
 	expectedMetricsMap := map[string]any{
@@ -880,6 +884,10 @@ func TestTrialLogsBackported(t *testing.T) {
 }
 
 func TestTrialLogs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	api, curUser, ctx := setupAPITest(t, nil)
 	trial, task0 := createTestTrial(t, api, curUser)
 
@@ -976,6 +984,10 @@ func TestTrialLogs(t *testing.T) {
 }
 
 func TestTrialLogFields(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	api, curUser, ctx := setupAPITest(t, nil)
 	trial, task0 := createTestTrial(t, api, curUser)
 

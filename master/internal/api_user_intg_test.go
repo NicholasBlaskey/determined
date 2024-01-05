@@ -149,6 +149,10 @@ func fetchUserIds(ctx context.Context, t *testing.T, api *apiServer, req *apiv1.
 }
 
 func TestLoginRemote(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	api, _, ctx := setupAPITest(t, nil)
 
 	t.Run("created with remote", func(t *testing.T) {
@@ -367,6 +371,10 @@ func TestFilterUser(t *testing.T) {
 }
 
 func TestPatchUser(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	api, _, ctx := setupAPITest(t, nil)
 	userID, err := user.Add(ctx,
 		&model.User{
