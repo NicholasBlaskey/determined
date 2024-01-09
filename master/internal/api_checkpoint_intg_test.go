@@ -189,6 +189,62 @@ func TestCheckpointsOnArchivedSteps(t *testing.T) {
 		actual.Training.ValidationMetrics.AvgMetrics.AsMap())
 }
 
+func TestReportCheckpointWithStorageID(t *testing.T) {
+	api, curUser, ctx := setupAPITest(t, nil)
+	trial, task := createTestTrial(t, api, curUser)
+
+	t.Run("invalid checkpoint storage", func(t *testing.T) {
+		invalidCheckpointStorage, err := structpb.NewStruct(map[string]any{
+			"type": "shared_fs",
+		})
+		require.NoError(t, err)
+
+		_, err = api.RunPrepareForReport(ctx, &apiv1.RunPrepareForReportRequest{
+			RunId:             int32(trial.ID),
+			CheckpointStorage: invalidCheckpointStorage,
+		})
+		require.Equal(t, codes.InvalidArgument, status.Code(err))
+	})
+
+	checkpointStorage, err := structpb.NewStruct(map[string]any{
+		"type":        "shared_fs",
+		"host_path":   uuid.New().String(),
+		"propagation": "private",
+	})
+	require.NoError(t, err)
+
+	reportResponse, err := api.RunPrepareForReport(ctx, &apiv1.RunPrepareForReportRequest{
+		RunId:             int32(trial.ID),
+		CheckpointStorage: checkpointStorage,
+	})
+	require.NoError(t, err)
+	checkpointMeta, err := structpb.NewStruct(map[string]any{
+		"steps_completed": 1,
+	})
+	require.NoError(t, err)
+	checkpointID := uuid.New().String()
+	_, err = api.ReportCheckpoint(ctx, &apiv1.ReportCheckpointRequest{
+		Checkpoint: &checkpointv1.Checkpoint{
+			TaskId:       string(task.TaskID),
+			AllocationId: nil,
+			Uuid:         checkpointID,
+			ReportTime:   timestamppb.New(time.Now()),
+			Resources:    nil,
+			Metadata:     checkpointMeta,
+			State:        checkpointv1.State_STATE_COMPLETED,
+			StorageId:    &reportResponse.StorageId,
+		},
+	})
+	require.NoError(t, err)
+
+	checkpointResponse, err := api.GetCheckpoint(ctx, &apiv1.GetCheckpointRequest{
+		CheckpointUuid: checkpointID,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, checkpointResponse.Checkpoint.StorageId)
+	require.Equal(t, reportResponse.StorageId, *checkpointResponse.Checkpoint.StorageId)
+}
+
 func TestCheckpointRemoveFilesPrefixAndEmpty(t *testing.T) {
 	api, _, ctx := setupAPITest(t, nil)
 	_, err := api.CheckpointsRemoveFiles(ctx, &apiv1.CheckpointsRemoveFilesRequest{

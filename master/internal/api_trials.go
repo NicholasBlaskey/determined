@@ -30,6 +30,8 @@ import (
 	"github.com/determined-ai/determined/master/pkg/protoutils/protoconverter"
 	"github.com/determined-ai/determined/master/pkg/protoutils/protoless"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
+	"github.com/determined-ai/determined/master/pkg/schemas"
+	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/master/pkg/searcher"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
 	"github.com/determined-ai/determined/proto/pkg/checkpointv1"
@@ -1364,6 +1366,38 @@ func (a *apiServer) ReportTrialValidationMetrics(
 	return &apiv1.ReportTrialValidationMetricsResponse{}, err
 }
 
+// TODO move to runs api.
+func (a *apiServer) RunPrepareForReport(
+	ctx context.Context, req *apiv1.RunPrepareForReportRequest,
+) (*apiv1.RunPrepareForReportResponse, error) {
+	// TODO(runs) run specific RBAC.
+	if err := trials.CanGetTrialsExperimentAndCheckCanDoAction(ctx, int(req.RunId),
+		experiment.AuthZProvider.Get().CanEditExperiment); err != nil {
+		return nil, err
+	}
+
+	bytes, err := req.CheckpointStorage.MarshalJSON()
+	if err != nil {
+		return nil, fmt.Errorf("marshaling checkpoint storage %+v: %w", req.CheckpointStorage, err)
+	}
+	cs := &expconf.CheckpointStorageConfig{}
+	if err := cs.UnmarshalJSON(bytes); err != nil {
+		return nil, fmt.Errorf("unmarshaling json bytes %s: %w", string(bytes), err)
+	}
+	if err := schemas.IsComplete(cs); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid checkpoint storage: %s", err)
+	}
+
+	storageID, err := db.AddStorageBackend(ctx, db.Bun(), cs)
+	if err != nil {
+		return nil, fmt.Errorf("adding storage ID for runID %d: %w", req.RunId, err)
+	}
+
+	return &apiv1.RunPrepareForReportResponse{
+		StorageId: int32(storageID),
+	}, nil
+}
+
 func (a *apiServer) ReportCheckpoint(
 	ctx context.Context, req *apiv1.ReportCheckpointRequest,
 ) (*apiv1.ReportCheckpointResponse, error) {
@@ -1407,6 +1441,11 @@ func checkpointV2FromProtoWithDefaults(p *checkpointv1.Checkpoint) (*model.Check
 		p.ReportTime = timestamppb.New(time.Now().UTC())
 	}
 
+	var storageID *model.StorageBackendID
+	if p.StorageId != nil {
+		storageID = ptrs.Ptr(model.StorageBackendID(*p.StorageId))
+	}
+
 	c := &model.CheckpointV2{
 		UUID:         conv.ToUUID(p.Uuid),
 		TaskID:       model.TaskID(p.TaskId),
@@ -1415,6 +1454,7 @@ func checkpointV2FromProtoWithDefaults(p *checkpointv1.Checkpoint) (*model.Check
 		State:        conv.ToCheckpointState(p.State),
 		Resources:    p.Resources,
 		Metadata:     p.Metadata.AsMap(),
+		StorageID:    storageID,
 	}
 	if err := conv.Error(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "converting checkpoint: %s", err)

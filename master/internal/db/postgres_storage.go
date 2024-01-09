@@ -9,6 +9,7 @@ import (
 
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
+	"github.com/determined-ai/determined/master/pkg/schemas"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 )
 
@@ -50,6 +51,10 @@ func expconfToStorageBackend(cs *expconf.CheckpointStorageConfig) storageBackend
 func AddStorageBackend(
 	ctx context.Context, idb bun.IDB, cs *expconf.CheckpointStorageConfig,
 ) (model.StorageBackendID, error) {
+	if err := schemas.IsComplete(cs); err != nil {
+		return 0, fmt.Errorf("schema is not complete: %w", err)
+	}
+
 	backend := expconfToStorageBackend(cs)
 	if _, err := idb.NewInsert().Model(&backend).
 		Returning("id").

@@ -2,6 +2,7 @@ package expconf
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,6 +47,7 @@ func (c CheckpointStorageConfigV0) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (c *CheckpointStorageConfigV0) UnmarshalJSON(data []byte) error {
+	fmt.Println(string(data))
 	if err := union.Unmarshal(data, c); err != nil {
 		return err
 	}

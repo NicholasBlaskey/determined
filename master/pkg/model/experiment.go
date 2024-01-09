@@ -644,6 +644,7 @@ type CheckpointV2 struct {
 	Resources     map[string]int64       `db:"resources"`
 	Metadata      map[string]interface{} `db:"metadata"`
 	Size          int64                  `db:"size"`
+	StorageID     *StorageBackendID      `db:"storage_id"`
 }
 
 // CheckpointTrainingMetadata is a substruct of checkpoints encapsulating training specific
@@ -664,14 +665,15 @@ type Checkpoint struct {
 	bun.BaseModel `bun:"table:checkpoints_view"`
 	ID            int `db:"id"`
 
-	UUID         *uuid.UUID    `db:"uuid"`
-	TaskID       *TaskID       `db:"task_id"`
-	AllocationID *AllocationID `db:"allocation_id"`
-	ReportTime   time.Time     `db:"report_time"`
-	State        State         `db:"state"`
-	Resources    JSONObj       `db:"resources"`
-	Metadata     JSONObj       `db:"metadata"`
-	Size         int64         `db:"size"`
+	UUID         *uuid.UUID        `db:"uuid"`
+	TaskID       *TaskID           `db:"task_id"`
+	AllocationID *AllocationID     `db:"allocation_id"`
+	ReportTime   time.Time         `db:"report_time"`
+	State        State             `db:"state"`
+	Resources    JSONObj           `db:"resources"`
+	Metadata     JSONObj           `db:"metadata"`
+	Size         int64             `db:"size"`
+	StorageID    *StorageBackendID `db:"storage_id"`
 
 	CheckpointTrainingMetadata
 }
