@@ -1,5 +1,6 @@
 CREATE TYPE checkpoint_storage_type AS ENUM (
-  'shared_fs'
+  'shared_fs',
+  's3'
 );
 
 -- Default fields work the same as required right?

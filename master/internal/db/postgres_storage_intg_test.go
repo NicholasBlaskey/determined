@@ -1,9 +1,9 @@
+//nolint:exhaustruct
 package db
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -22,7 +22,7 @@ type storageBackendExhaustiveTestCases struct {
 	checkpointStorage *expconf.CheckpointStorageConfig
 }
 
-func generateTestCases(t *testing.T) []storageBackendExhaustiveTestCases {
+func generateStorageBackendExhaustiveTestCases(t *testing.T) []storageBackendExhaustiveTestCases {
 	var cases []storageBackendExhaustiveTestCases
 
 	cs := expconf.CheckpointStorageConfig{}
@@ -30,9 +30,6 @@ func generateTestCases(t *testing.T) []storageBackendExhaustiveTestCases {
 	typeOfT := s.Type()
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
-
-		fmt.Printf("%d: %s %s = %v\n", i,
-			typeOfT.Field(i).Name, f.Type(), f.Interface())
 
 		unionTag := typeOfT.Field(i).Tag.Get("union")
 		if f.Kind() != reflect.Ptr || unionTag == "" {
@@ -47,6 +44,12 @@ func generateTestCases(t *testing.T) []storageBackendExhaustiveTestCases {
 		subS := subStruct.Elem()
 		subTypeOfS := subS.Type()
 		for i := 0; i < subS.NumField(); i++ {
+			if subTypeOfS.Field(i).Type.Kind() != reflect.Ptr &&
+				subTypeOfS.Field(i).Type.Elem().Kind() != reflect.String {
+				require.Fail(t, "this test only handles *string "+
+					"you can add logic to skip the non *string field")
+			}
+
 			jsonTag, _, _ := strings.Cut(subTypeOfS.Field(i).Tag.Get("json"), ",")
 			if jsonTag != "-" {
 				testCase[jsonTag] = uuid.New().String()
@@ -70,52 +73,28 @@ func TestStorageBackendExhaustive(t *testing.T) {
 	// This test is designed to make sure any added checkpoint fields are persisted correctly.
 	// This test should fail if you add a new checkpoint storage type or add a new field
 	// and do not update the database.
+	cases := generateStorageBackendExhaustiveTestCases(t)
 
-	cases := generateTestCases(t)
+	ctx := context.Background()
+	require.NoError(t, etc.SetRootPath(RootFromDB))
+	pgDB := MustResolveTestPostgres(t)
+	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
+
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			fmt.Println(c.checkpointStorage)
+			storageID, err := AddStorageBackend(ctx, Bun(), c.checkpointStorage)
+			require.NoError(t, err)
+
+			// Test that we dedupe storage IDs.
+			secondID, err := AddStorageBackend(ctx, Bun(), c.checkpointStorage)
+			require.NoError(t, err)
+			require.Equal(t, storageID, secondID)
+
+			actual, err := StorageBackend(ctx, Bun(), storageID)
+			require.NoError(t, err)
+			require.Equal(t, c.checkpointStorage, actual)
 		})
 	}
-
-	/*
-		value := reflect.ValueOf(cs)
-		typeOf := value.Type()
-		for i := 0; i < value.NumField(); i++ {
-			fieldValue := value.Field(i)
-			fieldType := typeOf.Field(i)
-
-			// Check if the field has a "union" tag
-			unionTag := fieldType.Tag.Get("union")
-			if unionTag == "" {
-				continue
-			}
-
-			t.Run(fmt.Sprintf("storage %s", unionTag), func(t *testing.T) {
-				m := make(map[string]any)
-				unionKey, unionVal, found := strings.Cut(unionTag, ",")
-				require.True(t, found, "union tag not in expected format of unionKey,unionVal "+unionTag)
-				m[unionKey] = unionVal
-
-				subStruct := reflect.ValueOf(fieldValue.Interface())
-				subValue := reflect.ValueOf(subStruct)
-				subTypeOf := subValue.Type()
-				fmt.Printf("TYPES %T %T %T %T\n", subStruct, subValue, subTypeOf)
-				for i := 0; i < subValue.NumField(); i++ {
-					// fieldValue := subValue.Field(i)
-					fieldType := subTypeOf.Field(i)
-					fmt.Printf("fieldType %T %v\n", fieldType, fieldType.Name)
-
-					// Check if the field has a "union" tag
-					jsonTag := fieldType.Tag.Get("json")
-					if jsonTag == "" {
-						continue
-					}
-					fmt.Println(jsonTag)
-				}
-			})
-		}
-	*/
 }
 
 func fillUUIDs(s string) string {
@@ -123,7 +102,6 @@ func fillUUIDs(s string) string {
 		s = strings.Replace(s, "%s", uuid.New().String(), 1)
 	}
 
-	fmt.Println(s)
 	return s
 }
 

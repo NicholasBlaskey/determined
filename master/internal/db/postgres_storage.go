@@ -25,6 +25,7 @@ type storageBackend struct {
 	SharedFSPropagation     *string `bun:"shared_fs_propagation"`
 }
 
+//nolint:exhaustruct
 func expconfToStorageBackend(cs *expconf.CheckpointStorageConfig) storageBackend {
 	switch storage := cs.GetUnionMember().(type) {
 	case expconf.SharedFSConfig:
@@ -38,7 +39,7 @@ func expconfToStorageBackend(cs *expconf.CheckpointStorageConfig) storageBackend
 			SharedFSPropagation:     ptrs.Ptr(storage.Propagation()),
 		}
 	default:
-		panic("unknown union member")
+		panic(fmt.Sprintf("unknown type converting expconf to storage backend %T", storage))
 	}
 }
 
@@ -54,7 +55,6 @@ func AddStorageBackend(
 		Returning("id").
 		On("CONFLICT DO NOTHING").
 		Exec(ctx); err != nil {
-
 		json, jsonErr := cs.MarshalJSON()
 		if jsonErr != nil {
 			return 0, fmt.Errorf("adding storage backend: %w: %w", jsonErr, err)
@@ -120,31 +120,33 @@ func storageIDByConfig(
 
 // StorageBackend returns the checkpoint storage backend information.
 // We won't return the "save_*_best" fields on the expconf struct.
+//
+//nolint:exhaustruct
 func StorageBackend(
 	ctx context.Context, idb bun.IDB, id model.StorageBackendID,
 ) (*expconf.CheckpointStorageConfig, error) {
-	var storageBackend storageBackend
-	if err := idb.NewSelect().Model(&storageBackend).
+	var backend storageBackend
+	if err := idb.NewSelect().Model(&backend).
 		Where("id = ?", id).
-		Scan(ctx, &storageBackend); err != nil {
+		Scan(ctx, &backend); err != nil {
 		return nil, fmt.Errorf("getting storage backend ID %d: %w", id, err)
 	}
 
-	switch storageBackend.Type {
+	switch backend.Type {
 	case model.SharedFSStorageType:
 		return &expconf.CheckpointStorageConfig{
 			RawSharedFSConfig: &expconf.SharedFSConfig{
-				RawHostPath:        storageBackend.SharedFSHostPath,
-				RawContainerPath:   storageBackend.SharedFSContainerPath,
-				RawCheckpointPath:  storageBackend.SharedFSCheckpointPath,
-				RawTensorboardPath: storageBackend.SharedFSTensorboardPath,
-				RawStoragePath:     storageBackend.SharedFSStoragePath,
-				RawPropagation:     storageBackend.SharedFSPropagation,
+				RawHostPath:        backend.SharedFSHostPath,
+				RawContainerPath:   backend.SharedFSContainerPath,
+				RawCheckpointPath:  backend.SharedFSCheckpointPath,
+				RawTensorboardPath: backend.SharedFSTensorboardPath,
+				RawStoragePath:     backend.SharedFSStoragePath,
+				RawPropagation:     backend.SharedFSPropagation,
 			},
 		}, nil
 	default:
 		return nil, fmt.Errorf("got unexpected backendType %s for storageID %d",
-			storageBackend.Type, id)
+			backend.Type, id)
 	}
 
 	// TODO should we validate? Kinda think we shouldn't???
