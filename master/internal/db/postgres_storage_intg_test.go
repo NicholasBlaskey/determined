@@ -46,8 +46,8 @@ func generateStorageBackendExhaustiveTestCases(t *testing.T) []storageBackendExh
 		for i := 0; i < subS.NumField(); i++ {
 			if subTypeOfS.Field(i).Type.Kind() != reflect.Ptr &&
 				subTypeOfS.Field(i).Type.Elem().Kind() != reflect.String {
-				require.Fail(t, "this test only handles *string "+
-					"you can add logic to skip the non *string field")
+				require.Fail(t, "this test only handles *string, you can add logic "+
+					"to skip the non *string field if you add a test case in TestStorageBackend")
 			}
 
 			jsonTag, _, _ := strings.Cut(subTypeOfS.Field(i).Tag.Get("json"), ",")
