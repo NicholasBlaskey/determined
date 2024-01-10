@@ -237,12 +237,38 @@ func TestReportCheckpointWithStorageID(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	checkpointResponse, err := api.GetCheckpoint(ctx, &apiv1.GetCheckpointRequest{
-		CheckpointUuid: checkpointID,
+	t.Run("GetCheckpoint returns storageID", func(t *testing.T) {
+		checkpointResponse, err := api.GetCheckpoint(ctx, &apiv1.GetCheckpointRequest{
+			CheckpointUuid: checkpointID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, checkpointResponse.Checkpoint.StorageId)
+		require.Equal(t, reportResponse.StorageId, *checkpointResponse.Checkpoint.StorageId)
 	})
-	require.NoError(t, err)
-	require.NotNil(t, checkpointResponse.Checkpoint.StorageId)
-	require.Equal(t, reportResponse.StorageId, *checkpointResponse.Checkpoint.StorageId)
+
+	t.Run("GetExperimentCheckpoints returns storageID", func(t *testing.T) {
+		res, err := api.GetExperimentCheckpoints(ctx, &apiv1.GetExperimentCheckpointsRequest{
+			Id: int32(trial.ExperimentID),
+		})
+		require.NoError(t, err)
+		require.Len(t, res.Checkpoints, 1)
+		for _, c := range res.Checkpoints {
+			require.NotNil(t, c.StorageId)
+			require.Equal(t, reportResponse.StorageId, *c.StorageId)
+		}
+	})
+
+	t.Run("GetTrialCheckpoints returns storageID", func(t *testing.T) {
+		res, err := api.GetTrialCheckpoints(ctx, &apiv1.GetTrialCheckpointsRequest{
+			Id: int32(trial.ID),
+		})
+		require.NoError(t, err)
+		require.Len(t, res.Checkpoints, 1)
+		for _, c := range res.Checkpoints {
+			require.NotNil(t, c.StorageId)
+			require.Equal(t, reportResponse.StorageId, *c.StorageId)
+		}
+	})
 }
 
 func TestCheckpointRemoveFilesPrefixAndEmpty(t *testing.T) {

@@ -166,6 +166,9 @@ def test_delete_checkpoints() -> None:
     assert len(exp_1_checkpoints) > 0, f"no checkpoints found in experiment with ID:{exp_id_1}"
     assert len(exp_2_checkpoints) > 0, f"no checkpoints found in experiment with ID:{exp_id_2}"
 
+    # One-liner assertion with inline addition of checkpoints
+    assert all(checkpoint.storage_id is not None for checkpoint in exp_1_checkpoints + exp_2_checkpoints), "Storage ID cannot be None for all checkpoints in both experiments"
+
     d_exp_1_checkpoint_uuids = [
         exp_1_checkpoints[d_index].uuid
         for d_index in random.sample(range(len(exp_1_checkpoints)), 2)
@@ -465,6 +468,7 @@ def test_checkpoint_partial_delete() -> None:
         ).checkpoint
         assert ckpt.resources == resources
         assert ckpt.state == state
+        assert ckpt.storage_id is not None
 
     # Unchanged and empty glob causes checkpoint state says the same.
     remove_body = bindings.v1CheckpointsRemoveFilesRequest(

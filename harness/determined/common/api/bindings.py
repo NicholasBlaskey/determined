@@ -1880,6 +1880,7 @@ class v1Checkpoint(Printable):
     """Checkpoint a collection of files saved by a task."""
     allocationId: "typing.Optional[str]" = None
     reportTime: "typing.Optional[str]" = None
+    storageId: "typing.Optional[int]" = None
     taskId: "typing.Optional[str]" = None
 
     def __init__(
@@ -1892,6 +1893,7 @@ class v1Checkpoint(Printable):
         uuid: str,
         allocationId: "typing.Union[str, None, Unset]" = _unset,
         reportTime: "typing.Union[str, None, Unset]" = _unset,
+        storageId: "typing.Union[int, None, Unset]" = _unset,
         taskId: "typing.Union[str, None, Unset]" = _unset,
     ):
         self.metadata = metadata
@@ -1903,6 +1905,8 @@ class v1Checkpoint(Printable):
             self.allocationId = allocationId
         if not isinstance(reportTime, Unset):
             self.reportTime = reportTime
+        if not isinstance(storageId, Unset):
+            self.storageId = storageId
         if not isinstance(taskId, Unset):
             self.taskId = taskId
 
@@ -1919,6 +1923,8 @@ class v1Checkpoint(Printable):
             kwargs["allocationId"] = obj["allocationId"]
         if "reportTime" in obj:
             kwargs["reportTime"] = obj["reportTime"]
+        if "storageId" in obj:
+            kwargs["storageId"] = obj["storageId"]
         if "taskId" in obj:
             kwargs["taskId"] = obj["taskId"]
         return cls(**kwargs)
@@ -1935,6 +1941,8 @@ class v1Checkpoint(Printable):
             out["allocationId"] = self.allocationId
         if not omit_unset or "reportTime" in vars(self):
             out["reportTime"] = self.reportTime
+        if not omit_unset or "storageId" in vars(self):
+            out["storageId"] = self.storageId
         if not omit_unset or "taskId" in vars(self):
             out["taskId"] = self.taskId
         return out
@@ -12035,6 +12043,55 @@ class v1RoleWithAssignments(Printable):
             out["userRoleAssignments"] = None if self.userRoleAssignments is None else [x.to_json(omit_unset) for x in self.userRoleAssignments]
         return out
 
+class v1RunPrepareForReportRequest(Printable):
+    """Request to prepare to start reporting to a run."""
+
+    def __init__(
+        self,
+        *,
+        checkpointStorage: "typing.Dict[str, typing.Any]",
+        runId: int,
+    ):
+        self.checkpointStorage = checkpointStorage
+        self.runId = runId
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1RunPrepareForReportRequest":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "checkpointStorage": obj["checkpointStorage"],
+            "runId": obj["runId"],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "checkpointStorage": self.checkpointStorage,
+            "runId": self.runId,
+        }
+        return out
+
+class v1RunPrepareForReportResponse(Printable):
+
+    def __init__(
+        self,
+        *,
+        storageId: int,
+    ):
+        self.storageId = storageId
+
+    @classmethod
+    def from_json(cls, obj: Json) -> "v1RunPrepareForReportResponse":
+        kwargs: "typing.Dict[str, typing.Any]" = {
+            "storageId": obj["storageId"],
+        }
+        return cls(**kwargs)
+
+    def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
+        out: "typing.Dict[str, typing.Any]" = {
+            "storageId": self.storageId,
+        }
+        return out
+
 class v1RunnableOperation(Printable):
     """RunnableOperation represents a single runnable operation emitted by a
     searcher.
@@ -20723,6 +20780,32 @@ def get_ResourceAllocationRaw(
     if _resp.status_code == 200:
         return v1ResourceAllocationRawResponse.from_json(_resp.json())
     raise APIHttpError("get_ResourceAllocationRaw", _resp)
+
+def post_RunPrepareForReport(
+    session: "api.Session",
+    *,
+    body: "v1RunPrepareForReportRequest",
+    runId: int,
+) -> "v1RunPrepareForReportResponse":
+    """Start syncing and prepare to be able to report to a run.
+    This should be called once per task that will report to the run.
+
+    - runId: RunID to sync to.
+    """
+    _params = None
+    _resp = session._do_request(
+        method="POST",
+        path=f"/api/v1/runs/{runId}/start",
+        params=_params,
+        json=body.to_json(True),
+        data=None,
+        headers=None,
+        timeout=None,
+        stream=False,
+    )
+    if _resp.status_code == 200:
+        return v1RunPrepareForReportResponse.from_json(_resp.json())
+    raise APIHttpError("post_RunPrepareForReport", _resp)
 
 def get_SearchExperiments(
     session: "api.Session",
