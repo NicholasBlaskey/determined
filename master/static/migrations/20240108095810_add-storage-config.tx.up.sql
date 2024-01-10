@@ -1,6 +1,9 @@
 CREATE TYPE checkpoint_storage_type AS ENUM (
   'shared_fs',
-  's3'
+  's3',
+  'gcs',
+  'azure',
+  'directory'
 );
 
 CREATE TABLE storage_backend (
@@ -13,21 +16,68 @@ CREATE TABLE storage_backend (
   shared_fs_tensorboard_path TEXT,
   shared_fs_storage_path     TEXT,
   shared_fs_propagation      TEXT,
-  CONSTRAINT shared_fs_required_fields CHECK (type = 'shared_fs' AND (
+  CONSTRAINT shared_fs_required_fields CHECK (type != 'shared_fs' OR (
       shared_fs_host_path IS NOT NULL AND
       shared_fs_propagation IS NOT NULL
+  )),
+
+  s3_bucket       TEXT,
+  s3_access_key   TEXT,
+  s3_secret_key   TEXT,
+  s3_endpoint_url TEXT,
+  s3_prefix       TEXT,
+  CONSTRAINT s3_required_fields CHECK (type != 's3' OR (
+      s3_bucket IS NOT NULL
+  )),
+
+  gcs_bucket TEXT,
+  gcs_prefix TEXT,
+  CONSTRAINT gcs_required_fields CHECK (type != 'gcs' OR (
+      gcs_bucket IS NOT NULL
+  )),
+
+  azure_container         TEXT,
+  azure_connection_string TEXT,
+  azure_account_url       TEXT,
+  azure_credential        TEXT,
+  CONSTRAINT azure_required_fields CHECK (type != 'azure' OR (
+        NOT (azure_container IS NULL) AND
+        NOT (azure_connection_string IS NOT NULL AND azure_account_url IS NOT NULL) AND
+        NOT (azure_connection_string IS NOT NULL AND azure_credential IS NOT NULL)
+  )),
+
+  directory_container_path TEXT,
+  CONSTRAINT directory_required_fields CHECK (type != 'directory' OR (
+      directory_container_path IS NOT NULL
   ))
 );
 
 -- Hack for lack of pre-postgres 15 NULLS NOT DISTINCT.
 -- https://stackoverflow.com/questions/8289100/create-unique-constraint-with-null-columns
-CREATE UNIQUE INDEX ix_storage_backend_shared_fs_unique ON storage_backend (
+-- TODO seperate index?
+CREATE UNIQUE INDEX ix_storage_backend_unique ON storage_backend (
   COALESCE(shared_fs_host_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_container_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_checkpoint_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_tensorboard_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_storage_path, 'DeterminedReservedNullUniqueValue'),
-  COALESCE(shared_fs_propagation, 'DeterminedReservedNullUniqueValue')
+  COALESCE(shared_fs_propagation, 'DeterminedReservedNullUniqueValue'),
+
+  COALESCE(s3_bucket, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(s3_access_key, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(s3_secret_key, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(s3_endpoint_url, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(s3_prefix, 'DeterminedReservedNullUniqueValue'),
+
+  COALESCE(gcs_bucket, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(gcs_prefix, 'DeterminedReservedNullUniqueValue'),
+
+  COALESCE(azure_container, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(azure_connection_string, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(azure_account_url, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(azure_credential, 'DeterminedReservedNullUniqueValue'),
+
+  COALESCE(directory_container_path, 'DeterminedReservedNullUniqueValue')
 );
 
 ALTER TABLE checkpoints_v2

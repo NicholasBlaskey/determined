@@ -19,7 +19,7 @@ import (
 
 type storageBackendExhaustiveTestCases struct {
 	name              string
-	checkpointStorage *expconf.CheckpointStorageConfig
+	checkpointStorage string
 }
 
 func generateStorageBackendExhaustiveTestCases(t *testing.T) []storageBackendExhaustiveTestCases {
@@ -51,50 +51,26 @@ func generateStorageBackendExhaustiveTestCases(t *testing.T) []storageBackendExh
 			}
 
 			jsonTag, _, _ := strings.Cut(subTypeOfS.Field(i).Tag.Get("json"), ",")
-			if jsonTag != "-" {
-				testCase[jsonTag] = uuid.New().String()
+			if jsonTag == "-" {
+				continue
 			}
+			if unionVal == "azure" && jsonTag == "connection_string" {
+				continue // Azure only can set one of these. So skip account_url.
+			}
+
+			testCase[jsonTag] = uuid.New().String()
 		}
 
 		bytes, err := json.Marshal(testCase)
 		require.NoError(t, err)
-		cs := &expconf.CheckpointStorageConfig{}
-		require.NoError(t, cs.UnmarshalJSON(bytes))
+
 		cases = append(cases, storageBackendExhaustiveTestCases{
 			name:              unionTag,
-			checkpointStorage: cs,
+			checkpointStorage: string(bytes),
 		})
 	}
 
 	return cases
-}
-
-func TestStorageBackendExhaustive(t *testing.T) {
-	// This test is designed to make sure any added checkpoint fields are persisted correctly.
-	// This test should fail if you add a new checkpoint storage type or add a new field
-	// and do not update the database.
-	cases := generateStorageBackendExhaustiveTestCases(t)
-
-	ctx := context.Background()
-	require.NoError(t, etc.SetRootPath(RootFromDB))
-	pgDB := MustResolveTestPostgres(t)
-	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			storageID, err := AddStorageBackend(ctx, Bun(), c.checkpointStorage)
-			require.NoError(t, err)
-
-			// Test that we dedupe storage IDs.
-			secondID, err := AddStorageBackend(ctx, Bun(), c.checkpointStorage)
-			require.NoError(t, err)
-			require.Equal(t, storageID, secondID)
-
-			actual, err := StorageBackend(ctx, Bun(), storageID)
-			require.NoError(t, err)
-			require.Equal(t, c.checkpointStorage, actual)
-		})
-	}
 }
 
 func fillUUIDs(s string) string {
@@ -106,14 +82,16 @@ func fillUUIDs(s string) string {
 }
 
 func TestStorageBackend(t *testing.T) {
-	cases := []struct {
-		name string
-		json string
-	}{
+	// TODO combine above test cases with this.
+	cases := []storageBackendExhaustiveTestCases{
 		{"fs minimal", fillUUIDs(`{"type": "shared_fs", "host_path": "%s", "propagation": "rshared"}`)},
-		{"fs maximal", fillUUIDs(`{"type": "shared_fs", "host_path": "%s", "container_path": "%s",
-	"checkpoint_path": "%s", "tensorboard_path": "%s", "storage_path": "%s", "propagation": "rshared"}`)},
+		{"s3 minimal", fillUUIDs(`{"type": "s3", "bucket": "%s"}`)},
+		{"gcs minimal", fillUUIDs(`{"type": "gcs", "bucket": "%s"}`)},
+		{"azure connection_string", fillUUIDs(`{"type": "azure", "container": "%s", "connection_string": "%s"}`)},
+		{"azure url", fillUUIDs(`{"type": "azure", "container": "%s", "account_url": "%s", "credential": "%s"}`)},
+		{"container minimal", fillUUIDs(`{"type": "directory", "container_path": "%s"}`)},
 	}
+	cases = append(cases, generateStorageBackendExhaustiveTestCases(t)...)
 
 	ctx := context.Background()
 	require.NoError(t, etc.SetRootPath(RootFromDB))
@@ -123,7 +101,7 @@ func TestStorageBackend(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			cs := &expconf.CheckpointStorageConfig{}
-			require.NoError(t, cs.UnmarshalJSON([]byte(c.json)))
+			require.NoError(t, cs.UnmarshalJSON([]byte(c.checkpointStorage)))
 
 			storageID, err := AddStorageBackend(ctx, Bun(), cs)
 			require.NoError(t, err)
@@ -152,6 +130,31 @@ func TestStorageBackendChecks(t *testing.T) {
 		{"fs missing propagation", storageBackend{
 			Type:             model.SharedFSStorageType,
 			SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
+		}},
+		{"s3 missing bucket", storageBackend{
+			Type: model.S3StorageType,
+		}},
+		{"gcs missing bucket", storageBackend{
+			Type: model.GCSStorageType,
+		}},
+		{"azure missing container", storageBackend{
+			Type:                  model.AzureStorageType,
+			AzureConnectionString: ptrs.Ptr(uuid.New().String()),
+		}},
+		{"azure connect + url set", storageBackend{
+			Type:                  model.AzureStorageType,
+			AzureContainer:        ptrs.Ptr(uuid.New().String()),
+			AzureConnectionString: ptrs.Ptr(uuid.New().String()),
+			AzureAccountURL:       ptrs.Ptr(uuid.New().String()),
+		}},
+		{"azure connect + credential set", storageBackend{
+			Type:                  model.AzureStorageType,
+			AzureContainer:        ptrs.Ptr(uuid.New().String()),
+			AzureConnectionString: ptrs.Ptr(uuid.New().String()),
+			AzureAccountURL:       ptrs.Ptr(uuid.New().String()),
+		}},
+		{"directory missing container_path", storageBackend{
+			Type: model.DirectoryStorageType,
 		}},
 	}
 

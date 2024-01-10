@@ -24,6 +24,22 @@ type storageBackend struct {
 	SharedFSTensorboardPath *string `bun:"shared_fs_tensorboard_path"`
 	SharedFSStoragePath     *string `bun:"shared_fs_storage_path"`
 	SharedFSPropagation     *string `bun:"shared_fs_propagation"`
+
+	S3Bucket      *string `bun:"s3_bucket"`
+	S3AccessKey   *string `bun:"s3_access_key"`
+	S3SecretKey   *string `bun:"s3_secret_key"`
+	S3EndpointURL *string `bun:"s3_endpoint_url"`
+	S3Prefix      *string `bun:"s3_prefix"`
+
+	GCSBucket *string `bun:"gcs_bucket"`
+	GCSPrefix *string `bun:"gcs_prefix"`
+
+	AzureContainer        *string `bun:"azure_container"`
+	AzureConnectionString *string `bun:"azure_connection_string"`
+	AzureAccountURL       *string `bun:"azure_account_url"`
+	AzureCredential       *string `bun:"azure_credential"`
+
+	DirectoryContainerPath *string `bun:"directory_container_path"`
 }
 
 //nolint:exhaustruct
@@ -38,6 +54,34 @@ func expconfToStorageBackend(cs *expconf.CheckpointStorageConfig) storageBackend
 			SharedFSTensorboardPath: storage.TensorboardPath(),
 			SharedFSStoragePath:     storage.StoragePath(),
 			SharedFSPropagation:     ptrs.Ptr(storage.Propagation()),
+		}
+	case expconf.S3Config:
+		return storageBackend{
+			Type:          model.S3StorageType,
+			S3Bucket:      ptrs.Ptr(storage.Bucket()),
+			S3AccessKey:   storage.AccessKey(),
+			S3SecretKey:   storage.SecretKey(),
+			S3EndpointURL: storage.EndpointURL(),
+			S3Prefix:      storage.Prefix(),
+		}
+	case expconf.GCSConfig:
+		return storageBackend{
+			Type:      model.GCSStorageType,
+			GCSBucket: ptrs.Ptr(storage.Bucket()),
+			GCSPrefix: storage.Prefix(),
+		}
+	case expconf.AzureConfig:
+		return storageBackend{
+			Type:                  model.AzureStorageType,
+			AzureContainer:        ptrs.Ptr(storage.Container()),
+			AzureConnectionString: storage.ConnectionString(),
+			AzureAccountURL:       storage.AccountURL(),
+			AzureCredential:       storage.Credential(),
+		}
+	case expconf.DirectoryConfig:
+		return storageBackend{
+			Type:                   model.DirectoryStorageType,
+			DirectoryContainerPath: ptrs.Ptr(storage.ContainerPath()),
 		}
 	default:
 		panic(fmt.Sprintf("unknown type converting expconf to storage backend %T", storage))
@@ -54,7 +98,6 @@ func AddStorageBackend(
 	if err := schemas.IsComplete(cs); err != nil {
 		return 0, fmt.Errorf("schema is not complete: %w", err)
 	}
-
 	backend := expconfToStorageBackend(cs)
 	if _, err := idb.NewInsert().Model(&backend).
 		Returning("id").
@@ -147,6 +190,38 @@ func StorageBackend(
 				RawTensorboardPath: backend.SharedFSTensorboardPath,
 				RawStoragePath:     backend.SharedFSStoragePath,
 				RawPropagation:     backend.SharedFSPropagation,
+			},
+		}, nil
+	case model.S3StorageType:
+		return &expconf.CheckpointStorageConfig{
+			RawS3Config: &expconf.S3Config{
+				RawBucket:      backend.S3Bucket,
+				RawAccessKey:   backend.S3AccessKey,
+				RawSecretKey:   backend.S3SecretKey,
+				RawEndpointURL: backend.S3EndpointURL,
+				RawPrefix:      backend.S3Prefix,
+			},
+		}, nil
+	case model.GCSStorageType:
+		return &expconf.CheckpointStorageConfig{
+			RawGCSConfig: &expconf.GCSConfig{
+				RawBucket: backend.GCSBucket,
+				RawPrefix: backend.GCSPrefix,
+			},
+		}, nil
+	case model.AzureStorageType:
+		return &expconf.CheckpointStorageConfig{
+			RawAzureConfig: &expconf.AzureConfig{
+				RawContainer:        backend.AzureContainer,
+				RawConnectionString: backend.AzureConnectionString,
+				RawAccountURL:       backend.AzureAccountURL,
+				RawCredential:       backend.AzureCredential,
+			},
+		}, nil
+	case model.DirectoryStorageType:
+		return &expconf.CheckpointStorageConfig{
+			RawDirectoryConfig: &expconf.DirectoryConfig{
+				RawContainerPath: backend.DirectoryContainerPath,
 			},
 		}, nil
 	default:

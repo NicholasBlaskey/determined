@@ -13,4 +13,8 @@ const (
 	S3StorageType StorageType = "s3"
 	// GCSStorageType is the type for s3.
 	GCSStorageType StorageType = "gcs"
+	// AzureStorageType is the type for azure.
+	AzureStorageType StorageType = "azure"
+	// DirectoryStorageType is the type for directory.
+	DirectoryStorageType StorageType = "directory"
 )
