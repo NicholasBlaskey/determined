@@ -19428,22 +19428,16 @@ export const InternalApiFetchParamCreator = function (configuration?: Configurat
         /**
          * 
          * @summary Start syncing and prepare to be able to report to a run. This should be called once per task that will report to the run.
-         * @param {number} runId RunID to sync to.
          * @param {V1RunPrepareForReportRequest} body
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        runPrepareForReport(runId: number, body: V1RunPrepareForReportRequest, options: any = {}): FetchArgs {
-            // verify required parameter 'runId' is not null or undefined
-            if (runId === null || runId === undefined) {
-                throw new RequiredError('runId','Required parameter runId was null or undefined when calling runPrepareForReport.');
-            }
+        runPrepareForReport(body: V1RunPrepareForReportRequest, options: any = {}): FetchArgs {
             // verify required parameter 'body' is not null or undefined
             if (body === null || body === undefined) {
                 throw new RequiredError('body','Required parameter body was null or undefined when calling runPrepareForReport.');
             }
-            const localVarPath = `/api/v1/runs/{runId}/start`
-                .replace(`{${"runId"}}`, encodeURIComponent(String(runId)));
+            const localVarPath = `/api/v1/runs/start`;
             const localVarUrlObj = new URL(localVarPath, BASE_PATH);
             const localVarRequestOptions = { method: 'POST', ...options };
             const localVarHeaderParameter = {} as any;
@@ -20980,13 +20974,12 @@ export const InternalApiFp = function (configuration?: Configuration) {
         /**
          * 
          * @summary Start syncing and prepare to be able to report to a run. This should be called once per task that will report to the run.
-         * @param {number} runId RunID to sync to.
          * @param {V1RunPrepareForReportRequest} body
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        runPrepareForReport(runId: number, body: V1RunPrepareForReportRequest, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<V1RunPrepareForReportResponse> {
-            const localVarFetchArgs = InternalApiFetchParamCreator(configuration).runPrepareForReport(runId, body, options);
+        runPrepareForReport(body: V1RunPrepareForReportRequest, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<V1RunPrepareForReportResponse> {
+            const localVarFetchArgs = InternalApiFetchParamCreator(configuration).runPrepareForReport(body, options);
             return (fetch: FetchAPI = window.fetch, basePath: string = BASE_PATH) => {
                 return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
                     if (response.status >= 200 && response.status < 300) {
@@ -21779,13 +21772,12 @@ export const InternalApiFactory = function (configuration?: Configuration, fetch
         /**
          * 
          * @summary Start syncing and prepare to be able to report to a run. This should be called once per task that will report to the run.
-         * @param {number} runId RunID to sync to.
          * @param {V1RunPrepareForReportRequest} body
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        runPrepareForReport(runId: number, body: V1RunPrepareForReportRequest, options?: any) {
-            return InternalApiFp(configuration).runPrepareForReport(runId, body, options)(fetch, basePath);
+        runPrepareForReport(body: V1RunPrepareForReportRequest, options?: any) {
+            return InternalApiFp(configuration).runPrepareForReport(body, options)(fetch, basePath);
         },
         /**
          * 
@@ -22619,14 +22611,13 @@ export class InternalApi extends BaseAPI {
     /**
      * 
      * @summary Start syncing and prepare to be able to report to a run. This should be called once per task that will report to the run.
-     * @param {number} runId RunID to sync to.
      * @param {V1RunPrepareForReportRequest} body
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InternalApi
      */
-    public runPrepareForReport(runId: number, body: V1RunPrepareForReportRequest, options?: any) {
-        return InternalApiFp(this.configuration).runPrepareForReport(runId, body, options)(this.fetch, this.basePath)
+    public runPrepareForReport(body: V1RunPrepareForReportRequest, options?: any) {
+        return InternalApiFp(this.configuration).runPrepareForReport(body, options)(this.fetch, this.basePath)
     }
     
     /**

@@ -16,6 +16,7 @@ message RunPrepareForReportRequest {
   // Checkpoint storage config.
   google.protobuf.Struct checkpoint_storage = 2;
 }
+// Response to prepare to start reporting to a run.
 message RunPrepareForReportResponse {
   option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
     json_schema: { required: [ "storage_id" ] }

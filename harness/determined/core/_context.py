@@ -12,7 +12,7 @@ import appdirs
 import determined as det
 from determined import core, tensorboard
 from determined.common import api, constants, storage, util
-from determined.common.api import certs
+from determined.common.api import bindings, certs
 
 logger = logging.getLogger("determined.core")
 
@@ -285,6 +285,13 @@ def init(
                 container_path=constants.SHARED_FS_CONTAINER_PATH,
             )
 
+        runPrepareResponse = bindings.post_RunPrepareForReport(
+            session,
+            body=bindings.v1RunPrepareForReportRequest(
+                runId=info.trial.trial_id,
+                checkpointStorage=info.trial._config["checkpoint_storage"],
+            ),
+        )
         checkpoint = core.CheckpointContext(
             distributed,
             storage_manager,
@@ -293,6 +300,7 @@ def init(
             info.allocation_id,
             tensorboard_mode,
             tensorboard_manager,
+            runPrepareResponse.storageId,
         )
 
         preempt = core.PreemptContext(session, info.allocation_id, distributed, preempt_mode)

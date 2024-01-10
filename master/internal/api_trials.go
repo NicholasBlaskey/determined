@@ -1380,7 +1380,7 @@ func (a *apiServer) RunPrepareForReport(
 	if err != nil {
 		return nil, fmt.Errorf("marshaling checkpoint storage %+v: %w", req.CheckpointStorage, err)
 	}
-	cs := &expconf.CheckpointStorageConfig{}
+	cs := &expconf.CheckpointStorageConfig{} //nolint:exhaustruct
 	if err := cs.UnmarshalJSON(bytes); err != nil {
 		return nil, fmt.Errorf("unmarshaling json bytes %s: %w", string(bytes), err)
 	}

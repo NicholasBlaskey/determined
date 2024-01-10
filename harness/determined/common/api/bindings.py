@@ -20785,17 +20785,14 @@ def post_RunPrepareForReport(
     session: "api.Session",
     *,
     body: "v1RunPrepareForReportRequest",
-    runId: int,
 ) -> "v1RunPrepareForReportResponse":
     """Start syncing and prepare to be able to report to a run.
     This should be called once per task that will report to the run.
-
-    - runId: RunID to sync to.
     """
     _params = None
     _resp = session._do_request(
         method="POST",
-        path=f"/api/v1/runs/{runId}/start",
+        path="/api/v1/runs/start",
         params=_params,
         json=body.to_json(True),
         data=None,

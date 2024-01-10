@@ -78,6 +78,7 @@ func (x *RunPrepareForReportRequest) GetCheckpointStorage() *_struct.Struct {
 	return nil
 }
 
+// Response to prepare to start reporting to a run.
 type RunPrepareForReportResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

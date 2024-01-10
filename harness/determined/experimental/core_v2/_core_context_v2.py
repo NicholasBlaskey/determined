@@ -135,6 +135,7 @@ def _make_v2_context(
             None,  # No allocations when off-cluster.
             tensorboard_mode,
             tensorboard_manager,
+            None,  # TODO get storage_id.
         )
 
         # At present, detached mode does not support preemption.
