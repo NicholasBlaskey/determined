@@ -6,8 +6,9 @@ from typing import List
 import pytest
 
 from determined.common.api import bindings
+from tests import api_utils
 from tests import config as conf
-from tests import ray_utils, api_utils
+from tests import ray_utils
 
 EXAMPLES_ROOT = conf.EXAMPLES_PATH / "features" / "unmanaged"
 
@@ -24,6 +25,7 @@ def test_unmanaged() -> None:
     exp_path = EXAMPLES_ROOT / "1_singleton.py"
     _run_unmanaged_script(["python", exp_path])
 
+
 @pytest.mark.e2e_cpu
 def test_unmanaged_checkpoints() -> None:
     exp_path = conf.fixtures_path("unmanaged/checkpointing.py")
@@ -33,11 +35,10 @@ def test_unmanaged_checkpoints() -> None:
     prefix = "determined experiment id: "
     lines = ""
     assert p.stdout
-    for l in p.stdout.split("\n"):
-        lines += l
-        print(prefix, l, prefix in l)
-        if prefix in l:
-            exp_id = int(l.split(prefix)[1].strip())
+    for line in p.stdout.split("\n"):
+        lines += line
+        if prefix in line:
+            exp_id = int(line.split(prefix)[1].strip())
             break
     assert exp_id is not None, "couldn't parse experiment id " + lines
 
