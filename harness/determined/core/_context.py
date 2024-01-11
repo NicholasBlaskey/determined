@@ -285,6 +285,7 @@ def init(
                 container_path=constants.SHARED_FS_CONTAINER_PATH,
             )
 
+        # TODO move.
         runPrepareResponse = bindings.post_RunPrepareForReport(
             session,
             body=bindings.v1RunPrepareForReportRequest(

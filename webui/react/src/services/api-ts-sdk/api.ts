@@ -8906,20 +8906,20 @@ export interface V1RunPrepareForReportRequest {
      * @type {any}
      * @memberof V1RunPrepareForReportRequest
      */
-    checkpointStorage: any;
+    checkpointStorage?: any;
 }
 /**
- * 
+ * Response to prepare to start reporting to a run.
  * @export
  * @interface V1RunPrepareForReportResponse
  */
 export interface V1RunPrepareForReportResponse {
     /**
-     * The token to be used when sending results.
+     * The storage_id to be used when creating new checkpoints. This will be returned always when checkpoint storage is set in the request.
      * @type {number}
      * @memberof V1RunPrepareForReportResponse
      */
-    storageId: number;
+    storageId?: number;
 }
 /**
  * The type of the Scheduler.   - SCHEDULER_TYPE_UNSPECIFIED: Unspecified. This value will never actually be returned by the API, it is just an artifact of using protobuf.  - SCHEDULER_TYPE_PRIORITY: The priority scheduler.  - SCHEDULER_TYPE_FAIR_SHARE: The fair share scheduler.  - SCHEDULER_TYPE_ROUND_ROBIN: The round robin scheduler  - SCHEDULER_TYPE_KUBERNETES: The kubernetes scheduler.  - SCHEDULER_TYPE_SLURM: A slurm placeholder. When running on slurm, all scheduling behavior is delegated.  - SCHEDULER_TYPE_PBS: A PBS placeholder. When running on PBS, all scheduling behavior is delegated.

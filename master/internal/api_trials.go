@@ -1376,25 +1376,29 @@ func (a *apiServer) RunPrepareForReport(
 		return nil, err
 	}
 
-	bytes, err := req.CheckpointStorage.MarshalJSON()
-	if err != nil {
-		return nil, fmt.Errorf("marshaling checkpoint storage %+v: %w", req.CheckpointStorage, err)
-	}
-	cs := &expconf.CheckpointStorageConfig{} //nolint:exhaustruct
-	if err := cs.UnmarshalJSON(bytes); err != nil {
-		return nil, fmt.Errorf("unmarshaling json bytes %s: %w", string(bytes), err)
-	}
-	if err := schemas.IsComplete(cs); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid checkpoint storage: %s", err)
-	}
+	var storageID *int32
+	if req.CheckpointStorage != nil {
+		bytes, err := req.CheckpointStorage.MarshalJSON()
+		if err != nil {
+			return nil, fmt.Errorf("marshaling checkpoint storage %+v: %w", req.CheckpointStorage, err)
+		}
+		cs := &expconf.CheckpointStorageConfig{} //nolint:exhaustruct
+		if err := cs.UnmarshalJSON(bytes); err != nil {
+			return nil, fmt.Errorf("unmarshaling json bytes %s: %w", string(bytes), err)
+		}
+		if err := schemas.IsComplete(cs); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid checkpoint storage: %s", err)
+		}
 
-	storageID, err := db.AddStorageBackend(ctx, db.Bun(), cs)
-	if err != nil {
-		return nil, fmt.Errorf("adding storage ID for runID %d: %w", req.RunId, err)
+		id, err := db.AddStorageBackend(ctx, db.Bun(), cs)
+		if err != nil {
+			return nil, fmt.Errorf("adding storage ID for runID %d: %w", req.RunId, err)
+		}
+		storageID = ptrs.Ptr(int32(id))
 	}
 
 	return &apiv1.RunPrepareForReportResponse{
-		StorageId: int32(storageID),
+		StorageId: storageID,
 	}, nil
 }
 

@@ -12045,51 +12045,60 @@ class v1RoleWithAssignments(Printable):
 
 class v1RunPrepareForReportRequest(Printable):
     """Request to prepare to start reporting to a run."""
+    checkpointStorage: "typing.Optional[typing.Dict[str, typing.Any]]" = None
 
     def __init__(
         self,
         *,
-        checkpointStorage: "typing.Dict[str, typing.Any]",
         runId: int,
+        checkpointStorage: "typing.Union[typing.Dict[str, typing.Any], None, Unset]" = _unset,
     ):
-        self.checkpointStorage = checkpointStorage
         self.runId = runId
+        if not isinstance(checkpointStorage, Unset):
+            self.checkpointStorage = checkpointStorage
 
     @classmethod
     def from_json(cls, obj: Json) -> "v1RunPrepareForReportRequest":
         kwargs: "typing.Dict[str, typing.Any]" = {
-            "checkpointStorage": obj["checkpointStorage"],
             "runId": obj["runId"],
         }
+        if "checkpointStorage" in obj:
+            kwargs["checkpointStorage"] = obj["checkpointStorage"]
         return cls(**kwargs)
 
     def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
         out: "typing.Dict[str, typing.Any]" = {
-            "checkpointStorage": self.checkpointStorage,
             "runId": self.runId,
         }
+        if not omit_unset or "checkpointStorage" in vars(self):
+            out["checkpointStorage"] = self.checkpointStorage
         return out
 
 class v1RunPrepareForReportResponse(Printable):
+    """Response to prepare to start reporting to a run."""
+    storageId: "typing.Optional[int]" = None
 
     def __init__(
         self,
         *,
-        storageId: int,
+        storageId: "typing.Union[int, None, Unset]" = _unset,
     ):
-        self.storageId = storageId
+        if not isinstance(storageId, Unset):
+            self.storageId = storageId
 
     @classmethod
     def from_json(cls, obj: Json) -> "v1RunPrepareForReportResponse":
         kwargs: "typing.Dict[str, typing.Any]" = {
-            "storageId": obj["storageId"],
         }
+        if "storageId" in obj:
+            kwargs["storageId"] = obj["storageId"]
         return cls(**kwargs)
 
     def to_json(self, omit_unset: bool = False) -> typing.Dict[str, typing.Any]:
         out: "typing.Dict[str, typing.Any]" = {
-            "storageId": self.storageId,
         }
+        if not omit_unset or "storageId" in vars(self):
+            out["storageId"] = self.storageId
         return out
 
 class v1RunnableOperation(Printable):

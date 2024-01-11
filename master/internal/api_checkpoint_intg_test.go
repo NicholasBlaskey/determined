@@ -221,10 +221,17 @@ func TestCheckpointReturned(t *testing.T) {
 	require.NoError(t, err)
 
 	reportResponse, err := api.RunPrepareForReport(ctx, &apiv1.RunPrepareForReportRequest{
+		RunId: int32(trial.ID),
+	})
+	require.NoError(t, err)
+	require.Nil(t, reportResponse.StorageId)
+
+	reportResponse, err = api.RunPrepareForReport(ctx, &apiv1.RunPrepareForReportRequest{
 		RunId:             int32(trial.ID),
 		CheckpointStorage: checkpointStorage,
 	})
 	require.NoError(t, err)
+	require.NotNil(t, reportResponse.StorageId)
 	checkpointMeta, err := structpb.NewStruct(map[string]any{
 		"steps_completed": 1,
 	})
@@ -238,7 +245,7 @@ func TestCheckpointReturned(t *testing.T) {
 		Resources:    map[string]int64{"x": 128, "y/": 0},
 		Metadata:     checkpointMeta,
 		State:        checkpointv1.State_STATE_COMPLETED,
-		StorageId:    &reportResponse.StorageId,
+		StorageId:    reportResponse.StorageId,
 	}
 	_, err = api.ReportCheckpoint(ctx, &apiv1.ReportCheckpointRequest{
 		Checkpoint: checkpoint,
