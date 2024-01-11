@@ -55,3 +55,8 @@ CREATE OR REPLACE VIEW proto_checkpoints_view AS
 
 ALTER TABLE checkpoints_v2 DROP COLUMN storage_id;
 DROP TABLE storage_backend;
+DROP TABLE storage_backend_shared_fs;
+DROP TABLE storage_backend_s3;
+DROP TABLE storage_backend_gcs;
+DROP TABLE storage_backend_azure;
+DROP TABLE storage_backend_directory;
