@@ -192,22 +192,6 @@ func TestCheckpointsOnArchivedSteps(t *testing.T) {
 		actual.Training.ValidationMetrics.AvgMetrics.AsMap())
 }
 
-func TestInvalidCheckpointStorageStartRun(t *testing.T) {
-	api, curUser, ctx := setupAPITest(t, nil)
-	trial, _ := createTestTrial(t, api, curUser)
-
-	invalidCheckpointStorage, err := structpb.NewStruct(map[string]any{
-		"type": "shared_fs",
-	})
-	require.NoError(t, err)
-
-	_, err = api.RunPrepareForReport(ctx, &apiv1.RunPrepareForReportRequest{
-		RunId:             int32(trial.ID),
-		CheckpointStorage: invalidCheckpointStorage,
-	})
-	require.Equal(t, codes.InvalidArgument, status.Code(err))
-}
-
 func TestCheckpointReturned(t *testing.T) {
 	// This tries to test all places where we will return a checkpointv1.Checkpoint.
 	api, curUser, ctx := setupAPITest(t, nil)

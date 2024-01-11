@@ -95,9 +95,11 @@ func expconfToStorageBackend(cs *expconf.CheckpointStorageConfig) storageBackend
 func AddStorageBackend(
 	ctx context.Context, idb bun.IDB, cs *expconf.CheckpointStorageConfig,
 ) (model.StorageBackendID, error) {
+	cs = schemas.WithDefaults(cs)
 	if err := schemas.IsComplete(cs); err != nil {
 		return 0, fmt.Errorf("schema is not complete: %w", err)
 	}
+
 	backend := expconfToStorageBackend(cs)
 	if _, err := idb.NewInsert().Model(&backend).
 		Returning("id").

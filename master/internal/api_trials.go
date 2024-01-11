@@ -30,7 +30,6 @@ import (
 	"github.com/determined-ai/determined/master/pkg/protoutils/protoconverter"
 	"github.com/determined-ai/determined/master/pkg/protoutils/protoless"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
-	"github.com/determined-ai/determined/master/pkg/schemas"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 	"github.com/determined-ai/determined/master/pkg/searcher"
 	"github.com/determined-ai/determined/proto/pkg/apiv1"
@@ -1385,9 +1384,6 @@ func (a *apiServer) RunPrepareForReport(
 		cs := &expconf.CheckpointStorageConfig{} //nolint:exhaustruct
 		if err := cs.UnmarshalJSON(bytes); err != nil {
 			return nil, fmt.Errorf("unmarshaling json bytes %s: %w", string(bytes), err)
-		}
-		if err := schemas.IsComplete(cs); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid checkpoint storage: %s", err)
 		}
 
 		id, err := db.AddStorageBackend(ctx, db.Bun(), cs)
