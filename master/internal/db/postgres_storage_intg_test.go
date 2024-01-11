@@ -158,6 +158,11 @@ func TestStorageBackendChecks(t *testing.T) {
 		{"directory missing container_path", storageBackend{
 			Type: model.DirectoryStorageType,
 		}},
+		{"s3 wrong type", storageBackend{
+			Type:             model.S3StorageType,
+			SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
+			S3Bucket:         ptrs.Ptr(uuid.New().String()),
+		}},
 	}
 
 	ctx := context.Background()

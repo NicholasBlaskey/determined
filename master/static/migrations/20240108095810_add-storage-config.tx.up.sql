@@ -17,8 +17,16 @@ CREATE TABLE storage_backend (
   shared_fs_storage_path     TEXT,
   shared_fs_propagation      TEXT,
   CONSTRAINT shared_fs_required_fields CHECK (type != 'shared_fs' OR (
-      shared_fs_host_path IS NOT NULL AND
-      shared_fs_propagation IS NOT NULL
+    shared_fs_host_path IS NOT NULL AND
+    shared_fs_propagation IS NOT NULL
+  )),
+  CONSTRAINT shard_fs_type_set CHECK (type = 'shared_fs' OR NOT (
+    shared_fs_host_path IS NOT NULL OR
+    shared_fs_container_path IS NOT NULL OR
+    shared_fs_checkpoint_path IS NOT NULL OR
+    shared_fs_tensorboard_path IS NOT NULL OR
+    shared_fs_storage_path IS NOT NULL OR
+    shared_fs_propagation IS NOT NULL
   )),
 
   s3_bucket       TEXT,
@@ -27,13 +35,13 @@ CREATE TABLE storage_backend (
   s3_endpoint_url TEXT,
   s3_prefix       TEXT,
   CONSTRAINT s3_required_fields CHECK (type != 's3' OR (
-      s3_bucket IS NOT NULL
+    s3_bucket IS NOT NULL
   )),
 
   gcs_bucket TEXT,
   gcs_prefix TEXT,
   CONSTRAINT gcs_required_fields CHECK (type != 'gcs' OR (
-      gcs_bucket IS NOT NULL
+    gcs_bucket IS NOT NULL
   )),
 
   azure_container         TEXT,
@@ -41,44 +49,51 @@ CREATE TABLE storage_backend (
   azure_account_url       TEXT,
   azure_credential        TEXT,
   CONSTRAINT azure_required_fields CHECK (type != 'azure' OR (
-        NOT (azure_container IS NULL) AND
-        NOT (azure_connection_string IS NOT NULL AND azure_account_url IS NOT NULL) AND
-        NOT (azure_connection_string IS NOT NULL AND azure_credential IS NOT NULL)
+    NOT (azure_container IS NULL) AND
+    NOT (azure_connection_string IS NOT NULL AND azure_account_url IS NOT NULL) AND
+    NOT (azure_connection_string IS NOT NULL AND azure_credential IS NOT NULL)
   )),
 
   directory_container_path TEXT,
   CONSTRAINT directory_required_fields CHECK (type != 'directory' OR (
-      directory_container_path IS NOT NULL
+    directory_container_path IS NOT NULL
   ))
 );
 
 -- Hack for lack of pre-postgres 15 NULLS NOT DISTINCT.
 -- https://stackoverflow.com/questions/8289100/create-unique-constraint-with-null-columns
--- TODO seperate index?
-CREATE UNIQUE INDEX ix_storage_backend_unique ON storage_backend (
+CREATE UNIQUE INDEX ix_storage_backend_unique_fs ON storage_backend (
   COALESCE(shared_fs_host_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_container_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_checkpoint_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_tensorboard_path, 'DeterminedReservedNullUniqueValue'),
   COALESCE(shared_fs_storage_path, 'DeterminedReservedNullUniqueValue'),
-  COALESCE(shared_fs_propagation, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(shared_fs_propagation, 'DeterminedReservedNullUniqueValue')
+) WHERE type = 'shared_fs';
 
+CREATE UNIQUE INDEX ix_storage_backend_unique_s3 ON storage_backend (
   COALESCE(s3_bucket, 'DeterminedReservedNullUniqueValue'),
   COALESCE(s3_access_key, 'DeterminedReservedNullUniqueValue'),
   COALESCE(s3_secret_key, 'DeterminedReservedNullUniqueValue'),
   COALESCE(s3_endpoint_url, 'DeterminedReservedNullUniqueValue'),
-  COALESCE(s3_prefix, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(s3_prefix, 'DeterminedReservedNullUniqueValue')
+) WHERE type = 's3';
 
+CREATE UNIQUE INDEX ix_storage_backend_unique_gcs ON storage_backend (
   COALESCE(gcs_bucket, 'DeterminedReservedNullUniqueValue'),
-  COALESCE(gcs_prefix, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(gcs_prefix, 'DeterminedReservedNullUniqueValue')
+) WHERE type = 'gcs';
 
+CREATE UNIQUE INDEX ix_storage_backend_unique_azure ON storage_backend (
   COALESCE(azure_container, 'DeterminedReservedNullUniqueValue'),
   COALESCE(azure_connection_string, 'DeterminedReservedNullUniqueValue'),
   COALESCE(azure_account_url, 'DeterminedReservedNullUniqueValue'),
-  COALESCE(azure_credential, 'DeterminedReservedNullUniqueValue'),
+  COALESCE(azure_credential, 'DeterminedReservedNullUniqueValue')
+) WHERE type = 'azure';
 
+CREATE UNIQUE INDEX ix_storage_backend_unique_directory ON storage_backend (
   COALESCE(directory_container_path, 'DeterminedReservedNullUniqueValue')
-);
+) WHERE type = 'directory';
 
 ALTER TABLE checkpoints_v2
   ADD COLUMN storage_id int REFERENCES storage_backend(id);
