@@ -4,12 +4,14 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 
 	"github.com/determined-ai/determined/master/pkg/etc"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -169,4 +171,69 @@ func TestStorageBackendChecks(t *testing.T) {
 			require.ErrorContains(t, err, "constraint")
 		})
 	}
+}
+
+func TestStorageBackendValidate(t *testing.T) {
+	ctx := context.Background()
+	require.NoError(t, etc.SetRootPath(RootFromDB))
+	pgDB := MustResolveTestPostgres(t)
+	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
+
+	t.Run("s3 fails validate prefix errors", func(t *testing.T) {
+		cs := &expconf.CheckpointStorageConfig{
+			RawS3Config: &expconf.S3Config{
+				RawBucket: ptrs.Ptr(uuid.New().String()),
+				RawPrefix: ptrs.Ptr("../invalid"),
+			},
+		}
+		_, err := AddStorageBackend(ctx, Bun(), cs)
+		require.ErrorContains(t, err, "config is invalid")
+	})
+
+	t.Run("shared_fs defaults propgation", func(t *testing.T) {
+		cs := &expconf.CheckpointStorageConfig{
+			RawSharedFSConfig: &expconf.SharedFSConfigV0{
+				RawHostPath: ptrs.Ptr(uuid.New().String()),
+			},
+		}
+
+		_, err := AddStorageBackend(ctx, Bun(), cs)
+		require.NoError(t, err)
+	})
+}
+
+func TestStorageBackendQuery(t *testing.T) {
+	backend := storageBackend{
+		Type:             model.SharedFSStorageType,
+		SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
+	}
+
+	q := Bun().NewSelect().Model(&backend).Column("id")
+
+	valueOfStruct := reflect.ValueOf(backend)
+	typeOfStruct := reflect.TypeOf(backend)
+	for i := 0; i < valueOfStruct.NumField(); i++ {
+		fieldValue := valueOfStruct.Field(i)
+		fieldType := typeOfStruct.Field(i)
+
+		tag := fieldType.Tag.Get("bun")
+		if fieldValue.IsValid() {
+			switch v := fieldValue.Interface().(type) {
+			case *string:
+				if v == nil {
+					q = q.Where("? IS NULL", bun.Safe(tag))
+				} else {
+					q = q.Where("? = ?", bun.Safe(tag), *v)
+				}
+			case model.StorageType:
+				q = q.Where("? = ?", bun.Safe(tag), v)
+			case bun.BaseModel, model.StorageBackendID:
+			default:
+				panic(fmt.Sprintf("unknown field type %T", fieldValue.Interface()))
+			}
+		}
+	}
+
+	expected := storageIDByConfigQuery(Bun(), &backend)
+	require.Equal(t, expected.String(), q.String())
 }

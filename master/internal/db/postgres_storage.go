@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/uptrace/bun"
 
@@ -133,39 +132,50 @@ func storageIDByConfig(
 	ctx context.Context, idb bun.IDB, cs *expconf.CheckpointStorageConfig,
 ) (model.StorageBackendID, error) {
 	backend := expconfToStorageBackend(cs)
-	q := idb.NewSelect().Model(&backend).Column("id")
-
-	// This is really gross but the alternative of listing every column seems worse from a
-	// bug potential standpoint.
-	valueOfStruct := reflect.ValueOf(backend)
-	typeOfStruct := reflect.TypeOf(backend)
-	for i := 0; i < valueOfStruct.NumField(); i++ {
-		fieldValue := valueOfStruct.Field(i)
-		fieldType := typeOfStruct.Field(i)
-
-		tag := fieldType.Tag.Get("bun")
-		if fieldValue.IsValid() {
-			switch v := fieldValue.Interface().(type) {
-			case *string:
-				if v == nil {
-					q = q.Where("? IS NULL", bun.Safe(tag))
-				} else {
-					q = q.Where("? = ?", bun.Safe(tag), *v)
-				}
-			case model.StorageType:
-				q = q.Where("? = ?", bun.Safe(tag), v)
-			case bun.BaseModel, model.StorageBackendID:
-			default:
-				panic(fmt.Sprintf("unknown field type %T", fieldValue.Interface()))
-			}
-		}
-	}
-
-	if err := q.Scan(ctx, &backend); err != nil {
+	if err := storageIDByConfigQuery(idb, &backend).Scan(ctx, &backend); err != nil {
 		return 0, fmt.Errorf("looking up storage backend by config: %w", err)
 	}
 
 	return backend.ID, nil
+}
+
+// This is written as a seperate function so we can test this.
+func storageIDByConfigQuery(
+	idb bun.IDB, backend *storageBackend,
+) *bun.SelectQuery {
+	q := idb.NewSelect().Model(backend).Column("id").Where("type = ?", backend.Type)
+	addStringPtrWhere := func(colName string, v *string) {
+		if v != nil {
+			q = q.Where("? = ?", bun.Safe(colName), *v)
+		} else {
+			q = q.Where("? IS NULL", bun.Safe(colName))
+		}
+	}
+
+	addStringPtrWhere("shared_fs_host_path", backend.SharedFSHostPath)
+	addStringPtrWhere("shared_fs_container_path", backend.SharedFSContainerPath)
+	addStringPtrWhere("shared_fs_checkpoint_path", backend.SharedFSCheckpointPath)
+	addStringPtrWhere("shared_fs_tensorboard_path", backend.SharedFSTensorboardPath)
+	addStringPtrWhere("shared_fs_storage_path", backend.SharedFSStoragePath)
+	addStringPtrWhere("shared_fs_propagation", backend.SharedFSPropagation)
+
+	addStringPtrWhere("s3_bucket", backend.S3Bucket)
+	addStringPtrWhere("s3_access_key", backend.S3AccessKey)
+	addStringPtrWhere("s3_secret_key", backend.S3SecretKey)
+	addStringPtrWhere("s3_endpoint_url", backend.S3EndpointURL)
+	addStringPtrWhere("s3_prefix", backend.S3Prefix)
+
+	addStringPtrWhere("gcs_bucket", backend.GCSBucket)
+	addStringPtrWhere("gcs_prefix", backend.GCSPrefix)
+
+	addStringPtrWhere("azure_container", backend.AzureContainer)
+	addStringPtrWhere("azure_connection_string", backend.AzureConnectionString)
+	addStringPtrWhere("azure_account_url", backend.AzureAccountURL)
+	addStringPtrWhere("azure_credential", backend.AzureCredential)
+
+	addStringPtrWhere("directory_container_path", backend.DirectoryContainerPath)
+
+	return q
 }
 
 // StorageBackend returns the checkpoint storage backend information.
@@ -230,7 +240,4 @@ func StorageBackend(
 		return nil, fmt.Errorf("got unexpected backendType %s for storageID %d",
 			backend.Type, id)
 	}
-
-	// TODO should we validate? Kinda think we shouldn't???
-	// I guess depends on backwards validation checks.
 }
