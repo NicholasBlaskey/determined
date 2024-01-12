@@ -84,8 +84,8 @@ type RunPrepareForReportResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The storage_id to be used when creating new checkpoints. This will be returned always
-	// when checkpoint storage is set in the request.
+	// The storage_id to be used when creating new checkpoints. This will be
+	// returned always when checkpoint storage is set in the request.
 	StorageId *int32 `protobuf:"varint,1,opt,name=storage_id,json=storageId,proto3,oneof" json:"storage_id,omitempty"`
 }
 

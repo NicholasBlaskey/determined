@@ -367,7 +367,7 @@ func (a *apiServer) CheckpointsRemoveFiles(
 		checkpointUUIDs := conv.ToUUIDList(strings.Split(expIDcUUIDs.CheckpointUUIDSStr, ","))
 
 		go func() {
-			groups, err := storage.GroupCheckpointsByStorageIDs(context.Background(), checkpointUUIDs)
+			groups, err := storage.GroupCheckpoints(context.Background(), checkpointUUIDs)
 			if err != nil {
 				log.WithError(err).Error("failed to group GC experiment in delete experiments")
 				return

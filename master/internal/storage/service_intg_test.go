@@ -122,15 +122,15 @@ func TestStorageBackend(t *testing.T) {
 			cs := &expconf.CheckpointStorageConfig{}
 			require.NoError(t, cs.UnmarshalJSON([]byte(c.checkpointStorage)))
 
-			storageID, err := AddStorageBackend(ctx, db.Bun(), cs)
+			storageID, err := AddBackend(ctx, cs)
 			require.NoError(t, err)
 
 			// Test that we dedupe storage IDs.
-			secondID, err := AddStorageBackend(ctx, db.Bun(), cs)
+			secondID, err := AddBackend(ctx, cs)
 			require.NoError(t, err)
 			require.Equal(t, storageID, secondID)
 
-			actual, err := StorageBackend(ctx, storageID)
+			actual, err := Backend(ctx, storageID)
 			require.NoError(t, err)
 			require.Equal(t, *cs, actual)
 		})
@@ -222,7 +222,7 @@ func TestStorageBackendValidate(t *testing.T) {
 				RawPrefix: ptrs.Ptr("../invalid"),
 			},
 		}
-		_, err := AddStorageBackend(ctx, db.Bun(), cs)
+		_, err := AddBackend(ctx, cs)
 		require.ErrorContains(t, err, "config is invalid")
 	})
 
@@ -233,7 +233,7 @@ func TestStorageBackendValidate(t *testing.T) {
 			},
 		}
 
-		_, err := AddStorageBackend(ctx, db.Bun(), cs)
+		_, err := AddBackend(ctx, cs)
 		require.NoError(t, err)
 	})
 }
@@ -294,21 +294,19 @@ func TestGroupCheckpointsByStorageIDs(t *testing.T) {
 	_, task := db.RequireMockTrial(t, db.SingleDB(), exp)
 	allocation := db.RequireMockAllocation(t, db.SingleDB(), task.TaskID)
 
-	// Create storage IDs.
-	storageID0, err := AddStorageBackend(ctx, db.Bun(), &expconf.CheckpointStorageConfig{
+	storageID0, err := AddBackend(ctx, &expconf.CheckpointStorageConfig{
 		RawDirectoryConfig: &expconf.DirectoryConfig{
 			RawContainerPath: ptrs.Ptr(uuid.New().String()),
 		},
 	})
 	require.NoError(t, err)
-	storageID1, err := AddStorageBackend(ctx, db.Bun(), &expconf.CheckpointStorageConfig{
+	storageID1, err := AddBackend(ctx, &expconf.CheckpointStorageConfig{
 		RawDirectoryConfig: &expconf.DirectoryConfig{
 			RawContainerPath: ptrs.Ptr(uuid.New().String()),
 		},
 	})
 	require.NoError(t, err)
 
-	// Create checkpoints
 	checkpoint0 := db.MockModelCheckpoint(uuid.New(), allocation)
 	require.NoError(t, db.AddCheckpointMetadata(ctx, &checkpoint0))
 
@@ -324,7 +322,7 @@ func TestGroupCheckpointsByStorageIDs(t *testing.T) {
 	checkpoint3.StorageID = &storageID1
 	require.NoError(t, db.AddCheckpointMetadata(ctx, &checkpoint3))
 
-	actual, err := GroupCheckpointsByStorageIDs(ctx, []uuid.UUID{
+	actual, err := GroupCheckpoints(ctx, []uuid.UUID{
 		checkpoint0.UUID, checkpoint1.UUID, checkpoint2.UUID, checkpoint3.UUID,
 	})
 	require.NoError(t, err)

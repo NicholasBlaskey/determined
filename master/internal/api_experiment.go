@@ -486,7 +486,7 @@ func (a *apiServer) deleteExperiments(exps []*model.Experiment, userModel *model
 				return err
 			}
 			if len(checkpoints) > 0 {
-				groups, err := storage.GroupCheckpointsByStorageIDs(context.Background(), checkpoints)
+				groups, err := storage.GroupCheckpoints(context.Background(), checkpoints)
 				if err != nil {
 					log.WithError(err).Error("failed to group GC experiment in delete experiments")
 					return err
@@ -1303,7 +1303,7 @@ func (a *apiServer) PatchExperiment(
 
 			taskID := model.NewTaskID()
 			go func() {
-				groups, err := storage.GroupCheckpointsByStorageIDs(context.Background(), checkpoints)
+				groups, err := storage.GroupCheckpoints(context.Background(), checkpoints)
 				if err != nil {
 					log.WithError(err).Error("failed to group GC experiment in patch experiment")
 					return

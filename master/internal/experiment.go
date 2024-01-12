@@ -472,7 +472,7 @@ func (e *internalExperiment) stop() error {
 	if len(checkpoints) > 0 {
 		taskID := model.TaskID(fmt.Sprintf("%d.%s", e.ID, uuid.New()))
 		go func() {
-			groups, err := storage.GroupCheckpointsByStorageIDs(context.TODO(), checkpoints)
+			groups, err := storage.GroupCheckpoints(context.Background(), checkpoints)
 			if err != nil {
 				e.syslog.WithError(err).Error("failed to group GC experiment checkpoints")
 				return

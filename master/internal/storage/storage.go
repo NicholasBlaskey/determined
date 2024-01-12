@@ -38,7 +38,7 @@ func (p *storageBackendRow) toChildRowOnlyIDPopulated() storageBackend {
 
 type storageBackend interface {
 	toExpconf() *expconf.CheckpointStorageConfig
-	getID() int
+	id() int
 }
 
 type storageBackendSharedFS struct {
@@ -53,7 +53,7 @@ type storageBackendSharedFS struct {
 	Propagation     string  `bun:"propagation"`
 }
 
-func (s *storageBackendSharedFS) getID() int {
+func (s *storageBackendSharedFS) id() int {
 	return s.ID
 }
 
@@ -82,7 +82,7 @@ type storageBackendS3 struct {
 	Prefix      *string `bun:"prefix"`
 }
 
-func (s *storageBackendS3) getID() int {
+func (s *storageBackendS3) id() int {
 	return s.ID
 }
 
@@ -107,7 +107,7 @@ type storageBackendGCS struct {
 	Prefix *string `bun:"prefix"`
 }
 
-func (s *storageBackendGCS) getID() int {
+func (s *storageBackendGCS) id() int {
 	return s.ID
 }
 
@@ -131,7 +131,7 @@ type storageBackendAzure struct {
 	Credential       *string `bun:"credential"`
 }
 
-func (s *storageBackendAzure) getID() int {
+func (s *storageBackendAzure) id() int {
 	return s.ID
 }
 
@@ -154,7 +154,7 @@ type storageBackendDirectory struct {
 	ContainerPath string `bun:"container_path"`
 }
 
-func (s *storageBackendDirectory) getID() int {
+func (s *storageBackendDirectory) id() int {
 	return s.ID
 }
 

@@ -81,7 +81,7 @@ func runCheckpointGCTask(
 
 	// Update checkpoint storage with storageID.
 	if storageID != nil {
-		checkpointStorage, err := storage.StorageBackend(context.TODO(), *storageID)
+		checkpointStorage, err := storage.Backend(context.TODO(), *storageID)
 		if err != nil {
 			return fmt.Errorf("getting storage id %d in create gc task: %w", *storageID, err)
 		}

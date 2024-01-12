@@ -14,12 +14,12 @@ import (
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 )
 
-// AddStorageBackend adds storage backend information.
+// AddBackend adds storage backend information.
 // We won't persist the "save_*_best" fields on the expconf struct.
 // If the same storage backend has been persisted before then we will return the ID and
 // not insert another row.
-func AddStorageBackend(
-	ctx context.Context, idb bun.IDB, cs *expconf.CheckpointStorageConfig,
+func AddBackend(
+	ctx context.Context, cs *expconf.CheckpointStorageConfig,
 ) (model.StorageBackendID, error) {
 	cs = schemas.WithDefaults(cs)
 	if err := schemas.IsComplete(cs); err != nil {
@@ -27,46 +27,56 @@ func AddStorageBackend(
 	}
 
 	childTableRow, unionType := expconfToStorage(cs)
-	if _, err := idb.NewInsert().Returning("id").
-		On("CONFLICT DO NOTHING").
-		Model(childTableRow).
-		Exec(ctx); err != nil {
-		json, jsonErr := cs.MarshalJSON()
-		if jsonErr != nil {
-			return 0, fmt.Errorf("adding storage backend: %w: %w", jsonErr, err)
-		}
-		return 0, fmt.Errorf("adding storage backend %s: %w", string(json), err)
-	}
 
-	// ON CONFLICT DO NOTHING returns a non zero ID only when we insert a new row.
-	// When we insert a new row also insert a new row in the parent table.
-	if childTableRow.getID() != 0 {
-		unionTableRow := &storageBackendRow{}
-		if _, err := idb.NewInsert().Model(unionTableRow).
-			Value(unionType, "?", childTableRow.getID()).
-			Returning("id").
+	var res model.StorageBackendID
+	if err := db.Bun().RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		if _, err := tx.NewInsert().Returning("id").
+			On("CONFLICT DO NOTHING").
+			Model(childTableRow).
 			Exec(ctx); err != nil {
-			return 0, fmt.Errorf("adding storage backend row: %w", err)
+			json, jsonErr := cs.MarshalJSON()
+			if jsonErr != nil {
+				return fmt.Errorf("adding storage backend: %w: %w", jsonErr, err)
+			}
+			return fmt.Errorf("adding storage backend %s: %w", string(json), err)
 		}
 
-		return unionTableRow.ID, nil
+		// ON CONFLICT DO NOTHING returns a non zero ID only when we insert a new row.
+		// When we insert a new row also insert a new row in the parent table.
+		if childTableRow.id() != 0 {
+			unionTableRow := &storageBackendRow{}
+			if _, err := tx.NewInsert().Model(unionTableRow).
+				Value(unionType, "?", childTableRow.id()).
+				Returning("id").
+				Exec(ctx); err != nil {
+				return fmt.Errorf("adding storage backend row: %w", err)
+			}
+
+			res = unionTableRow.ID
+			return nil
+		}
+
+		// This case we have already inserted a parent and a child row.
+		// First do a lookup for the child row then do another lookup of the parent.
+		childBackendID, err := getChildBackendRows(ctx, tx, childTableRow)
+		if err != nil {
+			return fmt.Errorf("getting child backend row in dupe case %v: %w", childTableRow, err)
+		}
+
+		unionTableRow := &storageBackendRow{}
+		if err := tx.NewSelect().Model(unionTableRow).
+			Where("? = ?", bun.Safe(unionType), childBackendID).
+			Scan(ctx, unionTableRow); err != nil {
+			return fmt.Errorf("getting parent backend row in dupe case %v: %w", childTableRow, err)
+		}
+
+		res = unionTableRow.ID
+		return nil
+	}); err != nil {
+		return 0, fmt.Errorf("adding storage backend: %w", err)
 	}
 
-	// This case we have already inserted a parent and a child row.
-	// First do a lookup for the child row then do another lookup of the parent.
-	childBackendID, err := getChildBackendRows(ctx, idb, childTableRow)
-	if err != nil {
-		return 0, fmt.Errorf("getting child backend row in dupe case %v: %w", childTableRow, err)
-	}
-
-	unionTableRow := &storageBackendRow{}
-	if err := idb.NewSelect().Model(unionTableRow).
-		Where("? = ?", bun.Safe(unionType), childBackendID).
-		Scan(ctx, unionTableRow); err != nil {
-		return 0, fmt.Errorf("getting parent backend row in dupe case %v: %w", childTableRow, err)
-	}
-
-	return unionTableRow.ID, nil
+	return res, nil
 }
 
 func getChildBackendRows(ctx context.Context, idb bun.IDB, backend storageBackend) (int, error) {
@@ -79,7 +89,7 @@ func getChildBackendRows(ctx context.Context, idb bun.IDB, backend storageBacken
 	if err := q.Scan(ctx, backend); err != nil {
 		return 0, fmt.Errorf("running storage child lookup query: %w", err)
 	}
-	return backend.getID(), nil
+	return backend.id(), nil
 }
 
 // This is written like this so we can easily test this. Without testing the query it
@@ -132,9 +142,9 @@ func getChildBackendRowWheres(backend storageBackend) ([]string, [][]any) {
 	return wheres, args
 }
 
-// StorageBackend returns the checkpoint storage backend information.
+// Backend returns the checkpoint storage backend information.
 // We won't return the "save_*_best" fields on the expconf struct.
-func StorageBackend(
+func Backend(
 	ctx context.Context, id model.StorageBackendID,
 ) (expconf.CheckpointStorageConfig, error) {
 	var parentRow storageBackendRow
@@ -147,7 +157,7 @@ func StorageBackend(
 
 	childRow := parentRow.toChildRowOnlyIDPopulated()
 	if err := db.Bun().NewSelect().Model(childRow).
-		Where("id = ?", childRow.getID()).
+		Where("id = ?", childRow.id()).
 		Scan(ctx, childRow); err != nil {
 		return expconf.CheckpointStorageConfig{},
 			fmt.Errorf("getting child of storage backend ID %d: %w", id, err)
@@ -161,24 +171,24 @@ func StorageBackend(
 	return *conf, nil
 }
 
-// CheckpointStorageGroup is a grouping of storage ID to checkpoints.
+// CheckpointsGroup is a grouping of storage ID to checkpoints.
 // This isn't a map[*model.StorageBackendID][]uuid.UUID since it is pretty
 // easy to misuse the *model.StorageBackendID by just doing something like m[ptrs.Ptr(5)].
-type CheckpointStorageGroup struct {
+type CheckpointsGroup struct {
 	StorageID   *model.StorageBackendID
 	Checkpoints []uuid.UUID
 }
 
-// GroupCheckpointsByStorageIDs takes a list of checkpoints and returns a mapping by storageID.
-func GroupCheckpointsByStorageIDs(
+// GroupCheckpoints takes a list of checkpoints and returns a mapping by storageID.
+func GroupCheckpoints(
 	ctx context.Context, uuids []uuid.UUID,
-) ([]*CheckpointStorageGroup, error) {
+) ([]*CheckpointsGroup, error) {
 	checkpoints, err := db.SingleDB().CheckpointByUUIDs(uuids)
 	if err != nil {
 		return nil, err
 	}
 
-	groups := make(map[model.StorageBackendID]*CheckpointStorageGroup)
+	groups := make(map[model.StorageBackendID]*CheckpointsGroup)
 	for _, c := range checkpoints {
 		if c.UUID == nil {
 			return nil, fmt.Errorf("got checkpoint uuids back with a nil uuid %+v", c)
@@ -190,7 +200,7 @@ func GroupCheckpointsByStorageIDs(
 		}
 
 		if _, ok := groups[id]; !ok {
-			groups[id] = &CheckpointStorageGroup{
+			groups[id] = &CheckpointsGroup{
 				StorageID: c.StorageID,
 			}
 		}

@@ -19,9 +19,9 @@ message RunPrepareForReportRequest {
 // Response to prepare to start reporting to a run.
 message RunPrepareForReportResponse {
   option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-    json_schema: { required: [ ] }
+    json_schema: { required: [] }
   };
-  // The storage_id to be used when creating new checkpoints. This will be returned always
-  // when checkpoint storage is set in the request.
+  // The storage_id to be used when creating new checkpoints. This will be
+  // returned always when checkpoint storage is set in the request.
   optional int32 storage_id = 1;
 }
