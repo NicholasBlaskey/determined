@@ -1,9 +1,11 @@
 //nolint:exhaustruct
-package db
+package storage
 
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -12,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 
+	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/pkg/etc"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
@@ -20,6 +23,25 @@ import (
 type storageBackendExhaustiveTestCases struct {
 	name              string
 	checkpointStorage string
+}
+
+func TestMain(m *testing.M) {
+	pgDB, err := db.ResolveTestPostgres()
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	err = db.MigrateTestPostgres(pgDB, "file://../../static/migrations", "up")
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	err = etc.SetRootPath("../../static/srv")
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	os.Exit(m.Run())
 }
 
 func generateStorageBackendExhaustiveTestCases(t *testing.T) []storageBackendExhaustiveTestCases {
@@ -94,24 +116,20 @@ func TestStorageBackend(t *testing.T) {
 	cases = append(cases, generateStorageBackendExhaustiveTestCases(t)...)
 
 	ctx := context.Background()
-	require.NoError(t, etc.SetRootPath(RootFromDB))
-	pgDB := MustResolveTestPostgres(t)
-	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
-
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			cs := &expconf.CheckpointStorageConfig{}
 			require.NoError(t, cs.UnmarshalJSON([]byte(c.checkpointStorage)))
 
-			storageID, err := AddStorageBackend(ctx, Bun(), cs)
+			storageID, err := AddStorageBackend(ctx, db.Bun(), cs)
 			require.NoError(t, err)
 
 			// Test that we dedupe storage IDs.
-			secondID, err := AddStorageBackend(ctx, Bun(), cs)
+			secondID, err := AddStorageBackend(ctx, db.Bun(), cs)
 			require.NoError(t, err)
 			require.Equal(t, storageID, secondID)
 
-			actual, err := StorageBackend(ctx, Bun(), storageID)
+			actual, err := StorageBackend(ctx, db.Bun(), storageID)
 			require.NoError(t, err)
 			require.Equal(t, cs, actual)
 		})
@@ -186,13 +204,9 @@ func TestStorageBackendChecks(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	require.NoError(t, etc.SetRootPath(RootFromDB))
-	pgDB := MustResolveTestPostgres(t)
-	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
-
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			_, err := Bun().NewInsert().Model(c.toInsert).Exec(ctx)
+			_, err := db.Bun().NewInsert().Model(c.toInsert).Exec(ctx)
 			require.ErrorContains(t, err, "constraint")
 		})
 	}
@@ -200,10 +214,6 @@ func TestStorageBackendChecks(t *testing.T) {
 
 func TestStorageBackendValidate(t *testing.T) {
 	ctx := context.Background()
-	require.NoError(t, etc.SetRootPath(RootFromDB))
-	pgDB := MustResolveTestPostgres(t)
-	MustMigrateTestPostgres(t, pgDB, MigrationsFromDB)
-
 	t.Run("s3 fails validate prefix errors", func(t *testing.T) {
 		cs := &expconf.CheckpointStorageConfig{
 			RawS3Config: &expconf.S3Config{
@@ -211,7 +221,7 @@ func TestStorageBackendValidate(t *testing.T) {
 				RawPrefix: ptrs.Ptr("../invalid"),
 			},
 		}
-		_, err := AddStorageBackend(ctx, Bun(), cs)
+		_, err := AddStorageBackend(ctx, db.Bun(), cs)
 		require.ErrorContains(t, err, "config is invalid")
 	})
 
@@ -222,7 +232,7 @@ func TestStorageBackendValidate(t *testing.T) {
 			},
 		}
 
-		_, err := AddStorageBackend(ctx, Bun(), cs)
+		_, err := AddStorageBackend(ctx, db.Bun(), cs)
 		require.NoError(t, err)
 	})
 }

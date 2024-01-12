@@ -23,6 +23,7 @@ import (
 	"github.com/determined-ai/determined/master/internal/experiment"
 	"github.com/determined-ai/determined/master/internal/grpcutil"
 	"github.com/determined-ai/determined/master/internal/sproto"
+	"github.com/determined-ai/determined/master/internal/storage"
 	"github.com/determined-ai/determined/master/internal/task"
 	"github.com/determined-ai/determined/master/internal/trials"
 	"github.com/determined-ai/determined/master/pkg/model"
@@ -1386,7 +1387,7 @@ func (a *apiServer) RunPrepareForReport(
 			return nil, fmt.Errorf("unmarshaling json bytes %s: %w", string(bytes), err)
 		}
 
-		id, err := db.AddStorageBackend(ctx, db.Bun(), cs)
+		id, err := storage.AddStorageBackend(ctx, db.Bun(), cs)
 		if err != nil {
 			return nil, fmt.Errorf("adding storage ID for runID %d: %w", req.RunId, err)
 		}
