@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
+	"golang.org/x/exp/maps"
 
+	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/schemas"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
@@ -132,21 +135,67 @@ func getChildBackendRowWheres(backend storageBackend) ([]string, [][]any) {
 // StorageBackend returns the checkpoint storage backend information.
 // We won't return the "save_*_best" fields on the expconf struct.
 func StorageBackend(
-	ctx context.Context, idb bun.IDB, id model.StorageBackendID,
-) (*expconf.CheckpointStorageConfig, error) {
+	ctx context.Context, id model.StorageBackendID,
+) (expconf.CheckpointStorageConfig, error) {
 	var parentRow storageBackendRow
-	if err := idb.NewSelect().Model(&parentRow).
+	if err := db.Bun().NewSelect().Model(&parentRow).
 		Where("id = ?", id).
 		Scan(ctx, &parentRow); err != nil {
-		return nil, fmt.Errorf("getting storage backend ID %d: %w", id, err)
+		return expconf.CheckpointStorageConfig{},
+			fmt.Errorf("getting storage backend ID %d: %w", id, err)
 	}
 
 	childRow := parentRow.toChildRowOnlyIDPopulated()
-	if err := idb.NewSelect().Model(childRow).
+	if err := db.Bun().NewSelect().Model(childRow).
 		Where("id = ?", childRow.getID()).
 		Scan(ctx, childRow); err != nil {
-		return nil, fmt.Errorf("getting child of storage backend ID %d: %w", id, err)
+		return expconf.CheckpointStorageConfig{},
+			fmt.Errorf("getting child of storage backend ID %d: %w", id, err)
 	}
 
-	return childRow.toExpconf(), nil
+	conf := childRow.toExpconf()
+	if conf == nil {
+		return expconf.CheckpointStorageConfig{},
+			fmt.Errorf("childRow toExpconf is nil, this is unexpected")
+	}
+	return *conf, nil
+}
+
+// CheckpointStorageGroup is a grouping of storage ID to checkpoints.
+// This isn't a map[*model.StorageBackendID][]uuid.UUID since it is pretty
+// easy to misuse the *model.StorageBackendID by just doing something like m[ptrs.Ptr(5)].
+type CheckpointStorageGroup struct {
+	StorageID   *model.StorageBackendID
+	Checkpoints []uuid.UUID
+}
+
+// GroupCheckpointsByStorageIDs takes a list of checkpoints and returns a mapping by storageID.
+func GroupCheckpointsByStorageIDs(
+	ctx context.Context, uuids []uuid.UUID,
+) ([]*CheckpointStorageGroup, error) {
+	checkpoints, err := db.SingleDB().CheckpointByUUIDs(uuids)
+	if err != nil {
+		return nil, err
+	}
+
+	groups := make(map[model.StorageBackendID]*CheckpointStorageGroup)
+	for _, c := range checkpoints {
+		if c.UUID == nil {
+			return nil, fmt.Errorf("got checkpoint uuids back with a nil uuid %+v", c)
+		}
+
+		id := model.StorageBackendID(0)
+		if c.StorageID != nil {
+			id = *c.StorageID
+		}
+
+		if _, ok := groups[id]; !ok {
+			groups[id] = &CheckpointStorageGroup{
+				StorageID: c.StorageID,
+			}
+		}
+		groups[id].Checkpoints = append(groups[id].Checkpoints, *c.UUID)
+	}
+
+	return maps.Values(groups), nil
 }

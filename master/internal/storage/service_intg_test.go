@@ -16,6 +16,7 @@ import (
 
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/pkg/etc"
+	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 )
@@ -129,9 +130,9 @@ func TestStorageBackend(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, storageID, secondID)
 
-			actual, err := StorageBackend(ctx, db.Bun(), storageID)
+			actual, err := StorageBackend(ctx, storageID)
 			require.NoError(t, err)
-			require.Equal(t, cs, actual)
+			require.Equal(t, *cs, actual)
 		})
 	}
 }
@@ -282,5 +283,64 @@ func TestStorageBackendQuery(t *testing.T) {
 			}
 			require.ElementsMatch(t, expected, actual)
 		})
+	}
+}
+
+func TestGroupCheckpointsByStorageIDs(t *testing.T) {
+	ctx := context.Background()
+
+	user := db.RequireMockUser(t, db.SingleDB())
+	exp := db.RequireMockExperiment(t, db.SingleDB(), user)
+	_, task := db.RequireMockTrial(t, db.SingleDB(), exp)
+	allocation := db.RequireMockAllocation(t, db.SingleDB(), task.TaskID)
+
+	// Create storage IDs.
+	storageID0, err := AddStorageBackend(ctx, db.Bun(), &expconf.CheckpointStorageConfig{
+		RawDirectoryConfig: &expconf.DirectoryConfig{
+			RawContainerPath: ptrs.Ptr(uuid.New().String()),
+		},
+	})
+	require.NoError(t, err)
+	storageID1, err := AddStorageBackend(ctx, db.Bun(), &expconf.CheckpointStorageConfig{
+		RawDirectoryConfig: &expconf.DirectoryConfig{
+			RawContainerPath: ptrs.Ptr(uuid.New().String()),
+		},
+	})
+	require.NoError(t, err)
+
+	// Create checkpoints
+	checkpoint0 := db.MockModelCheckpoint(uuid.New(), allocation)
+	require.NoError(t, db.AddCheckpointMetadata(ctx, &checkpoint0))
+
+	checkpoint1 := db.MockModelCheckpoint(uuid.New(), allocation)
+	checkpoint1.StorageID = &storageID0
+	require.NoError(t, db.AddCheckpointMetadata(ctx, &checkpoint1))
+
+	checkpoint2 := db.MockModelCheckpoint(uuid.New(), allocation)
+	checkpoint2.StorageID = &storageID1
+	require.NoError(t, db.AddCheckpointMetadata(ctx, &checkpoint2))
+
+	checkpoint3 := db.MockModelCheckpoint(uuid.New(), allocation)
+	checkpoint3.StorageID = &storageID1
+	require.NoError(t, db.AddCheckpointMetadata(ctx, &checkpoint3))
+
+	actual, err := GroupCheckpointsByStorageIDs(ctx, []uuid.UUID{
+		checkpoint0.UUID, checkpoint1.UUID, checkpoint2.UUID, checkpoint3.UUID,
+	})
+	require.NoError(t, err)
+
+	expected := map[model.StorageBackendID][]uuid.UUID{
+		0:          {checkpoint0.UUID},
+		storageID0: {checkpoint1.UUID},
+		storageID1: {checkpoint2.UUID, checkpoint3.UUID},
+	}
+	require.Equal(t, len(expected), len(actual))
+	for _, a := range actual {
+		id := model.StorageBackendID(0)
+		if a.StorageID != nil {
+			id = *a.StorageID
+		}
+
+		require.ElementsMatch(t, expected[id], a.Checkpoints)
 	}
 }
