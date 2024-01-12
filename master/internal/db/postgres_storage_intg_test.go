@@ -4,7 +4,6 @@ package db
 import (
 	"context"
 	"encoding/json"
-	//"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -14,7 +13,6 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/determined-ai/determined/master/pkg/etc"
-	//"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/ptrs"
 	"github.com/determined-ai/determined/master/pkg/schemas/expconf"
 )
@@ -57,6 +55,7 @@ func generateStorageBackendExhaustiveTestCases(t *testing.T) []storageBackendExh
 				continue
 			}
 			if unionVal == "azure" && jsonTag == "connection_string" {
+				testCase["connection_string"] = nil
 				continue // Azure only can set one of these. So skip account_url.
 			}
 
@@ -119,49 +118,70 @@ func TestStorageBackend(t *testing.T) {
 	}
 }
 
-/*
 func TestStorageBackendChecks(t *testing.T) {
+	const reserved = "DeterminedReservedNullUniqueValue"
+
 	cases := []struct {
 		name     string
 		toInsert storageBackend
 	}{
-		{"fs missing host path", storageBackend{
-			Type:                model.SharedFSStorageType,
-			SharedFSPropagation: ptrs.Ptr(uuid.New().String()),
+		{"s3 bucket ..", &storageBackendS3{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr(".."),
 		}},
-		{"fs missing propagation", storageBackend{
-			Type:             model.SharedFSStorageType,
-			SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
+		{"s3 bucket starts with ../", &storageBackendS3{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr("../test"),
 		}},
-		{"s3 missing bucket", storageBackend{
-			Type: model.S3StorageType,
+		{"s3 bucket ends with /..", &storageBackendS3{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr("./test/.."),
 		}},
-		{"gcs missing bucket", storageBackend{
-			Type: model.GCSStorageType,
+		{"s3 bucket contains /../", &storageBackendS3{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr("./test/../git/."),
 		}},
-		{"azure missing container", storageBackend{
-			Type:                  model.AzureStorageType,
-			AzureConnectionString: ptrs.Ptr(uuid.New().String()),
+		{"gcs bucket ..", &storageBackendGCS{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr(".."),
 		}},
-		{"azure connect + url set", storageBackend{
-			Type:                  model.AzureStorageType,
-			AzureContainer:        ptrs.Ptr(uuid.New().String()),
-			AzureConnectionString: ptrs.Ptr(uuid.New().String()),
-			AzureAccountURL:       ptrs.Ptr(uuid.New().String()),
+		{"gcs bucket starts with ../", &storageBackendGCS{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr("../test"),
 		}},
-		{"azure connect + credential set", storageBackend{
-			Type:                  model.AzureStorageType,
-			AzureContainer:        ptrs.Ptr(uuid.New().String()),
-			AzureConnectionString: ptrs.Ptr(uuid.New().String()),
-			AzureAccountURL:       ptrs.Ptr(uuid.New().String()),
+		{"gcs bucket ends with /..", &storageBackendGCS{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr("./test/.."),
 		}},
-		{"directory missing container_path", storageBackend{
-			Type: model.DirectoryStorageType,
+		{"gcs bucket contains /../", &storageBackendGCS{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr("./test/../git/."),
 		}},
-		{"s3 wrong type", storageBackend{
-			Type:             model.S3StorageType,
-			SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
-			S3Bucket:         ptrs.Ptr(uuid.New().String()),
+		{"azure connect + url set", &storageBackendAzure{
+			Container:        uuid.New().String(),
+			ConnectionString: ptrs.Ptr(uuid.New().String()),
+			AccountURL:       ptrs.Ptr(uuid.New().String()),
+		}},
+		{"azure connect + credential set", &storageBackendAzure{
+			Container:        uuid.New().String(),
+			ConnectionString: ptrs.Ptr(uuid.New().String()),
+			AccountURL:       ptrs.Ptr(uuid.New().String()),
+		}},
+		{"fs reserved", &storageBackendSharedFS{
+			HostPath:      uuid.New().String(),
+			ContainerPath: ptrs.Ptr(reserved),
+		}},
+		{"s3 reserved", &storageBackendS3{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr(reserved),
+		}},
+		{"gcs reserved", &storageBackendGCS{
+			Bucket: uuid.New().String(),
+			Prefix: ptrs.Ptr(reserved),
+		}},
+		{"azure reserved", &storageBackendAzure{
+			Container:  uuid.New().String(),
+			Credential: ptrs.Ptr(reserved),
 		}},
 	}
 
@@ -172,12 +192,11 @@ func TestStorageBackendChecks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			_, err := Bun().NewInsert().Model(&c.toInsert).Exec(ctx)
+			_, err := Bun().NewInsert().Model(c.toInsert).Exec(ctx)
 			require.ErrorContains(t, err, "constraint")
 		})
 	}
 }
-*/
 
 func TestStorageBackendValidate(t *testing.T) {
 	ctx := context.Background()
@@ -218,59 +237,40 @@ func TestStorageBackendQuery(t *testing.T) {
 			csMap := make(map[string]any)
 			require.NoError(t, json.Unmarshal([]byte(c.checkpointStorage), &csMap))
 
+			type clause struct {
+				Where string
+				Args  []any
+			}
+
 			backend, _ := expconfToStorage(cs)
-			expected := Bun().NewSelect().Model(&backend).Column("id")
+			var expected []clause
 			for k, v := range csMap {
 				if k == "type" {
 					continue
 				}
 
 				if v == nil {
-					expected = expected.Where("? IS NULL", bun.Safe(k))
+					expected = append(expected, clause{
+						Where: "? IS NULL",
+						Args:  []any{bun.Safe(k)},
+					})
 				} else {
-					expected = expected.Where("? = ?", bun.Safe(k), v)
+					expected = append(expected, clause{
+						Where: "? = ?",
+						Args:  []any{bun.Safe(k), v},
+					})
 				}
 			}
 
-			actual := getChildBackendRowsQuery(Bun(), backend)
-
-			require.Equal(t, expected.String(), actual.String())
+			wheres, args := getChildBackendRowWheres(backend)
+			var actual []clause
+			for i := 0; i < len(wheres); i++ {
+				actual = append(actual, clause{
+					Where: wheres[i],
+					Args:  args[i],
+				})
+			}
+			require.ElementsMatch(t, expected, actual)
 		})
 	}
-
-	/*
-		backend := storageBackend{
-			Type:             model.SharedFSStorageType,
-			SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
-		}
-
-		q := Bun().NewSelect().Model(&backend).Column("id")
-
-		valueOfStruct := reflect.ValueOf(backend)
-		typeOfStruct := reflect.TypeOf(backend)
-		for i := 0; i < valueOfStruct.NumField(); i++ {
-			fieldValue := valueOfStruct.Field(i)
-			fieldType := typeOfStruct.Field(i)
-
-			tag := fieldType.Tag.Get("bun")
-			if fieldValue.IsValid() {
-				switch v := fieldValue.Interface().(type) {
-				case *string:
-					if v == nil {
-						q = q.Where("? IS NULL", bun.Safe(tag))
-					} else {
-						q = q.Where("? = ?", bun.Safe(tag), *v)
-					}
-				case model.StorageType:
-					q = q.Where("? = ?", bun.Safe(tag), v)
-				case bun.BaseModel, model.StorageBackendID:
-				default:
-					panic(fmt.Sprintf("unknown field type %T", fieldValue.Interface()))
-				}
-			}
-		}
-
-		expected := storageIDByConfigQuery(Bun(), &backend)
-		require.Equal(t, expected.String(), q.String())
-	*/
 }
