@@ -8,7 +8,7 @@ import determined as det
 from determined import core, experimental, tensorboard
 from determined.common import api, constants, storage, util
 from determined.common.api import bindings, certs
-from determined.common.storage.shared import _shortcut_to_config
+from determined.common.storage import shared
 
 logger = logging.getLogger("determined.core")
 
@@ -185,7 +185,7 @@ def run_prepare(
 ) -> bindings.v1RunPrepareForReportResponse:
     cs = None
     if isinstance(checkpoint_storage, str):
-        cs = _shortcut_to_config(checkpoint_storage)
+        cs = shared._shortcut_to_config(checkpoint_storage)
     elif isinstance(checkpoint_storage, dict):
         cs = checkpoint_storage
 

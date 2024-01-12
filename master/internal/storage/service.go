@@ -36,7 +36,7 @@ func AddStorageBackend(
 	}
 
 	// ON CONFLICT DO NOTHING returns a non zero ID only when we insert a new row.
-	// When we insert a new row also insert a new row in th parent table.
+	// When we insert a new row also insert a new row in the parent table.
 	if childTableRow.getID() != 0 {
 		unionTableRow := &storageBackendRow{}
 		if _, err := idb.NewInsert().Model(unionTableRow).
