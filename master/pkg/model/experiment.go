@@ -632,6 +632,9 @@ const (
 	StepsCompletedMetadataKey = "steps_completed"
 )
 
+// StorageBackendID is the ID for the storage backend.
+type StorageBackendID int
+
 // CheckpointV2 represents a row from the `checkpoints_v2` table.
 type CheckpointV2 struct {
 	bun.BaseModel `bun:"table:checkpoints_v2"`

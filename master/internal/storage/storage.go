@@ -1,4 +1,3 @@
-//nolint:exhaustruct
 package storage
 
 import (
@@ -58,6 +57,7 @@ func (s *storageBackendSharedFS) getID() int {
 	return s.ID
 }
 
+//nolint:exhaustruct
 func (s *storageBackendSharedFS) toExpconf() *expconf.CheckpointStorageConfig {
 	return &expconf.CheckpointStorageConfig{
 		RawSharedFSConfig: &expconf.SharedFSConfig{
@@ -86,6 +86,7 @@ func (s *storageBackendS3) getID() int {
 	return s.ID
 }
 
+//nolint:exhaustruct
 func (s *storageBackendS3) toExpconf() *expconf.CheckpointStorageConfig {
 	return &expconf.CheckpointStorageConfig{
 		RawS3Config: &expconf.S3Config{
@@ -110,6 +111,7 @@ func (s *storageBackendGCS) getID() int {
 	return s.ID
 }
 
+//nolint:exhaustruct
 func (s *storageBackendGCS) toExpconf() *expconf.CheckpointStorageConfig {
 	return &expconf.CheckpointStorageConfig{
 		RawGCSConfig: &expconf.GCSConfig{
@@ -133,6 +135,7 @@ func (s *storageBackendAzure) getID() int {
 	return s.ID
 }
 
+//nolint:exhaustruct
 func (s *storageBackendAzure) toExpconf() *expconf.CheckpointStorageConfig {
 	return &expconf.CheckpointStorageConfig{
 		RawAzureConfig: &expconf.AzureConfig{
@@ -155,6 +158,7 @@ func (s *storageBackendDirectory) getID() int {
 	return s.ID
 }
 
+//nolint:exhaustruct
 func (s *storageBackendDirectory) toExpconf() *expconf.CheckpointStorageConfig {
 	return &expconf.CheckpointStorageConfig{
 		RawDirectoryConfig: &expconf.DirectoryConfig{
