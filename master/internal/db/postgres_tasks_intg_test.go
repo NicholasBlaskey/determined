@@ -309,7 +309,6 @@ func TestExhaustiveEnums(t *testing.T) {
 		"DELETED":           true,
 	})
 	addCheck("AllocationState", "public.allocation_state", map[string]bool{})
-	addCheck("StorageType", "public.checkpoint_storage_type", map[string]bool{})
 
 	// Populate postgres types.
 	for _, c := range checks {
