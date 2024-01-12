@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package db
 
 import (
@@ -85,13 +86,18 @@ func AddStorageBackend(
 	}
 
 	childTableRow, unionType := expconfToStorage(cs)
-	q := idb.NewInsert().Returning("id").On("CONFLICT DO NOTHING")
-	switch r := childTableRow.(type) {
-	case *storageBackendSharedFS:
-		q = q.Model(r)
-	}
+	// q := idb.NewInsert().Returning("id").On("CONFLICT DO NOTHING").Model(childTableRow).Exec(ctx)
 
-	if _, err := q.Exec(ctx); err != nil {
+	/*
+		switch r := childTableRow.(type) {
+		case *storageBackendSharedFS:
+			q = q.Model(r)
+		}
+	*/
+	if _, err := idb.NewInsert().Returning("id").
+		On("CONFLICT DO NOTHING").
+		Model(childTableRow).
+		Exec(ctx); err != nil {
 		json, jsonErr := cs.MarshalJSON()
 		if jsonErr != nil {
 			return 0, fmt.Errorf("adding storage backend: %w: %w", jsonErr, err)
@@ -131,16 +137,18 @@ func AddStorageBackend(
 }
 
 func getChildBackendRows(ctx context.Context, idb bun.IDB, backend storageBackend) (int, error) {
+	fmt.Println("WORKING?")
 	q := getChildBackendRowsQuery(idb, backend)
 	if err := q.Scan(ctx, backend); err != nil {
 		return 0, fmt.Errorf("running storage child lookup query: %w", err)
 	}
+	fmt.Println("WORKING ID?", backend.getID())
 
 	return backend.getID(), nil
 }
 
 func getChildBackendRowsQuery(idb bun.IDB, backend storageBackend) *bun.SelectQuery {
-	q := idb.NewSelect().Model(backend)
+	q := idb.NewSelect().Model(backend).Column("id")
 
 	addStringPtrWhere := func(colName string, v *string) {
 		if v != nil {
@@ -165,8 +173,6 @@ func getChildBackendRowsQuery(idb bun.IDB, backend storageBackend) *bun.SelectQu
 
 // StorageBackend returns the checkpoint storage backend information.
 // We won't return the "save_*_best" fields on the expconf struct.
-//
-//nolint:exhaustruct
 func StorageBackend(
 	ctx context.Context, idb bun.IDB, id model.StorageBackendID,
 ) (*expconf.CheckpointStorageConfig, error) {

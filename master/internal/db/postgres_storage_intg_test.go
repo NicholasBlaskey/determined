@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	//"github.com/uptrace/bun"
+	"github.com/uptrace/bun"
 
 	"github.com/determined-ai/determined/master/pkg/etc"
 	//"github.com/determined-ai/determined/master/pkg/model"
@@ -84,7 +84,6 @@ func fillUUIDs(s string) string {
 }
 
 func TestStorageBackend(t *testing.T) {
-	// TODO combine above test cases with this.
 	cases := []storageBackendExhaustiveTestCases{
 		{"fs minimal", fillUUIDs(`{"type": "shared_fs", "host_path": "%s", "propagation": "rshared"}`)},
 		{"s3 minimal", fillUUIDs(`{"type": "s3", "bucket": "%s"}`)},
@@ -209,40 +208,69 @@ func TestStorageBackendValidate(t *testing.T) {
 	})
 }
 
-/*
 func TestStorageBackendQuery(t *testing.T) {
-	backend := storageBackend{
-		Type:             model.SharedFSStorageType,
-		SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
+	cases := generateStorageBackendExhaustiveTestCases(t)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			cs := &expconf.CheckpointStorageConfig{}
+			require.NoError(t, cs.UnmarshalJSON([]byte(c.checkpointStorage)))
+
+			csMap := make(map[string]any)
+			require.NoError(t, json.Unmarshal([]byte(c.checkpointStorage), &csMap))
+
+			backend, _ := expconfToStorage(cs)
+			expected := Bun().NewSelect().Model(&backend).Column("id")
+			for k, v := range csMap {
+				if k == "type" {
+					continue
+				}
+
+				if v == nil {
+					expected = expected.Where("? IS NULL", bun.Safe(k))
+				} else {
+					expected = expected.Where("? = ?", bun.Safe(k), v)
+				}
+			}
+
+			actual := getChildBackendRowsQuery(Bun(), backend)
+
+			require.Equal(t, expected.String(), actual.String())
+		})
 	}
 
-	q := Bun().NewSelect().Model(&backend).Column("id")
+	/*
+		backend := storageBackend{
+			Type:             model.SharedFSStorageType,
+			SharedFSHostPath: ptrs.Ptr(uuid.New().String()),
+		}
 
-	valueOfStruct := reflect.ValueOf(backend)
-	typeOfStruct := reflect.TypeOf(backend)
-	for i := 0; i < valueOfStruct.NumField(); i++ {
-		fieldValue := valueOfStruct.Field(i)
-		fieldType := typeOfStruct.Field(i)
+		q := Bun().NewSelect().Model(&backend).Column("id")
 
-		tag := fieldType.Tag.Get("bun")
-		if fieldValue.IsValid() {
-			switch v := fieldValue.Interface().(type) {
-			case *string:
-				if v == nil {
-					q = q.Where("? IS NULL", bun.Safe(tag))
-				} else {
-					q = q.Where("? = ?", bun.Safe(tag), *v)
+		valueOfStruct := reflect.ValueOf(backend)
+		typeOfStruct := reflect.TypeOf(backend)
+		for i := 0; i < valueOfStruct.NumField(); i++ {
+			fieldValue := valueOfStruct.Field(i)
+			fieldType := typeOfStruct.Field(i)
+
+			tag := fieldType.Tag.Get("bun")
+			if fieldValue.IsValid() {
+				switch v := fieldValue.Interface().(type) {
+				case *string:
+					if v == nil {
+						q = q.Where("? IS NULL", bun.Safe(tag))
+					} else {
+						q = q.Where("? = ?", bun.Safe(tag), *v)
+					}
+				case model.StorageType:
+					q = q.Where("? = ?", bun.Safe(tag), v)
+				case bun.BaseModel, model.StorageBackendID:
+				default:
+					panic(fmt.Sprintf("unknown field type %T", fieldValue.Interface()))
 				}
-			case model.StorageType:
-				q = q.Where("? = ?", bun.Safe(tag), v)
-			case bun.BaseModel, model.StorageBackendID:
-			default:
-				panic(fmt.Sprintf("unknown field type %T", fieldValue.Interface()))
 			}
 		}
-	}
 
-	expected := storageIDByConfigQuery(Bun(), &backend)
-	require.Equal(t, expected.String(), q.String())
+		expected := storageIDByConfigQuery(Bun(), &backend)
+		require.Equal(t, expected.String(), q.String())
+	*/
 }
-*/
