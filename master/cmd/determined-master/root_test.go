@@ -95,7 +95,7 @@ webhooks:
 		},
 	}
 
-	expected.ResourcePools = []config.ResourcePoolConfig{
+	expected.ResourcePoolsDontUse = []config.ResourcePoolConfig{ //nolint:staticcheck
 		{
 			PoolName:                 "default",
 			Provider:                 providerConf,
