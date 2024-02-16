@@ -56,11 +56,6 @@ func TestResolveConfigErrors(t *testing.T) {
 		validationErrorString string
 	}{
 		{"both resource_manager and resource_managers", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_manager:
   type: agent
 resource_managers:
@@ -68,11 +63,6 @@ resource_managers:
 `, errBothRMAndRMsGiven, ""},
 
 		{"both resource_manager and resource_managers", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: a
@@ -83,11 +73,6 @@ resource_pools:
 `, errMoreThanOneRMAndRootPoolsGiven, ""},
 
 		{"both resource_pools specified", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: a
@@ -98,11 +83,6 @@ resource_pools:
 `, errBothPoolsGiven, ""},
 
 		{"multiple agent RM specified", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: a
@@ -113,11 +93,6 @@ resource_managers:
 		// TODO(RM-XXX) why is "Check Failed 2" errors.
 		// I think it s because of check.Validate calling it twice somehow.
 		{"dupe pools", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: a
@@ -128,11 +103,6 @@ resource_managers:
 			"has a duplicate name: a\n\terror found at root: 1 resource pool has a duplicate name: a"},
 
 		{"dupe rm names", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: a
@@ -144,11 +114,6 @@ resource_managers:
 			"resource manager at index 1 has a duplicate name: a"},
 
 		{"k8s name not specified", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: a
@@ -158,11 +123,6 @@ resource_managers:
 			"ResourceManagers[1].KubernetesRM: name is required:  must be non-empty"},
 
 		{"k8s rocm config", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: kubernetes
     max_slots_per_pod: 2
@@ -171,11 +131,6 @@ resource_managers:
 			"ResourceManagers[0].KubernetesRM: rocm slot_type is not supported yet on k8s"},
 
 		{"k8s negative cpu", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: kubernetes
     max_slots_per_pod: 2
@@ -186,11 +141,6 @@ resource_managers:
 			"KubernetesRM: slot_resource_requests.cpu must be > 0: -10 is not greater than 0"},
 
 		{"agent name not specified", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: kubernetes
     max_slots_per_pod: 2
@@ -228,24 +178,13 @@ func TestResolveConfig(t *testing.T) {
 		yaml     string
 		expected Config
 	}{
-		{"no resource manager or pools specified", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
-`, Config{
+		{"no resource manager or pools specified", `{}`, Config{
 			ResourceConfig: ResourceConfig{
 				ResourceManagers: defaultRMsConfig(),
 			},
 		}},
 
 		{"old resource manager specified with no pools / no scheduler", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_manager:
   type: agent
 `, Config{
@@ -261,11 +200,6 @@ resource_manager:
 		}},
 
 		{"old resource manager specified with no pools / scheduler given", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_manager:
   type: agent
   scheduler:
@@ -300,11 +234,6 @@ resource_manager:
 		}},
 
 		{"old resource manager specified with pools given / scheduler given", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_manager:
   type: agent
   scheduler:
@@ -365,11 +294,6 @@ resource_pools:
 		}},
 
 		{"new resource manager with old pools", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
 resource_pools:
@@ -414,12 +338,50 @@ resource_pools:
 			},
 		}},
 
+		{"no resource manager with pools given", `
+resource_pools:
+  - pool_name: test
+  - pool_name: test2
+`, Config{
+			ResourceConfig: ResourceConfig{
+				ResourceManagers: ResourceManagersConfig{
+					{
+						AgentRM: &AgentResourceManagerConfigV1{
+							Name:                       defaultResourceManagerName,
+							Scheduler:                  DefaultSchedulerConfig(),
+							DefaultAuxResourcePool:     defaultResourcePoolName,
+							DefaultComputeResourcePool: defaultResourcePoolName,
+							ResourcePools: []ResourcePoolConfig{
+								{
+									PoolName:                 "test",
+									MaxAuxContainersPerAgent: 100,
+									AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
+								},
+								{
+									PoolName:                 "test2",
+									MaxAuxContainersPerAgent: 100,
+									AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
+								},
+							},
+						},
+					},
+				},
+				ResourcePoolsDontUse: []ResourcePoolConfig{
+					{
+						PoolName:                 "test",
+						MaxAuxContainersPerAgent: 100,
+						AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
+					},
+					{
+						PoolName:                 "test2",
+						MaxAuxContainersPerAgent: 100,
+						AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
+					},
+				},
+			},
+		}},
+
 		{"multiple resource manager pools get defaulted", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     name: dockeragents
@@ -453,11 +415,6 @@ resource_managers:
 		}},
 
 		{"new resource manager with new pools", `
-db:
-  user: config_file_user
-  password: password
-  host: hostname
-  port: "3000"
 resource_managers:
   - type: agent
     resource_pools:

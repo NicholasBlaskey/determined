@@ -92,11 +92,13 @@ func (r *ResourceConfig) ResolveResource(oldPools []ResourcePoolConfig) error {
 	if len(r.ResourceManagers) == 1 && r.ResourceManagers[0].Name() == "" {
 		r.ResourceManagers[0].setName(defaultResourceManagerName)
 	}
-	if len(r.ResourceManagers) == 1 && len(oldPools) > 0 {
-		r.ResourceManagers[0].setPools(oldPools)
-	}
 	if len(r.ResourceManagers) == 0 {
 		r.ResourceManagers = defaultRMsConfig()
+	}
+
+	// Set v0 pools.
+	if len(r.ResourceManagers) == 1 && len(oldPools) > 0 {
+		r.ResourceManagers[0].setPools(oldPools)
 	}
 
 	agentRMCount := 0
