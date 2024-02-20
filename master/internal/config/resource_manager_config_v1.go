@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	defaultResourceManagerName = "defaultrm"
-	defaultResourcePoolName    = "default"
+	defaultRMName = "defaultrm"
+	defaultRPName = "default"
 )
 
 // ResourceManagerConfigV1 hosts configuration fields for the resource manager.
@@ -91,12 +91,12 @@ func (r *ResourceManagerConfigV1) UnmarshalJSON(data []byte) error {
 	// Fill in the default config.
 	if r.AgentRM == nil && r.KubernetesRM == nil {
 		r.AgentRM = &AgentResourceManagerConfigV1{ //nolint:exhaustruct
-			Name: defaultResourceManagerName,
+			Name: defaultRMName,
 			Scheduler: &SchedulerConfig{
 				FittingPolicy: defaultFitPolicy,
 			},
-			DefaultComputeResourcePool: defaultResourcePoolName,
-			DefaultAuxResourcePool:     defaultResourcePoolName,
+			DefaultComputeResourcePool: defaultRPName,
+			DefaultAuxResourcePool:     defaultRPName,
 		}
 	}
 	return nil
@@ -139,10 +139,10 @@ func (a *AgentResourceManagerConfigV1) UnmarshalJSON(data []byte) error {
 			a.DefaultComputeResourcePool = a.DefaultGPUResourcePool
 		}
 		if a.DefaultComputeResourcePool == "" {
-			a.DefaultComputeResourcePool = defaultResourcePoolName
+			a.DefaultComputeResourcePool = defaultRPName
 		}
 		if a.DefaultAuxResourcePool == "" {
-			a.DefaultAuxResourcePool = defaultResourcePoolName
+			a.DefaultAuxResourcePool = defaultRPName
 		}
 	}
 
@@ -219,10 +219,10 @@ func (k *KubernetesResourceManagerConfigV1) UnmarshalJSON(data []byte) error {
 		k.DefaultAuxResourcePool = ""
 	} else {
 		if k.DefaultComputeResourcePool == "" {
-			k.DefaultComputeResourcePool = defaultResourcePoolName
+			k.DefaultComputeResourcePool = defaultRPName
 		}
 		if k.DefaultAuxResourcePool == "" {
-			k.DefaultAuxResourcePool = defaultResourcePoolName
+			k.DefaultAuxResourcePool = defaultRPName
 		}
 	}
 

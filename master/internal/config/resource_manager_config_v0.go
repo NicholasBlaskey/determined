@@ -50,8 +50,8 @@ func (r *ResourceManagerConfigV0) UnmarshalJSON(data []byte) error {
 			Scheduler: &SchedulerConfig{
 				FittingPolicy: defaultFitPolicy,
 			},
-			DefaultComputeResourcePool: defaultResourcePoolName,
-			DefaultAuxResourcePool:     defaultResourcePoolName,
+			DefaultComputeResourcePool: defaultRPName,
+			DefaultAuxResourcePool:     defaultRPName,
 		}
 	}
 	return nil
@@ -89,7 +89,7 @@ func (a *AgentResourceManagerConfigV0) ToV1() *AgentResourceManagerConfigV1 {
 		DefaultGPUResourcePool:     a.DefaultGPUResourcePool,
 		RequireAuthentication:      a.RequireAuthentication,
 		ClientCA:                   a.ClientCA,
-		Name:                       defaultResourceManagerName,
+		Name:                       defaultRMName,
 		Metadata:                   "",
 		ResourcePools:              nil,
 	}
@@ -113,10 +113,10 @@ func (a *AgentResourceManagerConfigV0) UnmarshalJSON(data []byte) error {
 			a.DefaultComputeResourcePool = a.DefaultGPUResourcePool
 		}
 		if a.DefaultComputeResourcePool == "" {
-			a.DefaultComputeResourcePool = defaultResourcePoolName
+			a.DefaultComputeResourcePool = defaultRPName
 		}
 		if a.DefaultAuxResourcePool == "" {
-			a.DefaultAuxResourcePool = defaultResourcePoolName
+			a.DefaultAuxResourcePool = defaultRPName
 		}
 	}
 
@@ -174,7 +174,7 @@ func (k *KubernetesResourceManagerConfigV0) ToV1() *KubernetesResourceManagerCon
 		DefaultAuxResourcePool:     k.DefaultAuxResourcePool,
 		DefaultComputeResourcePool: k.DefaultComputeResourcePool,
 		NoDefaultResourcePools:     k.NoDefaultResourcePools,
-		Name:                       defaultResourceManagerName,
+		Name:                       defaultRMName,
 		Metadata:                   "",
 		ResourcePools:              nil,
 	}
@@ -198,10 +198,10 @@ func (k *KubernetesResourceManagerConfigV0) UnmarshalJSON(data []byte) error {
 		k.DefaultAuxResourcePool = ""
 	} else {
 		if k.DefaultComputeResourcePool == "" {
-			k.DefaultComputeResourcePool = defaultResourcePoolName
+			k.DefaultComputeResourcePool = defaultRPName
 		}
 		if k.DefaultAuxResourcePool == "" {
-			k.DefaultAuxResourcePool = defaultResourcePoolName
+			k.DefaultAuxResourcePool = defaultRPName
 		}
 	}
 

@@ -52,17 +52,17 @@ var (
 
 func defaultRMsConfig() ResourceManagersConfig {
 	poolConfig := defaultRPConfig()
-	poolConfig.PoolName = defaultResourcePoolName
+	poolConfig.PoolName = defaultRPName
 
 	//nolint:exhaustruct
 	return ResourceManagersConfig{
 		{
 			AgentRM: &AgentResourceManagerConfigV1{
-				Name:                       defaultResourceManagerName,
+				Name:                       defaultRMName,
 				Scheduler:                  DefaultSchedulerConfig(),
 				ResourcePools:              []ResourcePoolConfig{poolConfig},
-				DefaultAuxResourcePool:     defaultResourcePoolName,
-				DefaultComputeResourcePool: defaultResourcePoolName,
+				DefaultAuxResourcePool:     defaultRPName,
+				DefaultComputeResourcePool: defaultRPName,
 			},
 		},
 	}
@@ -90,7 +90,7 @@ func (r *ResourceConfig) ResolveResource(oldPools []ResourcePoolConfig) error {
 
 	// Add defaults.
 	if len(r.ResourceManagers) == 1 && r.ResourceManagers[0].Name() == "" {
-		r.ResourceManagers[0].setName(defaultResourceManagerName)
+		r.ResourceManagers[0].setName(defaultRMName)
 	}
 	if len(r.ResourceManagers) == 0 {
 		r.ResourceManagers = defaultRMsConfig()
@@ -117,7 +117,7 @@ func (r *ResourceConfig) ResolveResource(oldPools []ResourcePoolConfig) error {
 		// discovers them based on slurm queues.
 		if (rm.AgentRM != nil || rm.KubernetesRM != nil) && len(rm.Pools()) == 0 {
 			defaultPool := defaultRPConfig()
-			defaultPool.PoolName = defaultResourcePoolName
+			defaultPool.PoolName = defaultRPName
 			rm.setPools([]ResourcePoolConfig{defaultPool})
 		}
 	}

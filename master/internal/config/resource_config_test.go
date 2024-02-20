@@ -171,7 +171,7 @@ resource_managers:
 
 func TestResolveConfig(t *testing.T) {
 	defaultRPConf := defaultRPConfig()
-	defaultRPConf.PoolName = defaultResourcePoolName
+	defaultRPConf.PoolName = defaultRPName
 
 	cases := []struct {
 		name     string
@@ -219,14 +219,14 @@ resource_manager:
 				ResourceManagers: ResourceManagersConfig{
 					{
 						AgentRM: &AgentResourceManagerConfigV1{
-							Name: defaultResourceManagerName,
+							Name: defaultRMName,
 							Scheduler: &SchedulerConfig{
 								RoundRobin:    &RoundRobinSchedulerConfig{},
 								FittingPolicy: "best",
 							},
 							ResourcePools:              []ResourcePoolConfig{defaultRPConf},
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 						},
 					},
 				},
@@ -268,7 +268,7 @@ resource_pools:
 				ResourceManagers: ResourceManagersConfig{
 					{
 						AgentRM: &AgentResourceManagerConfigV1{
-							Name: defaultResourceManagerName,
+							Name: defaultRMName,
 							Scheduler: &SchedulerConfig{
 								RoundRobin:    &RoundRobinSchedulerConfig{},
 								FittingPolicy: "best",
@@ -285,8 +285,8 @@ resource_pools:
 									AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
 								},
 							},
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 						},
 					},
 				},
@@ -316,7 +316,7 @@ resource_pools:
 				ResourceManagers: ResourceManagersConfig{
 					{
 						AgentRM: &AgentResourceManagerConfigV1{
-							Name:      defaultResourceManagerName,
+							Name:      defaultRMName,
 							Scheduler: DefaultSchedulerConfig(),
 							ResourcePools: []ResourcePoolConfig{
 								{
@@ -330,8 +330,8 @@ resource_pools:
 									AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
 								},
 							},
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 						},
 					},
 				},
@@ -347,10 +347,10 @@ resource_pools:
 				ResourceManagers: ResourceManagersConfig{
 					{
 						AgentRM: &AgentResourceManagerConfigV1{
-							Name:                       defaultResourceManagerName,
+							Name:                       defaultRMName,
 							Scheduler:                  DefaultSchedulerConfig(),
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 							ResourcePools: []ResourcePoolConfig{
 								{
 									PoolName:                 "test",
@@ -396,8 +396,8 @@ resource_managers:
 							Name:                       "dockeragents",
 							Scheduler:                  DefaultSchedulerConfig(),
 							ResourcePools:              []ResourcePoolConfig{defaultRPConf},
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 						},
 					},
 					{
@@ -406,8 +406,8 @@ resource_managers:
 							ResourcePools:              []ResourcePoolConfig{defaultRPConf},
 							MaxSlotsPerPod:             ptrs.Ptr(65),
 							SlotType:                   "cuda",
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 						},
 					},
 				},
@@ -425,7 +425,7 @@ resource_managers:
 				ResourceManagers: ResourceManagersConfig{
 					{
 						AgentRM: &AgentResourceManagerConfigV1{
-							Name:      defaultResourceManagerName,
+							Name:      defaultRMName,
 							Scheduler: DefaultSchedulerConfig(),
 							ResourcePools: []ResourcePoolConfig{
 								{
@@ -439,8 +439,8 @@ resource_managers:
 									AgentReconnectWait:       model.Duration(aproto.AgentReconnectWait),
 								},
 							},
-							DefaultAuxResourcePool:     defaultResourcePoolName,
-							DefaultComputeResourcePool: defaultResourcePoolName,
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
 						},
 					},
 				},
