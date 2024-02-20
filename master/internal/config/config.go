@@ -285,6 +285,7 @@ func (c *Config) Resolve() error {
 			if maxSlotsPerPod := *rm.KubernetesRM.MaxSlotsPerPod; maxSlotsPerPod < 0 {
 				return fmt.Errorf("max_slots_per_pod must be >= 0 got %d", maxSlotsPerPod)
 			}
+			break // TODO(multirm) remove this break.
 		}
 	}
 

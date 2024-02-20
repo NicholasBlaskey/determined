@@ -183,6 +183,14 @@ func TestApplyBackwardsCompatibility(t *testing.T) {
 				},
 			},
 		},
+		{
+			before: map[string]interface{}{
+				"resource_managers": []any{},
+			},
+			expected: map[string]interface{}{
+				"resource_managers": []any{},
+			},
+		},
 	}
 	for ix := range tcs {
 		tc := tcs[ix]
