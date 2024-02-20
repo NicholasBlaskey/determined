@@ -114,7 +114,7 @@ type AgentResourceManagerConfigV1 struct {
 	DefaultGPUResourcePool string `json:"default_gpu_resource_pool,omitempty"`
 
 	Name          string               `json:"name"`
-	Metadata      string               `json:"metadata"`
+	Metadata      map[string]any       `json:"metadata"`
 	ResourcePools []ResourcePoolConfig `json:"resource_pools"`
 
 	RequireAuthentication bool   `json:"require_authentication"`
@@ -192,7 +192,7 @@ type KubernetesResourceManagerConfigV1 struct {
 	MasterPort int32        `json:"_master_port,omitempty"`
 
 	Name          string               `json:"name"`
-	Metadata      string               `json:"metadata"`
+	Metadata      map[string]any       `json:"metadata"`
 	ResourcePools []ResourcePoolConfig `json:"resource_pools"`
 
 	DefaultAuxResourcePool     string `json:"default_aux_resource_pool"`

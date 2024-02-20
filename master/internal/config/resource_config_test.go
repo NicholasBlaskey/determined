@@ -381,6 +381,52 @@ resource_pools:
 			},
 		}},
 
+		{"metadata for multiple resource managers", `
+resource_managers:
+  - type: agent
+    name: dockeragents
+    metadata:
+      region: "nw"
+      nest:
+        into: "c"
+  - type: kubernetes
+    metadata:
+      test: "y"
+    name: k8s
+    max_slots_per_pod: 65
+`, Config{
+			ResourceConfig: ResourceConfig{
+				ResourceManagers: ResourceManagersConfig{
+					{
+						AgentRM: &AgentResourceManagerConfigV1{
+							Name:                       "dockeragents",
+							Scheduler:                  DefaultSchedulerConfig(),
+							ResourcePools:              []ResourcePoolConfig{defaultRPConf},
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
+							Metadata: map[string]any{
+								"region": "nw",
+								"nest":   map[string]any{"into": "c"},
+							},
+						},
+					},
+					{
+						KubernetesRM: &KubernetesResourceManagerConfigV1{
+							Name:                       "k8s",
+							ResourcePools:              []ResourcePoolConfig{defaultRPConf},
+							MaxSlotsPerPod:             ptrs.Ptr(65),
+							SlotType:                   "cuda",
+							DefaultAuxResourcePool:     defaultRPName,
+							DefaultComputeResourcePool: defaultRPName,
+							Metadata: map[string]any{
+								"test": "y",
+							},
+						},
+					},
+				},
+			},
+		}},
+
 		{"multiple resource manager pools get defaulted", `
 resource_managers:
   - type: agent

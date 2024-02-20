@@ -90,7 +90,7 @@ func (a *AgentResourceManagerConfigV0) ToV1() *AgentResourceManagerConfigV1 {
 		RequireAuthentication:      a.RequireAuthentication,
 		ClientCA:                   a.ClientCA,
 		Name:                       defaultRMName,
-		Metadata:                   "",
+		Metadata:                   nil,
 		ResourcePools:              nil,
 	}
 }
@@ -175,7 +175,7 @@ func (k *KubernetesResourceManagerConfigV0) ToV1() *KubernetesResourceManagerCon
 		DefaultComputeResourcePool: k.DefaultComputeResourcePool,
 		NoDefaultResourcePools:     k.NoDefaultResourcePools,
 		Name:                       defaultRMName,
-		Metadata:                   "",
+		Metadata:                   nil,
 		ResourcePools:              nil,
 	}
 }
